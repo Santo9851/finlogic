@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ls-primary: #100226;
+  --color-ls-supporting: #3A3153;
+  --color-ls-compliment: #F59F01;
+  --color-ls-secondary: #0B6EC3;
+  --color-ls-white: #FDF6FF;
+  --color-ls-up: #16c784;
+  --color-ls-down: #ea3943;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer utilities {
+  .bg-abstract-gradient {
+    background: radial-gradient(circle at top left, var(--color-ls-supporting), transparent),
+                radial-gradient(circle at bottom right, var(--color-ls-primary), transparent);
+  }
+  
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .text-reveal {
+    mask-image: linear-gradient(to right, white 50%, transparent 100%);
+    mask-size: 200% 100%;
+    mask-position: 100% 0;
+  }
+
+  .blend-screen {
+    mix-blend-mode: screen;
+  }
+
+  .blend-dodge {
+    mix-blend-mode: color-dodge;
+  }
+
+  .animate-pulse-orange {
+    animation: pulse-orange 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+@keyframes pulse-orange {
+  0%, 100% {
+    border-color: rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    border-color: rgba(245, 158, 11, 1);
+    box-shadow: 0 0 20px 0 rgba(245, 158, 11, 0.4);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}

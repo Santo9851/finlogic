@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "generated_at": "2026-03-13T02:55:53.665229+00:00",
+    "config_version": "2.0.0"
+  },
+  "header": {
+    "company_name": "Verification Test Ltd",
+    "sector": "AgriTech",
+    "ticket_size": "NPR 5.5 Cr",
+    "verdict": "BLOCKED",
+    "total_score": "50.0%"
+  },
+  "executive_summary": {
+    "overview": "Verification Test Ltd is being evaluated for a AgriTech investment.",
+    "key_findings": [
+      "Hard Gate Failed: FITTA 2019 compliance confirmed",
+      "Hard Gate Failed: IRD PAN registration & filing verified",
+      "Hard Gate Failed: PEP screening completed",
+      "Hard Gate Failed: FATF / AML check on all partners"
+    ]
+  },
+  "section_analysis": [
+    {
+      "id": "vision",
+      "title": "Unconventional Vision",
+      "score": "57.8%",
+      "status": "PASS",
+      "details": {
+        "problem_clarity": 9.0,
+        "market_size": 5,
+        "differentiation": 5,
+        "crossborder_resilience": 5
+      },
+      "red_flags": []
+    },
+    {
+      "id": "growth",
+      "title": "Wisdom-Backed Growth",
+      "score": "56.1%",
+      "status": "PASS",
+      "details": {
+        "unit_economics": 8.5,
+        "scalability": 5,
+        "esg_inclusion": 5,
+        "fitta_readiness": 5
+      },
+      "red_flags": []
+    },
+    {
+      "id": "leadership",
+      "title": "Leadership Activation",
+      "score": "44.4%",
+      "status": "PASS",
+      "details": {
+        "domain_depth": 5,
+        "execution_track": 5,
+        "team_completeness": 5,
+        "governance_risk": 5
+      },
+      "red_flags": []
+    },
+    {
+      "id": "insight",
+      "title": "Deep Insight",
+      "score": "44.4%",
+      "status": "PASS",
+      "details": {
+        "revenue_trajectory": 5,
+        "cac_ltv": 5,
+        "customer_validation": 5,
+        "risk_disclosure": 5
+      },
+      "red_flags": []
+    },
+    {
+      "id": "partnership",
+      "title": "Harmonious Partnerships",
+      "score": "44.4%",
+      "status": "PASS",
+      "details": {
+        "advisor_quality": 5,
+        "lp_strategic_fit": 5,
+        "ifc_signal": 5,
+        "sebon_mapping": 5
+      },
+      "red_flags": []
+    }
+  ],
+  "compliance_gates": {
+    "total": 10,
+    "passed": 0,
+    "hard_gates_failed": [
+      "FITTA 2019 compliance confirmed",
+      "IRD PAN registration & filing verified",
+      "PEP screening completed",
+      "FATF / AML check on all partners"
+    ],
+    "details": [
+      {
+        "label": "FITTA 2019 compliance confirmed",
+        "status": "failed"
+      },
+      {
+        "label": "IRD PAN registration & filing verified",
+        "status": "pending"
+      },
+      {
+        "label": "PEP screening completed",
+        "status": "pending"
+      },
+      {
+        "label": "FATF / AML check on all partners",
+        "status": "pending"
+      },
+      {
+        "label": "FNCCI/CNI/NCC reference obtained",
+        "status": "pending"
+      },
+      {
+        "label": "Digital transaction logs verified",
+        "status": "pending"
+      },
+      {
+        "label": "Bandh / disaster continuity plan submitted",
+        "status": "pending"
+      },
+      {
+        "label": "TAM verified with CBS/NRB data",
+        "status": "pending"
+      },
+      {
+        "label": "EPA clearance status confirmed",
+        "status": "pending"
+      },
+      {
+        "label": "SEBON licensing mapped (if public exit planned)",
+        "status": "pending"
+      }
+    ]
+  },
+  "risk_flags": [
+    "Hard Gate Failed: FITTA 2019 compliance confirmed",
+    "Hard Gate Failed: IRD PAN registration & filing verified",
+    "Hard Gate Failed: PEP screening completed",
+    "Hard Gate Failed: FATF / AML check on all partners"
+  ],
+  "weakest_sections": [
+    {
+      "title": "Leadership Activation",
+      "score": "44.4%"
+    },
+    {
+      "title": "Deep Insight",
+      "score": "44.4%"
+    }
+  ],
+  "action_items": [
+    "Resolve g_fitta compliance",
+    "Resolve g_ird_pan compliance",
+    "Resolve g_pep compliance",
+    "Resolve g_fatf compliance"
+  ]
+}
