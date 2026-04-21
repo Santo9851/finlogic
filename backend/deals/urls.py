@@ -53,7 +53,42 @@ from .views import (
     LPDocumentDownloadView,
     LPDocumentAcknowledgeView,
     LPPortfolioView,
+    # AI Financials
+    GPProjectExtractFinancialsView,
+    GPProjectExtractedFinancialsView,
+    GPProjectQoEAnalysisView,
+    GPExtractedFinancialsVerifyView,
+    GPProjectCommercialAnalysisView,
+    GPProjectOperationalAnalysisView,
+    GPLegalScannerView,
+    GPProjectRedFlagsView,
+    GPRedFlagReviewView,
+    GPTriggerScoringView,
+    GPProjectLatestScoringView,
+    GPCriterionOverrideView,
+    GPClearComplianceGateView,
+    GPApproveForLPView,
+    GPDCFValuationView,
+    GPLBOValuationView,
+    GPValuationDetailView,
+    GPValuationSensitivityView,
+    GPRegulatoryChecklistView,
+    GPSEBONFilingDeadlineListView,
+    GPGenerateMemoView,
+    GPMemoDetailView,
+    GPMemoFinalizeView,
+    PortfolioKPIReportListView,
+    PortfolioKPIReportDetailView,
+    GPFullAnalysisView,
 )
+
+
+
+
+
+
+
+
 
 app_name = 'deals'
 
@@ -94,6 +129,165 @@ urlpatterns = [
         GPProjectFormResponsesView.as_view(),
         name='gp-project-form-responses',
     ),
+    path(
+        'deals/projects/<uuid:pk>/extract-financials/',
+        GPProjectExtractFinancialsView.as_view(),
+        name='gp-project-extract-financials',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/extracted-financials/',
+        GPProjectExtractedFinancialsView.as_view(),
+        name='gp-project-extracted-financials',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/extracted-financials/<uuid:fin_id>/verify/',
+        GPExtractedFinancialsVerifyView.as_view(),
+        name='gp-project-extracted-financials-verify',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/qoe-analysis/',
+        GPProjectQoEAnalysisView.as_view(),
+        name='gp-project-qoe-analysis',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/run-commercial-analysis/',
+        GPProjectCommercialAnalysisView.as_view(),
+        name='gp-project-run-commercial-analysis',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/commercial-analysis/',
+        GPProjectCommercialAnalysisView.as_view(),
+        name='gp-project-commercial-analysis',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/run-operational-analysis/',
+        GPProjectOperationalAnalysisView.as_view(),
+        name='gp-project-run-operational-analysis',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/operational-analysis/',
+        GPProjectOperationalAnalysisView.as_view(),
+        name='gp-project-operational-analysis',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/documents/<uuid:doc_id>/scan-legal/',
+        GPLegalScannerView.as_view(),
+        name='gp-project-scan-legal',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/red-flags/',
+        GPProjectRedFlagsView.as_view(),
+        name='gp-project-red-flags',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/trigger-scoring/',
+        GPTriggerScoringView.as_view(),
+        name='gp-project-trigger-scoring',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/scoring/latest/',
+        GPProjectLatestScoringView.as_view(),
+        name='gp-project-scoring-latest',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/scoring/criteria/<uuid:score_id>/override/',
+        GPCriterionOverrideView.as_view(),
+        name='gp-scoring-criterion-override',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/scoring/gates/<str:gate_id>/clear/',
+        GPClearComplianceGateView.as_view(),
+        name='gp-scoring-gate-clear',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/approve-for-lp/',
+        GPApproveForLPView.as_view(),
+        name='gp-project-approve-for-lp',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/valuation/dcf/',
+        GPDCFValuationView.as_view(),
+        name='gp-project-valuation-dcf',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/valuation/lbo/',
+        GPLBOValuationView.as_view(),
+        name='gp-project-valuation-lbo',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/valuation/<uuid:model_id>/',
+        GPValuationDetailView.as_view(),
+        name='gp-project-valuation-detail',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/valuation/<uuid:model_id>/sensitivity/',
+        GPValuationSensitivityView.as_view(),
+        name='gp-project-valuation-sensitivity',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/regulatory-checklist/',
+        GPRegulatoryChecklistView.as_view(),
+        name='gp-project-regulatory-checklist',
+    ),
+    path(
+        'compliance/sebon-deadlines/',
+        GPSEBONFilingDeadlineListView.as_view(),
+        name='gp-sebon-deadlines',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/generate-memo/',
+        GPGenerateMemoView.as_view(),
+        name='gp-project-generate-memo',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/memos/latest/',
+        GPMemoDetailView.as_view(),
+        name='gp-project-memo-latest',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/memos/<uuid:memo_id>/',
+        GPMemoDetailView.as_view(),
+        name='gp-project-memo-detail',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/memos/<uuid:memo_id>/finalize/',
+        GPMemoFinalizeView.as_view(),
+        name='gp-project-memo-finalize',
+    ),
+    path(
+        'portfolio/kpi-reports/',
+        PortfolioKPIReportListView.as_view(),
+        name='portfolio-kpi-list',
+    ),
+    path(
+        'portfolio/projects/<uuid:pk>/kpi-reports/',
+        PortfolioKPIReportListView.as_view(),
+        name='portfolio-project-kpi-create',
+    ),
+    path(
+        'portfolio/kpi-reports/<uuid:pk>/',
+        PortfolioKPIReportDetailView.as_view(),
+        name='portfolio-kpi-detail',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/run-full-analysis/',
+        GPFullAnalysisView.as_view(),
+        name='gp-project-run-full-analysis',
+    ),
+
+
+
+
+
+
+    path(
+        'deals/red-flags/<uuid:pk>/review/',
+        GPRedFlagReviewView.as_view(),
+        name='gp-red-flag-review',
+    ),
+
+
+
 
     # ── Entrepreneur Token-Auth Flow (public – token is the credential) ────
     path(

@@ -20,7 +20,30 @@ from .models import (
     ImmutableAuditEvent,
     FundDocument,
     LPDocumentAccess,
+    ExtractedFinancials,
+    QoEReport,
+    CommercialAnalysis,
+    OperationalAnalysis,
+    RedFlagPattern,
+    RedFlagFinding,
+    ScoringRun,
+    CriterionScore,
+    ComplianceGate,
+    ValuationModel,
+    DCFAssumptions,
+    LBOAssumptions,
+    RegulatoryChecklist,
+    SEBONFilingDeadline,
+    DealMemo,
+    PortfolioKPIReport,
 )
+
+
+
+
+
+
+
 
 User = get_user_model()
 
@@ -144,6 +167,23 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
     documents = PEProjectDocumentSerializer(many=True, read_only=True)
     form_responses = PEProjectFormResponseSerializer(many=True, read_only=True)
     audit_events = serializers.SerializerMethodField()
+    extracted_financials = serializers.SerializerMethodField()
+    qoe_reports = serializers.SerializerMethodField()
+    commercial_analyses = serializers.SerializerMethodField()
+    operational_analyses = serializers.SerializerMethodField()
+    red_flags = serializers.SerializerMethodField()
+    latest_scoring = serializers.SerializerMethodField()
+    valuations = serializers.SerializerMethodField()
+    regulatory_checklist = serializers.SerializerMethodField()
+    latest_memo = serializers.SerializerMethodField()
+    kpi_reports = serializers.SerializerMethodField()
+
+
+
+
+
+
+
 
     class Meta:
         model = PEProject
@@ -157,7 +197,16 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
             'invitation_token', 'invitation_sent_at', 'invitation_expires_at',
             'is_invitation_valid', 'form_step_completed', 'submitted_at',
             'data_room_completeness', 'documents', 'form_responses', 'audit_events',
+            'extracted_financials', 'qoe_reports', 'commercial_analyses', 'operational_analyses', 'red_flags',
+            'latest_scoring', 'valuations', 'regulatory_checklist', 'latest_memo', 'kpi_reports',
             'created_by', 'created_by_detail', 'created_at', 'updated_at',
+
+
+
+
+
+
+
         )
         read_only_fields = (
             'id', 'invitation_token', 'invitation_sent_at', 'invitation_expires_at',
@@ -172,6 +221,52 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
     def get_audit_events(self, obj):
         events = ImmutableAuditEvent.objects.filter(object_id=obj.id).order_by('-created_at')[:20]
         return ImmutableAuditEventSerializer(events, many=True).data
+
+    def get_extracted_financials(self, obj):
+        return ExtractedFinancialsSerializer(obj.financials.all(), many=True).data
+
+    def get_qoe_reports(self, obj):
+        return QoEReportSerializer(obj.qoe_reports.all(), many=True).data
+
+    def get_commercial_analyses(self, obj):
+        return CommercialAnalysisSerializer(obj.commercial_analyses.all(), many=True).data
+
+    def get_operational_analyses(self, obj):
+        return OperationalAnalysisSerializer(obj.operational_analyses.all(), many=True).data
+
+    def get_red_flags(self, obj):
+        return RedFlagFindingSerializer(obj.red_flags.all(), many=True).data
+
+    def get_latest_scoring(self, obj):
+        run = obj.scoring_runs.first()
+        if run:
+            return ScoringRunSerializer(run).data
+        return None
+
+    def get_valuations(self, obj):
+        return ValuationModelSerializer(obj.valuations.all(), many=True).data
+
+    def get_regulatory_checklist(self, obj):
+        try:
+            return RegulatoryChecklistSerializer(obj.regulatory_checklist).data
+        except:
+            return None
+
+    def get_latest_memo(self, obj):
+        memo = obj.memos.order_by('-version', '-created_at').first()
+        if memo:
+            return DealMemoSerializer(memo).data
+        return None
+
+    def get_kpi_reports(self, obj):
+        return PortfolioKPIReportSerializer(obj.kpi_reports.all(), many=True).data
+
+
+
+
+
+
+
 
 
 class PEProjectStatusUpdateSerializer(serializers.ModelSerializer):
@@ -484,3 +579,123 @@ class LPPortfolioSerializer(serializers.ModelSerializer):
     def get_anonymized_name(self, obj):
         # SEBON-compliant anonymization
         return f"{obj.get_sector_display()} Project {str(obj.id)[:4].upper()}"
+
+
+# ---------------------------------------------------------------------------
+# 14. AI Financials & QoE
+# ---------------------------------------------------------------------------
+
+class ExtractedFinancialsSerializer(serializers.ModelSerializer):
+    verified_by_detail = UserMiniSerializer(source='verified_by', read_only=True)
+    
+    class Meta:
+        model = ExtractedFinancials
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at', 'updated_at', 'verified_by', 'verified_at')
+
+class QoEReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QoEReport
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at')
+
+class CommercialAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommercialAnalysis
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at')
+
+class OperationalAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OperationalAnalysis
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at')
+
+class RedFlagPatternSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RedFlagPattern
+        fields = '__all__'
+
+class RedFlagFindingSerializer(serializers.ModelSerializer):
+    pattern_detail = RedFlagPatternSerializer(source='pattern', read_only=True)
+    document_name = serializers.CharField(source='document.filename', read_only=True)
+    reviewed_by_detail = UserMiniSerializer(source='reviewed_by', read_only=True)
+    
+    class Meta:
+        model = RedFlagFinding
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at', 'reviewed_by', 'reviewed_at')
+
+class ComplianceGateSerializer(serializers.ModelSerializer):
+    cleared_by_detail = UserMiniSerializer(source='cleared_by', read_only=True)
+    class Meta:
+        model = ComplianceGate
+        fields = '__all__'
+
+class CriterionScoreSerializer(serializers.ModelSerializer):
+    overridden_by_detail = UserMiniSerializer(source='overridden_by', read_only=True)
+    class Meta:
+        model = CriterionScore
+        fields = '__all__'
+
+class ScoringRunSerializer(serializers.ModelSerializer):
+    criteria_scores = CriterionScoreSerializer(many=True, read_only=True)
+    compliance_gates = ComplianceGateSerializer(many=True, read_only=True)
+    triggered_by_detail = UserMiniSerializer(source='triggered_by', read_only=True)
+    
+    class Meta:
+        model = ScoringRun
+        fields = '__all__'
+
+class DCFAssumptionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DCFAssumptions
+        fields = '__all__'
+
+class LBOAssumptionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LBOAssumptions
+        fields = '__all__'
+
+class ValuationModelSerializer(serializers.ModelSerializer):
+    dcf_detail = DCFAssumptionsSerializer(read_only=True)
+    lbo_detail = LBOAssumptionsSerializer(read_only=True)
+    created_by_detail = UserMiniSerializer(source='created_by', read_only=True)
+    
+    class Meta:
+        model = ValuationModel
+        fields = '__all__'
+
+class RegulatoryChecklistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegulatoryChecklist
+        fields = '__all__'
+
+class SEBONFilingDeadlineSerializer(serializers.ModelSerializer):
+    submitted_by_detail = UserMiniSerializer(source='submitted_by', read_only=True)
+    
+    class Meta:
+        model = SEBONFilingDeadline
+        fields = '__all__'
+
+class DealMemoSerializer(serializers.ModelSerializer):
+    created_by_detail = UserMiniSerializer(source='created_by', read_only=True)
+    
+    class Meta:
+        model = DealMemo
+        fields = '__all__'
+
+class PortfolioKPIReportSerializer(serializers.ModelSerializer):
+    submitted_by_detail = UserMiniSerializer(source='submitted_by', read_only=True)
+    project_legal_name = serializers.CharField(source='project.legal_name', read_only=True)
+    
+    class Meta:
+        model = PortfolioKPIReport
+        fields = '__all__'
+
+
+
+
+
+
+

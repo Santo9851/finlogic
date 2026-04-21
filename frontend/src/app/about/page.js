@@ -49,13 +49,13 @@ export default function AboutPage() {
           text: "His career began at the Institute of Chartered Accountants of India, where he pursued Chartered Accountancy before completing a Bachelor of Commerce (Finance & Accounting) from Indira Gandhi Open University and a Master of Business Administration from Lincoln International College, Kathmandu.",
         },
         {
-          text: "From 2011 to 2017, Santosh served as Finance Officer at Open Consultant & Research Centre, where he led investment proposal preparation, equity fundamental research, deal negotiation, and Investment Committee advisory work. He went on to spend six formative years (2018–2024) at Sani Securities Company Limited as Financial Data Analyst and Research Analyst — pioneering data-driven investment frameworks, building KYC-compliant digital onboarding systems, leveraging Python and Power BI for institutional analytics, and engaging directly with government and regulatory stakeholders on market policy.",
+          text: "From 2011 to 2017, Santosh served as Finance Officer at Open Consultant & Research Centre, where he led investment proposal preparation, equity fundamental research, deal negotiation, and Investment Committee advisory work. He went on to spend six formative years at Sani Securities Company Limited as Financial Data Analyst and Research Analyst — pioneering data-driven investment frameworks, building KYC-compliant digital onboarding systems, leveraging Python and Power BI for institutional analytics, and engaging directly with government and regulatory stakeholders on market policy.",
         },
         {
           text: "In June 2024, Santosh founded Finlogic Capital Limited with a mandate to institutionalize private equity practice in Nepal and represent the country's financial sector in regional and bilateral forums.",
         },
         {
-          text: "Parallel to Finlogic, Santosh serves as a co-founder and strategic advisor to Silicon Himalayas Pvt Ltd, a project development and advisory firm operating across five high-potential verticals — Green Energy, Technology & Digital, Agri-tech, Tourism, and Smart Infrastructure. Silicon Himalayas employs a proprietary SPV Incubation Engine that systematically de-risks early-stage ventures through four stages: Validation, DPR/IP Creation, IRC Audit & SPV Formation, and Capitalization. This dual role positions Santosh at the intersection of deal origination and institutional capital deployment — a unique vantage point that directly informs Finlogic's investment strategy and pipeline.",
+          text: "Parallel to Finlogic, Santosh serves as a co-founder and strategic advisor to Silicon Himalayas Pvt Ltd, a project development and advisory firm operating across five high-potential verticals — Green Energy, Technology & Digital, Agri-tech, Tourism, and Smart Infrastructure. This dual role positions Santosh at the intersection of deal origination and institutional capital deployment — a unique vantage point that directly informs Finlogic's investment strategy and pipeline.",
           highlight: "Silicon Himalayas Pvt Ltd",
         },
         {
@@ -66,11 +66,10 @@ export default function AboutPage() {
       social: { linkedin: "#", twitter: "#" },
     },
     {
-
       id: 2,
       name: "Amrit Rana Chhetri",
       role: "Co-Founder & Director",
-      bio: "Amrit Rana Chhetri is an entrepreneur and institutional finance professional with deep expertise in fund management, investor relations, and clean energy development.",
+      bio: "Amrit is an entrepreneur and institutional finance professional with deep expertise in fund management, investor relations, and clean energy development.",
       bioFull: [
         {
           text: "Amrit Rana Chhetri is an entrepreneur and institutional finance professional with deep expertise in fund management, investor relations, and clean energy development. As Co-Founder and Director at Finlogic Capital Limited, he brings regulated fund management experience and a macro-level understanding of Nepal's structural growth opportunity.",
@@ -98,43 +97,135 @@ export default function AboutPage() {
     },
 
     {
-      id: 3,
+      id: 4,
       name: "Suman Subedi",
       role: "Director",
-      bio: "Detailed bio highlighting operational excellence, strategic guidance, and value creation for portfolio companies.",
+      bio: "Suman is a seasoned financial management professional with over eight years of experience spanning financial structuring, investment management, portfolio oversight, and corporate financial leadership.",
+      bioFull: [
+        {
+          text: "Suman Subedi is a seasoned financial management professional with over eight years of experience spanning financial structuring, investment management, portfolio oversight, and corporate financial leadership. As a Director at Finlogic Capital Limited, he brings deep operational finance expertise and a strong track record of building institutional-grade financial systems within Nepal's investment landscape.",
+        },
+        {
+          text: "Suman has spent eight years at Wealth Bee Investment Pvt. Ltd., progressing from Finance Manager to Chief Financial Officer. As Finance Manager, he established the firm's foundational financial systems, internal controls, and reporting frameworks from the ground up. Elevated to CFO, he took on broader responsibilities including strategic business expansion planning, investment evaluation, portfolio performance monitoring, business and asset valuation, and data-driven decision support for senior management.",
+          highlight: "Wealth Bee Investment Pvt. Ltd.",
+        },
+        {
+          text: "Alongside this, Suman has served as Chief Financial Officer at Routine of Nepal for approximately three years, further deepening his experience in corporate financial governance and multi-entity financial oversight.",
+        },
+        {
+          text: "Suman holds a Master of Business Administration (MBA) with a CGPA of 3.32 from Lincoln International College, affiliated to Lincoln University College, Malaysia — with equivalence certified by Tribhuvan University's Curriculum Development Centre. He completed his undergraduate studies with a Bachelor of Business Studies (BBS) from Shanker Dev Campus, Tribhuvan University.",
+        },
+        {
+          text: "His combination of hands-on CFO experience and investment management background makes him a vital contributor to Finlogic Capital's financial governance and operational integrity.",
+        },
+      ],
       image: "/images/suman-subedi.png",
       social: { linkedin: "#", twitter: "#" },
     },
     {
-      id: 4,
+      id: 5,
       name: "Anju Bhattarai",
-      role: "DIrector",
-      bio: "Focusing on digital transformation and evaluating high-growth tech ventures within the frontier markets.",
+      role: "Director",
+      bio: "Anju is a finance and compliance professional with over six years of progressive experience spanning regulatory compliance, financial management, and private equity deal structuring.",
+      bioFull: [
+        {
+          text: "Anju Bhattarai is a finance and compliance professional with over six years of progressive experience spanning regulatory compliance, financial management, investment evaluation, and private equity deal structuring. As a Director at Finlogic Capital Limited, she brings a disciplined, detail-oriented approach to the firm's governance, compliance architecture, and deal evaluation processes.",
+        },
+        {
+          text: "Anju began her career at ANK-Mountain JV, a Kathmandu-based infrastructure joint venture, where she served as Compliance Manager and Finance Officer. In this role, she was responsible for regulatory compliance, financial record management, internal audits, and strengthening reporting systems — building a strong foundation in financial governance and institutional controls.",
+          highlight: "ANK-Mountain JV",
+        },
+        {
+          text: "She subsequently joined Mountain Holding and Private Equity Pvt. Ltd. as Deal Evaluation and Valuation Specialist, where she developed deep expertise in evaluating investment opportunities, conducting detailed financial and business valuations, and supporting strategic deal structuring across Nepal's private equity landscape.",
+          highlight: "Mountain Holding and Private Equity Pvt. Ltd.",
+        },
+        {
+          text: "Anju holds a Master of Business Studies (MBS) in First Division from Lumbini Banijya Campus, Tribhuvan University, and a Bachelor of Business Administration (BBA) with a CGPA of 3.71 from Kshitiz International College, affiliated to Pokhara University.",
+        },
+        {
+          text: "Her combination of compliance rigor and private equity deal experience positions her as a critical pillar in Finlogic Capital's mission to institutionalize responsible, transparent investment practice in Nepal.",
+        },
+      ],
       image: "/images/anju-bhattarai.jpg",
       social: { linkedin: "#", twitter: "#" },
     },
     {
-      id: 5,
+      id: 6,
       name: "Gita Devi Khanal",
       role: "Director",
-      bio: "Leading strategic research and alignment across the five-pillar proprietary framework.",
-      image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=400&h=400&auto=format&fit=crop",
+      bio: "Gita is an investment advisory professional with over eight years of experience providing investment oversight, portfolio analysis, and strategic advisory support across diversified sectors.",
+      bioFull: [
+        {
+          text: "Gita Devi Khanal is an investment advisory professional with over eight years of experience providing investment oversight, portfolio analysis, and strategic advisory support across diversified sectors. As a Director at Finlogic Capital Limited, she contributes a cross-sector investment perspective and a disciplined approach to capital allocation and risk assessment.",
+        },
+        {
+          text: "Gita has served as a Part-Time Investment Consultant at Beta Business Consulting Pvt. Ltd. for more than eight years, where she provided investment advisory and oversight support across subsidiaries operating in financial services, hospitality, real estate, manufacturing, and energy sectors.",
+          highlight: "Beta Business Consulting Pvt. Ltd.",
+        },
+        {
+          text: "Her responsibilities spanned evaluation of investment opportunities and sector-wise feasibility analysis, oversight of investment performance across diversified portfolios, business and asset valuation for strategic decision-making, risk assessment and return analysis across multiple industries, capital allocation advisory, and preparation of analytical reports for senior management.",
+        },
+        {
+          text: "Her profile is notable for the breadth of sectoral exposure she brings — spanning industries that closely align with Finlogic Capital's own investment verticals — and for the practical financial acumen she has developed across a sustained long-term advisory engagement.",
+        },
+        {
+          text: "Gita holds a Master of Arts in History and a Bachelor of Arts with Honours in History, both from North-Eastern Hill University, Shillong, India — reflecting an intellectual foundation in analytical thinking and critical inquiry that has translated effectively into her investment advisory career.",
+        },
+      ],
+      image: "/images/gita-devi-khanal.png",
       social: { linkedin: "#", twitter: "#" },
     },
     {
-      id: 6,
-      name: "Janak Tiwari",
-      role: "Independent Director",
-      bio: "Supporting deal sourcing, due diligence, and market scouting in diverse frontier economies.",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&h=400&auto=format&fit=crop",
+      id: 3,
+      name: "Asmita Raut",
+      role: "Chief Executive Officer",
+      bio: "Asmita is a seasoned finance and investment professional with over a decade of experience spanning compliance, business valuation, investment analysis, and strategic business development.",
+      bioFull: [
+        {
+          text: "Asmita Raut is a seasoned finance and investment professional with over a decade of progressively senior experience spanning compliance, business valuation, investment analysis, and strategic business development. As Chief Executive Officer of Finlogic Capital Limited, she provides the firm's day-to-day leadership and drives its mandate to institutionalize private equity practice in Nepal.",
+        },
+        {
+          text: "Asmita began her professional career at I. Dhakal & Associates, a Chartered Accountancy firm, where she served as Compliance Manager and Finance Officer — building a rigorous foundation in regulatory compliance, financial reporting, internal controls, and coordination with audit and regulatory bodies.",
+          highlight: "I. Dhakal & Associates",
+        },
+        {
+          text: "She subsequently joined Kairavi Investment Pvt. Ltd. as Chief Valuation Officer, where over approximately five years she led business and asset valuation assignments, reviewed investment proposals, conducted financial analysis, and supported strategic investment decisions — experience that sits directly at the core of Finlogic Capital's deal evaluation function.",
+          highlight: "Kairavi Investment Pvt. Ltd.",
+        },
+        {
+          text: "Most recently, she has served as Business Development Analyst at Rock International Pvt. Ltd., managing investment strategies, portfolio performance monitoring, risk assessment, and regulatory compliance.",
+        },
+        {
+          text: "She holds an MBA in Global Business with a CGPA of 3.77 from South Asian Institute of Management, Pokhara University, and a BBA in Marketing with a CGPA of 3.12 from Kathmandu College of Management, Kathmandu University — a dual academic foundation that equips her to bridge analytical rigor with strategic market thinking.",
+        },
+      ],
+      image: "/images/asmita-raut.png",
       social: { linkedin: "#", twitter: "#" },
     },
     {
       id: 7,
-      name: "Asmita Raut",
-      role: "Chief Executive Officer",
-      bio: "Focused on quantitative analysis and financial modeling for sustainable scaling ventures.",
-      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&h=400&auto=format&fit=crop",
+      name: "Janak Tiwari",
+      role: "Independent Director",
+      bio: "Janak is a business development professional with over a decade of experience in client relationship management, strategic planning, and market development.",
+      bioFull: [
+        {
+          text: "Janak Tiwari is a business development professional with over a decade of experience in client relationship management, strategic planning, and market development. As Independent Director at Finlogic Capital Limited, he brings an independent governance perspective and practical business acumen to the firm's board — strengthening oversight, accountability, and strategic direction.",
+        },
+        {
+          text: "Janak has served as Business Development Manager at Mountain Infra Company Limited for over ten years, where he has been responsible for identifying new business opportunities, building and maintaining client relationships, and developing strategic plans to drive company growth.",
+          highlight: "Mountain Infra Company Limited",
+        },
+        {
+          text: "His sustained tenure in this role reflects strong market insight, communication capability, and a results-oriented approach to business strategy that complements the investment and governance functions of the Finlogic Capital board.",
+        },
+        {
+          text: "He holds a Bachelor of Commerce from Shobhit University, Meerut, India — with a grounding in financial accounting, cost accounting, auditing, taxation, management accounting, and business law — providing him with a sound commercial and financial literacy foundation.",
+        },
+        {
+          text: "As an Independent Director, Janak fulfills a critical governance role within Finlogic Capital's board structure, providing objective oversight and ensuring that the firm's investment decisions and operational conduct remain aligned with the best interests of its investors and stakeholders.",
+        },
+      ],
+      image: "/images/janak-tiwari.png",
       social: { linkedin: "#", twitter: "#" },
     },
   ];
@@ -255,10 +346,10 @@ export default function AboutPage() {
       <section className="py-24 bg-ls-supporting/5 text-center">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="text-3xl font-bold mb-12 text-ls-compliment">Advisory Board</h2>
-          <p className="text-ls-white/50 italic mb-8">Our advisors include distinguished leaders from technology, finance, and international developmental agencies across Asia and beyond.</p>
+          <p className="text-ls-white/50 italic mb-8">Our advisors include distinguished leaders from technology, finance, and international developmental agencies across Nepal and beyond.</p>
           <div className="flex flex-wrap justify-center gap-8 opacity-40">
-            {[1, 2, 3, 4].map(idx => (
-              <div key={idx} className="h-12 w-48 bg-ls-white/10 rounded flex items-center justify-center font-bold">[Board Member {idx}]</div>
+            {["Mr. Badri Khanal", "Mr. Himal Aryal",].map(idx => (
+              <div key={idx} className="h-12 w-48 bg-ls-white/10 rounded flex items-center justify-center font-bold">{idx}</div>
             ))}
           </div>
         </div>

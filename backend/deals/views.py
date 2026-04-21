@@ -36,7 +36,24 @@ from .models import (
     PEProject,
     PEProjectDocument,
     PEProjectFormResponse,
+    RedFlagFinding,
+    ScoringRun,
+    CriterionScore,
+    ComplianceGate,
+    ValuationModel,
+    DCFAssumptions,
+    LBOAssumptions,
+    RegulatoryChecklist,
+    SEBONFilingDeadline,
+    DealMemo,
+    PortfolioKPIReport,
 )
+
+
+
+
+
+
 from .permissions import (
     IsEntrepreneurRole,
     IsGPInvestorRole,
@@ -61,7 +78,43 @@ from .serializers import (
     PEProjectFormResponseSerializer,
     PEProjectListSerializer,
     PEProjectStatusUpdateSerializer,
+    ExtractedFinancialsSerializer,
+    QoEReportSerializer,
+    CommercialAnalysisSerializer,
+    OperationalAnalysisSerializer,
+    RedFlagFindingSerializer,
+    ScoringRunSerializer,
+    CriterionScoreSerializer,
+    ComplianceGateSerializer,
+    ValuationModelSerializer,
+    DCFAssumptionsSerializer,
+    LBOAssumptionsSerializer,
+    RegulatoryChecklistSerializer,
+    SEBONFilingDeadlineSerializer,
+    DealMemoSerializer,
+    PortfolioKPIReportSerializer,
 )
+
+from .valuation import calculate_dcf, calculate_lbo
+
+
+from .tasks import (
+
+    extract_financials_from_document, 
+    run_qoe_analysis,
+    run_commercial_analysis,
+    run_operational_analysis,
+    run_nepal_compliance_check,
+    generate_memo_draft,
+    run_finlo_scoring,
+    scan_legal_document,
+    run_full_analysis
+)
+
+
+
+
+
 from .signals import _log_audit_event
 
 User = get_user_model()
@@ -1214,3 +1267,551 @@ class EntrepreneurAuthGetUploadURLView(APIView):
             'document_id': doc.id,
             'content_type': presign['content_type'],
         })
+
+
+# ---------------------------------------------------------------------------
+# 15. AI Financials & QoE Endpoints
+# ---------------------------------------------------------------------------
+
+class GPProjectExtractFinancialsView(APIView):
+    """
+    POST /api/deals/projects/<uuid>/extract-financials/
+    Triggers AI extraction for a specific document.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        document_id = request.data.get('document_id')
+        if not document_id:
+            raise ValidationError("document_id is required.")
+        
+        # Trigger Celery Task
+        task = extract_financials_from_document.delay(document_id)
+        
+        return Response({
+            "status": "Task triggered",
+            "task_id": task.id
+        }, status=status.HTTP_202_ACCEPTED)
+
+
+class GPProjectExtractedFinancialsView(generics.ListAPIView):
+    """
+    GET /api/deals/projects/<uuid>/extracted-financials/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = ExtractedFinancialsSerializer
+
+    def get_queryset(self):
+        return ExtractedFinancials.objects.filter(project_id=self.kwargs['pk'])
+
+
+class GPProjectQoEAnalysisView(APIView):
+    """
+    GET /api/deals/projects/<uuid>/qoe-analysis/
+    Returns latest report or triggers a new one if requested.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        
+        # Check if they want to trigger a new analysis
+        if request.query_params.get('trigger') == 'true':
+            task = run_qoe_analysis.delay(str(project.pk))
+            return Response({"status": "Analysis triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+
+        report = project.qoe_reports.first()
+        if not report:
+            return Response({"detail": "No QoE report found for this project."}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response(QoEReportSerializer(report).data)
+
+
+class GPExtractedFinancialsVerifyView(APIView):
+    """
+    PATCH /api/deals/projects/<uuid>/extracted-financials/<id>/verify/
+    GP verifies the extracted financial data.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def patch(self, request, pk, fin_id):
+        financial = get_object_or_404(ExtractedFinancials, pk=fin_id, project_id=pk)
+        
+        financial.is_verified_by_gp = True
+        financial.verified_by = request.user
+        financial.verified_at = timezone.now()
+        financial.save()
+        
+        return Response(ExtractedFinancialsSerializer(financial).data)
+
+
+class GPProjectCommercialAnalysisView(APIView):
+    """
+    POST /api/deals/projects/<uuid>/run-commercial-analysis/
+    GET /api/deals/projects/<uuid>/commercial-analysis/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        task = run_commercial_analysis.delay(str(project.pk))
+        return Response({"status": "Commercial analysis triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+
+    def get(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        analysis = project.commercial_analyses.first()
+        if not analysis:
+            return Response({"detail": "No commercial analysis found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(CommercialAnalysisSerializer(analysis).data)
+
+
+class GPProjectOperationalAnalysisView(APIView):
+    """
+    POST /api/deals/projects/<uuid>/run-operational-analysis/
+    GET /api/deals/projects/<uuid>/operational-analysis/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        task = run_operational_analysis.delay(str(project.pk))
+        return Response({"status": "Operational analysis triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+
+    def get(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        analysis = project.operational_analyses.first()
+        if not analysis:
+            return Response({"detail": "No operational analysis found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(OperationalAnalysisSerializer(analysis).data)
+
+
+class GPLegalScannerView(APIView):
+    """
+    POST /api/deals/projects/<uuid>/documents/<id>/scan-legal/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk, doc_id):
+        get_object_or_404(PEProject, pk=pk)
+        doc = get_object_or_404(PEProjectDocument, pk=doc_id, project_id=pk)
+        
+        task = scan_legal_document.delay(str(doc.id))
+        return Response({"status": "Legal scan triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+
+
+class GPProjectRedFlagsView(generics.ListAPIView):
+    """
+    GET /api/deals/projects/<uuid>/red-flags/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = RedFlagFindingSerializer
+
+    def get_queryset(self):
+        return RedFlagFinding.objects.filter(project_id=self.kwargs['pk'])
+
+
+class GPRedFlagReviewView(APIView):
+    """
+    PATCH /api/deals/red-flags/<id>/review/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def patch(self, request, pk):
+        finding = get_object_or_404(RedFlagFinding, pk=pk)
+        finding.is_reviewed_by_gp = True
+        finding.reviewed_by = request.user
+        finding.reviewed_at = timezone.now()
+        finding.save()
+        return Response(RedFlagFindingSerializer(finding).data)
+
+
+class GPTriggerScoringView(APIView):
+    """
+    POST /api/deals/projects/<uuid:project_id>/trigger-scoring/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        task = run_finlo_scoring.delay(str(project.id), request.user.id)
+        return Response({"status": "FINLO scoring triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
+
+
+class GPProjectLatestScoringView(APIView):
+    """
+    GET /api/deals/projects/<uuid:project_id>/scoring/latest/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        run = project.scoring_runs.first()
+        if not run:
+            return Response({"detail": "No scoring run found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(ScoringRunSerializer(run).data)
+
+
+class GPCriterionOverrideView(APIView):
+    """
+    PATCH /api/deals/projects/<uuid:project_id>/scoring/criteria/<uuid:score_id>/override/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def patch(self, request, pk, score_id):
+        score = get_object_or_404(CriterionScore, pk=score_id, scoring_run__project_id=pk)
+        old_val = score.gp_score or score.ai_score
+        new_val = request.data.get('gp_score')
+        notes = request.data.get('gp_notes', '')
+
+        if new_val is None:
+            return Response({"detail": "gp_score is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        score.gp_score = new_val
+        score.gp_notes = notes
+        score.overridden_by = request.user
+        score.overridden_at = timezone.now()
+        score.save()
+
+        # Log Audit Event
+        _log_audit_event(
+            event_type='SCORING_OVERRIDE',
+            actor=request.user,
+            obj=score,
+            payload={
+                "criterion": score.criterion_id,
+                "old_value": old_val,
+                "new_value": new_val,
+                "notes": notes
+            },
+            request=request
+        )
+
+        return Response(CriterionScoreSerializer(score).data)
+
+
+class GPClearComplianceGateView(APIView):
+    """
+    POST /api/deals/projects/<uuid:project_id>/scoring/gates/<str:gate_id>/clear/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk, gate_id):
+        run = ScoringRun.objects.filter(project_id=pk).first()
+        if not run:
+            return Response({"detail": "No scoring run found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        gate = get_object_or_404(ComplianceGate, scoring_run=run, gate_id=gate_id)
+        gate.status = 'CLEARED'
+        gate.cleared_by = request.user
+        gate.cleared_at = timezone.now()
+        gate.notes = request.data.get('notes', '')
+        gate.save()
+
+        # Handle documents if provided
+        doc_ids = request.data.get('document_ids', [])
+        if doc_ids:
+            gate.documents.set(doc_ids)
+
+        _log_audit_event(
+            event_type='COMPLIANCE_CLEARED',
+            actor=request.user,
+            obj=gate,
+            payload={"gate": gate_id},
+            request=request
+        )
+
+        return Response(ComplianceGateSerializer(gate).data)
+
+
+class GPApproveForLPView(APIView):
+    """
+    POST /api/deals/projects/<uuid:project_id>/approve-for-lp/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        run = project.scoring_runs.first()
+        
+        if not run:
+            return Response({"detail": "Scoring must be completed first"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Check Compliance Gates
+        uncleared = run.compliance_gates.exclude(status='CLEARED').count()
+        if uncleared > 0:
+            return Response({"detail": f"{uncleared} compliance gates are still pending."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Check Assessment Summary (>100 words)
+        summary = request.data.get('assessment_summary', '')
+        word_count = len(summary.split())
+        if word_count < 100:
+            return Response({"detail": f"Assessment summary must be at least 100 words (current: {word_count})."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. Check Critical Red Flags
+        critical_flags = project.red_flags.filter(severity='CRITICAL', is_reviewed_by_gp=False).count()
+        if critical_flags > 0:
+            return Response({"detail": f"There are {critical_flags} unaddressed critical red flags."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Approve
+        project.status = 'GP_APPROVED'
+        project.save()
+        
+        run.gp_assessment_summary = summary
+        run.save()
+
+        _log_audit_event(
+            event_type='DEAL_APPROVED_FOR_LP',
+            actor=request.user,
+            obj=project,
+            payload={"final_score": run.total_deal_score},
+            request=request
+        )
+
+        return Response({"status": "Project approved for LP visibility"})
+
+
+class GPDCFValuationView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/valuation/dcf/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        assumptions = request.data.get('assumptions', {})
+        
+        # Calculate
+        outputs = calculate_dcf(assumptions)
+        
+        # Save
+        val = ValuationModel.objects.create(
+            project=project,
+            model_type='DCF',
+            assumptions=assumptions,
+            outputs=outputs,
+            created_by=request.user
+        )
+        
+        # Save structured assumptions
+        DCFAssumptions.objects.create(
+            valuation=val,
+            projection_years=assumptions.get('projection_years', 5),
+            revenue_growth_rate=assumptions.get('revenue_growth_rate', 0),
+            ebitda_margin=assumptions.get('ebitda_margin', 0),
+            tax_rate=assumptions.get('tax_rate', 0.25),
+            wacc=assumptions.get('wacc', 0.1),
+            terminal_growth_rate=assumptions.get('terminal_growth_rate', 0.03)
+        )
+        
+        return Response(ValuationModelSerializer(val).data, status=status.HTTP_201_CREATED)
+
+
+class GPLBOValuationView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/valuation/lbo/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        assumptions = request.data.get('assumptions', {})
+        
+        # Calculate
+        outputs = calculate_lbo(assumptions)
+        
+        # Save
+        val = ValuationModel.objects.create(
+            project=project,
+            model_type='LBO',
+            assumptions=assumptions,
+            outputs=outputs,
+            created_by=request.user
+        )
+        
+        # Save structured assumptions
+        LBOAssumptions.objects.create(
+            valuation=val,
+            entry_ebitda=assumptions.get('entry_ebitda', 0),
+            purchase_multiple=assumptions.get('entry_multiple', 0),
+            debt_financing=assumptions.get('debt_financing', []),
+            exit_year=assumptions.get('exit_year', 5),
+            exit_multiple=assumptions.get('exit_multiple', 0)
+        )
+        
+        return Response(ValuationModelSerializer(val).data, status=status.HTTP_201_CREATED)
+
+
+class GPValuationDetailView(generics.RetrieveAPIView):
+    """
+    GET /api/deals/projects/<uuid:pk>/valuation/<uuid:model_id>/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = ValuationModelSerializer
+    lookup_url_kwarg = 'model_id'
+
+    def get_queryset(self):
+        return ValuationModel.objects.filter(project_id=self.kwargs['pk'])
+
+
+class GPValuationSensitivityView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/valuation/<uuid:model_id>/sensitivity/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk, model_id):
+        val_model = get_object_or_404(ValuationModel, pk=model_id, project_id=pk)
+        
+        # Sensitivity inputs: e.g. wacc_range, terminal_growth_range for DCF
+        # Or entry_multiple_range, exit_multiple_range for LBO
+        sensitivity_config = request.data # { "x_axis": "wacc", "y_axis": "terminal_growth", "x_range": [...], "y_range": [...] }
+        
+        results = []
+        base_assumptions = val_model.assumptions.copy()
+        
+        x_field = sensitivity_config.get('x_axis')
+        y_field = sensitivity_config.get('y_axis')
+        x_range = sensitivity_config.get('x_range', [])
+        y_range = sensitivity_config.get('y_range', [])
+        
+        for y_val in y_range:
+            row = []
+            for x_val in x_range:
+                temp_assumptions = base_assumptions.copy()
+                temp_assumptions[x_field] = x_val
+                temp_assumptions[y_field] = y_val
+                
+                if val_model.model_type == 'DCF':
+                    out = calculate_dcf(temp_assumptions)
+                    row.append(out['equity_value'])
+                else:
+                    out = calculate_lbo(temp_assumptions)
+                    row.append(out['irr'])
+            results.append({"y_val": y_val, "row": row})
+            
+        return Response({
+            "x_axis": x_field,
+            "y_axis": y_field,
+            "x_range": x_range,
+            "y_range": y_range,
+            "results": results
+        })
+
+
+class GPRegulatoryChecklistView(generics.RetrieveUpdateAPIView):
+    """
+    GET /api/deals/projects/<uuid:pk>/regulatory-checklist/
+    PATCH /api/deals/projects/<uuid:pk>/regulatory-checklist/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = RegulatoryChecklistSerializer
+
+    def get_object(self):
+        project = get_object_or_404(PEProject, pk=self.kwargs['pk'])
+        obj, _ = RegulatoryChecklist.objects.get_or_create(project=project)
+        return obj
+
+
+class GPSEBONFilingDeadlineListView(generics.ListAPIView):
+    """
+    GET /api/compliance/sebon-deadlines/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = SEBONFilingDeadlineSerializer
+    queryset = SEBONFilingDeadline.objects.all()
+
+
+class GPGenerateMemoView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/generate-memo/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        generate_memo_draft.delay(project.id)
+        return Response({"status": "AI memo generation triggered"}, status=status.HTTP_202_ACCEPTED)
+
+
+class GPMemoDetailView(generics.RetrieveUpdateAPIView):
+    """
+    GET /api/deals/projects/<uuid:pk>/memos/latest/
+    PATCH /api/deals/projects/<uuid:pk>/memos/<uuid:memo_id>/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = DealMemoSerializer
+
+    def get_object(self):
+        project = get_object_or_404(PEProject, pk=self.kwargs['pk'])
+        if 'memo_id' in self.kwargs:
+            return get_object_or_404(DealMemo, pk=self.kwargs['memo_id'], project=project)
+        return project.memos.order_by('-version', '-created_at').first()
+
+
+class GPMemoFinalizeView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/memos/<uuid:memo_id>/finalize/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk, memo_id):
+        memo = get_object_or_404(DealMemo, pk=memo_id, project_id=pk)
+        memo.status = 'FINAL'
+        memo.save()
+        return Response({"status": "Memo finalized"})
+
+
+class GPFullAnalysisView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/run-full-analysis/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk)
+        run_full_analysis.delay(project.id, user_id=request.user.id)
+        return Response({"status": "Full AI analysis pipeline triggered"}, status=status.HTTP_202_ACCEPTED)
+
+
+
+class PortfolioKPIReportListView(generics.ListCreateAPIView):
+    """
+    GET /api/portfolio/kpi-reports/ (GP review)
+    POST /api/portfolio/<project_uuid>/kpi-reports/ (Submitter)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PortfolioKPIReportSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_type == 'GP_STAFF':
+            return PortfolioKPIReport.objects.all()
+        # Portfolio Co logic: only reports for projects where they are invited/associated
+        return PortfolioKPIReport.objects.filter(project__entrepreneur_user=user)
+
+    def perform_create(self, serializer):
+        project_id = self.kwargs.get('pk')
+        project = get_object_or_404(PEProject, pk=project_id)
+        serializer.save(
+            project=project,
+            submitted_by=self.request.user,
+            submitted_at=timezone.now(),
+            status='SUBMITTED'
+        )
+
+
+class PortfolioKPIReportDetailView(generics.RetrieveUpdateAPIView):
+    """
+    PATCH /api/portfolio/kpi-reports/<id>/ (GP review)
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = PortfolioKPIReportSerializer
+    queryset = PortfolioKPIReport.objects.all()
+
+
+
+
+
+
+
+

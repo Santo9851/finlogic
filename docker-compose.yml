@@ -13,14 +13,27 @@ services:
       - DJANGO_SETTINGS_MODULE=finlogic_api.settings
     ports:
       - "8000:8000"
+
     networks:
       - finlogic_net
+    depends_on:
+      - redis
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
+
+  # ── Redis ────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: finlogic_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - finlogic_net
 
   # ── Next.js Frontend ─────────────────────────────────────────────────────────
   frontend:
@@ -38,12 +51,51 @@ services:
       - NODE_ENV=production
       - PORT=3000
     ports:
-      - "3000:3000"
+      - "3001:3000"
+
     depends_on:
       - backend
+      - redis
+    networks:
+      - finlogic_net
+
+  # ── Celery Worker ────────────────────────────────────────────────────────────
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: finlogic_celery
+    restart: unless-stopped
+    command: celery -A finlogic_api worker --loglevel=info --concurrency=4
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=finlogic_api.settings
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - finlogic_net
+
+  # ── Celery Flower (Monitoring) ────────────────────────────────────────────────
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: finlogic_flower
+    restart: unless-stopped
+    command: celery -A finlogic_api flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+    ports:
+      - "5555:5555"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - celery_worker
     networks:
       - finlogic_net
 
 networks:
   finlogic_net:
     driver: bridge
+
