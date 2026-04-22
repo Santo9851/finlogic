@@ -11,6 +11,7 @@ services:
       - .env
     environment:
       - DJANGO_SETTINGS_MODULE=finlogic_api.settings
+      - REDIS_URL=redis://redis:6379/1
     ports:
       - "8000:8000"
 
@@ -24,6 +25,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+    volumes:
+      - ./backend:/app
 
   # ── Redis ────────────────────────────────────────────────────────────────────
   redis:
@@ -42,7 +45,7 @@ services:
       dockerfile: Dockerfile
       args:
         # Baked into the Next.js build at compile time
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api}
     container_name: finlogic_frontend
     restart: unless-stopped
     env_file:
@@ -71,9 +74,12 @@ services:
       - .env
     environment:
       - DJANGO_SETTINGS_MODULE=finlogic_api.settings
+      - REDIS_URL=redis://redis:6379/1
     depends_on:
       - redis
       - backend
+    volumes:
+      - ./backend:/app
     networks:
       - finlogic_net
 
@@ -89,9 +95,13 @@ services:
       - "5555:5555"
     env_file:
       - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/1
     depends_on:
       - redis
       - celery_worker
+    volumes:
+      - ./backend:/app
     networks:
       - finlogic_net
 

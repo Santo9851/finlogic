@@ -11,21 +11,35 @@ import {
   Lock,
   BadgeCheck,
   Rocket,
-  AlertCircle,
-  MapPin
+  MapPin,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/services/api';
 import { toast } from 'sonner';
+import FileUploader from '@/components/portal/FileUploader';
 
 export default function EntrepreneurProfilePage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
+  const [kybDocuments, setKybDocuments] = useState([]);
+  const [showKybModal, setShowKybModal] = useState(false);
 
   useEffect(() => {
     fetchProfile();
+    fetchKybDocuments();
   }, []);
+
+  const fetchKybDocuments = async () => {
+    try {
+      const res = await api.get('/deals/entrepreneur/kyc/');
+      setKybDocuments(res.data.results || res.data || []);
+    } catch (error) {
+      console.error('Failed to fetch KYB documents:', error);
+    }
+  };
 
   const fetchProfile = async () => {
     try {
@@ -46,11 +60,13 @@ export default function EntrepreneurProfilePage() {
   );
 
   // For entrepreneurs, we check their KYB (Know Your Business) status
-  // We'll use a placeholder logic for now based on profile type
-  const isKybVerified = false; 
+  const kybStatus = kybDocuments.length > 0 ? kybDocuments[0].status : 'NONE';
+  const isKybVerified = kybStatus === 'VERIFIED';
+  const isKybPending = kybStatus === 'PENDING';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
+    <>
+      <div className="max-w-4xl mx-auto space-y-8 pb-20">
       <div>
         <h1 className="text-3xl font-bold text-white">Founder Profile</h1>
         <p className="text-white/40 text-sm mt-1">Manage your professional profile and business verification.</p>
@@ -94,8 +110,15 @@ export default function EntrepreneurProfilePage() {
                 ? 'Your business has been verified. You can now receive investments and term sheets.'
                 : 'Know Your Business (KYB) verification is required before you can receive funding. Please submit your registration documents.'}
             </p>
-            <button className="w-full py-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border border-white/10">
-              {isKybVerified ? 'View Verification' : 'Start Verification'}
+            <button 
+              onClick={() => setShowKybModal(true)}
+              className={`w-full py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border ${
+                isKybVerified ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                isKybPending ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 cursor-wait' :
+                'bg-white/5 hover:bg-white/10 text-white border-white/10'
+              }`}
+            >
+              {isKybVerified ? 'View Verification' : isKybPending ? 'Verification Pending' : 'Start Verification'}
             </button>
           </div>
         </div>
@@ -184,5 +207,65 @@ export default function EntrepreneurProfilePage() {
         </div>
       </div>
     </div>
+
+    {/* KYB Verification Modal */}
+    {showKybModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="bg-[#0a0014] border border-white/10 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl relative">
+          <button 
+            onClick={() => setShowKybModal(false)}
+            className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors"
+          >
+            <X size={24} />
+          </button>
+          
+          <div className="p-8">
+            <h2 className="text-2xl font-bold text-white mb-2">Startup Verification</h2>
+            <p className="text-white/40 text-sm mb-8">Upload your company registration, TAX/PAN certificate, or incorporation documents.</p>
+            
+            <div className="bg-white/2 border border-white/5 rounded-2xl p-6">
+              <FileUploader 
+                isLocal={true}
+                kycUrl="/deals/entrepreneur/kyc/upload/"
+                onSuccess={() => {
+                  toast.success('KYB document uploaded successfully');
+                  fetchKybDocuments();
+                  setShowKybModal(false);
+                }}
+              />
+            </div>
+            
+            <div className="mt-8 space-y-4">
+              <h4 className="text-[10px] font-bold text-white/40 uppercase tracking-widest px-1">Recent Submissions</h4>
+              {kybDocuments.length === 0 ? (
+                <p className="text-xs text-white/20 italic px-1">No documents submitted yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {kybDocuments.map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                      <div className="flex items-center gap-3">
+                        <ShieldCheck size={16} className={doc.status === 'VERIFIED' ? 'text-emerald-400' : 'text-amber-400'} />
+                        <div>
+                          <p className="text-xs font-bold text-white">{doc.document_type}</p>
+                          <p className="text-[10px] text-white/40">{new Date(doc.uploaded_at).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-bold uppercase tracking-tighter px-2 py-0.5 rounded ${
+                        doc.status === 'VERIFIED' ? 'bg-emerald-500/10 text-emerald-400' :
+                        doc.status === 'REJECTED' ? 'bg-rose-500/10 text-rose-400' :
+                        'bg-amber-500/10 text-amber-400'
+                      }`}>
+                        {doc.status_display}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

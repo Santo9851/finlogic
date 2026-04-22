@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import { MetricCard } from '@/components/portal/PortalShell';
+import Link from 'next/link';
 
 export default function GPInvestorDashboard() {
   // 1. Fetch GP Investor Dashboard Data
@@ -179,9 +180,12 @@ export default function GPInvestorDashboard() {
             <p className="text-[10px] text-white/40 leading-relaxed mb-4">
               Access the electronic voting system for management company decisions.
             </p>
-            <button className="w-full py-2 bg-[#8b5cf6]/10 hover:bg-[#8b5cf6]/20 text-[#8b5cf6] text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border border-[#8b5cf6]/20">
+            <Link 
+              href="/gp-investor/governance"
+              className="w-full py-2 bg-[#8b5cf6]/10 hover:bg-[#8b5cf6]/20 text-[#8b5cf6] text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all border border-[#8b5cf6]/20 text-center block"
+            >
               Open Voting System
-            </button>
+            </Link>
           </div>
         </div>
       </div>

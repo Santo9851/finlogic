@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import api from '@/services/api';
+import Link from 'next/link';
 import { toast } from 'sonner';
 
 export default function GPInvestorProfilePage() {
@@ -148,9 +149,12 @@ export default function GPInvestorProfilePage() {
                 <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Manage your voting rights</p>
               </div>
             </div>
-            <button className="text-white/20 hover:text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg border border-white/10 transition-all">
+            <Link 
+              href="/gp-investor/governance"
+              className="text-white/20 hover:text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg border border-white/10 transition-all block"
+            >
               Access
-            </button>
+            </Link>
           </div>
         </div>
       </div>

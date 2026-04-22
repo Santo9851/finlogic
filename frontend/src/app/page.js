@@ -13,7 +13,7 @@ const HERO_SLIDES = [
     primaryCTA: "Discover Our Philosophy",
     secondaryCTA: "Meet the Team",
     primaryHref: "/philosophy",
-    secondaryHref: "/team",
+    secondaryHref: "/about",
     accent: "bg-ls-compliment",
     visual: <NeuralNetwork />
   },
@@ -63,11 +63,11 @@ export default function Home() {
       });
     };
     window.addEventListener('mousemove', handleMouseMove);
-    
+
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length);
     }, 8000);
-    
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       clearInterval(timer);
@@ -84,8 +84,8 @@ export default function Home() {
         {/* Abstract Background Elements (Enhanced with Scroll Parallax) */}
         {mounted && (
           <motion.div style={{ y: y1 }} className="absolute inset-0 z-0 pointer-events-none">
-            <motion.div 
-              animate={{ 
+            <motion.div
+              animate={{
                 scale: [1, 1.2, 1],
                 opacity: [0.3, 0.5, 0.3],
                 x: mousePos.x * 0.5,
@@ -94,8 +94,8 @@ export default function Home() {
               transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
               className="absolute -left-20 -top-20 h-[500px] w-[500px] rounded-full bg-ls-supporting/20 blur-[120px]"
             />
-            <motion.div 
-              animate={{ 
+            <motion.div
+              animate={{
                 scale: [1, 1.3, 1],
                 opacity: [0.2, 0.4, 0.2],
                 x: -mousePos.x,
@@ -111,25 +111,25 @@ export default function Home() {
         {mounted && (
           <motion.div style={{ y: y2 }} className="absolute inset-0 z-1 pointer-events-none opacity-30">
             {[...Array(20)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute h-1 w-1 rounded-full bg-ls-white/20"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.2, 0.5, 0.2]
-              }}
-              transition={{
-                duration: 5 + Math.random() * 5,
-                repeat: Infinity,
-                delay: Math.random() * 5
-              }}
-            />
-          ))}
-        </motion.div>
+              <motion.div
+                key={i}
+                className="absolute h-1 w-1 rounded-full bg-ls-white/20"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  y: [0, -20, 0],
+                  opacity: [0.2, 0.5, 0.2]
+                }}
+                transition={{
+                  duration: 5 + Math.random() * 5,
+                  repeat: Infinity,
+                  delay: Math.random() * 5
+                }}
+              />
+            ))}
+          </motion.div>
         )}
 
         <AnimatePresence mode="wait">
@@ -154,8 +154,8 @@ export default function Home() {
                     <span className={`h-2 w-2 rounded-full ${HERO_SLIDES[currentSlide].accent}`} />
                     <span>Exclusive Private Equity Insights</span>
                   </motion.div>
-                  
-                  <motion.h1 
+
+                  <motion.h1
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.4 }}
@@ -172,7 +172,7 @@ export default function Home() {
                     ))}
                   </motion.h1>
 
-                  <motion.p 
+                  <motion.p
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.6 }}
@@ -181,7 +181,7 @@ export default function Home() {
                     {HERO_SLIDES[currentSlide].subtitle}
                   </motion.p>
 
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.8 }}
@@ -207,7 +207,7 @@ export default function Home() {
                 {/* Right Side: Integrated SVG Visual */}
                 <div className="relative hidden aspect-square h-full w-full lg:flex items-center justify-center">
                   <motion.div
-                    animate={{ 
+                    animate={{
                       x: mousePos.x,
                       y: mousePos.y
                     }}
@@ -230,9 +230,8 @@ export default function Home() {
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-1 transition-all duration-500 rounded-full ${
-                    index === currentSlide ? 'w-12 bg-ls-compliment' : 'w-4 bg-ls-white/20 hover:bg-ls-white/40'
-                  }`}
+                  className={`h-1 transition-all duration-500 rounded-full ${index === currentSlide ? 'w-12 bg-ls-compliment' : 'w-4 bg-ls-white/20 hover:bg-ls-white/40'
+                    }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
@@ -263,7 +262,7 @@ export default function Home() {
       <section className="relative bg-ls-white py-24 lg:py-40 overflow-hidden">
         {/* Parallax Background Text */}
         {mounted && (
-          <motion.div 
+          <motion.div
             style={{ x: y1 }}
             className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-[20vw] font-black text-ls-primary/[0.02] pointer-events-none"
           >
@@ -273,7 +272,7 @@ export default function Home() {
 
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           {mounted && <motion.div style={{ y: y1 }} className="absolute inset-0 -z-10 pointer-events-none" />}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -338,16 +337,16 @@ export default function Home() {
       <section className="relative overflow-hidden bg-ls-primary py-24 text-ls-white lg:py-40">
         {/* Parallax Accent Blob */}
         {mounted && (
-          <motion.div 
+          <motion.div
             style={{ y: y2 }}
             className="absolute -right-64 top-0 h-[800px] w-[800px] rounded-full bg-ls-compliment/5 blur-[120px]"
           />
         )}
-        
+
         <div className="container mx-auto px-4 lg:px-8 relative z-10">
           {mounted && <motion.div style={{ y: y1 }} className="absolute inset-0 -z-10 pointer-events-none" />}
           <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -399,7 +398,7 @@ export default function Home() {
       {/* Latest Insights Section */}
       <section className="bg-ls-white py-24 lg:py-40">
         <div className="container mx-auto px-4 lg:px-8">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
@@ -436,8 +435,8 @@ export default function Home() {
                 date: 'February 28, 2026',
               },
             ].map((post, i) => (
-              <motion.div 
-                key={i} 
+              <motion.div
+                key={i}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}

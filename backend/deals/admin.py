@@ -20,6 +20,10 @@ from .models import (
     GPShareholder,
     GPDividend,
     FundDocument,
+    GovernanceProposal,
+    ProposalVote,
+    IRDocument,
+    EntrepreneurKYBDocument,
 )
 
 
@@ -315,3 +319,40 @@ class FundDocumentAdmin(admin.ModelAdmin):
     search_fields = ('title', 'file_name')
     raw_id_fields = ('fund',)
     readonly_fields = ('id',)
+
+
+# ---------------------------------------------------------------------------
+# GP Governance
+# ---------------------------------------------------------------------------
+
+class ProposalVoteInline(admin.TabularInline):
+    model = ProposalVote
+    extra = 0
+    readonly_fields = ('shareholder', 'choice', 'shares_at_voting', 'voted_at')
+
+
+@admin.register(GovernanceProposal)
+class GovernanceProposalAdmin(admin.ModelAdmin):
+    list_display = ('title', 'status', 'expiry_date', 'created_at')
+    list_filter = ('status',)
+    search_fields = ('title', 'description')
+    inlines = [ProposalVoteInline]
+
+
+# ---------------------------------------------------------------------------
+# IR Documents & Entrepreneur KYB
+# ---------------------------------------------------------------------------
+
+@admin.register(IRDocument)
+class IRDocumentAdmin(admin.ModelAdmin):
+    list_display = ('title', 'category', 'is_published', 'uploaded_at')
+    list_filter = ('category', 'is_published')
+    search_fields = ('title',)
+
+
+@admin.register(EntrepreneurKYBDocument)
+class EntrepreneurKYBDocumentAdmin(admin.ModelAdmin):
+    list_display = ('user', 'document_type', 'status', 'uploaded_at')
+    list_filter = ('status', 'document_type')
+    search_fields = ('user__email',)
+    raw_id_fields = ('user',)

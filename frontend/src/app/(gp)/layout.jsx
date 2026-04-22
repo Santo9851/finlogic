@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, PieChart, ShieldCheck,
-  UserPlus, LogOut, Menu, X, ChevronRight, Files, User
+  UserPlus, LogOut, Menu, X, ChevronRight, Files, User, FileText
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
@@ -20,6 +20,8 @@ const NAV = [
   { href: '/gp/deals', label: 'Deals', icon: Briefcase },
   { href: '/gp/portfolio', label: 'Portfolio', icon: PieChart },
   { href: '/gp/fund-admin/documents', label: 'Fund Admin', icon: Files },
+  { href: '/gp/ir-documents', label: 'Shareholder IR', icon: FileText },
+  { href: '/gp/governance', label: 'Governance', icon: ShieldCheck },
   { href: '/gp/audit', label: 'Audit Log', icon: ShieldCheck },
   { href: '/gp/deals/invite', label: 'Invite Entrepreneur', icon: UserPlus },
   { href: '/gp/profile', label: 'Profile Settings', icon: User },

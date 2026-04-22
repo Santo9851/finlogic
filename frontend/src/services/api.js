@@ -45,7 +45,7 @@ api.interceptors.response.use(
         try {
           // Use a fresh axios instance for the refresh call to avoid interceptor loops
           const refreshRes = await axios.post(
-            `${api.defaults.baseURL}/auth/login/refresh/`, 
+            `${api.defaults.baseURL}auth/login/refresh/`, 
             { refresh: refreshToken }
           );
 

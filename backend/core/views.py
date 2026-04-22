@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, permissions, status, viewsets, views
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -42,6 +43,15 @@ from .serializers import (
 User = get_user_model()
 
 from .utils.scoring import ScoringEngine, get_blank_payload_template
+
+
+class HealthCheckView(APIView):
+    """Simple 200 OK for Docker healthchecks"""
+    permission_classes = [permissions.AllowAny]
+    throttle_classes = []
+
+    def get(self, request, *args, **kwargs):
+        return Response({"status": "healthy"}, status=status.HTTP_200_OK)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

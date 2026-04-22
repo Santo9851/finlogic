@@ -11,6 +11,12 @@ from .models import (
     PEProject,
     PEProjectDocument,
     LPProfile,
+    LPKYCDocument,
+    EntrepreneurKYBDocument,
+    GovernanceProposal,
+    ProposalVote,
+    IRDocument,
+    GPShareholder,
     LPFundCommitment,
     PEInvestment,
     CapitalCall,
@@ -329,6 +335,90 @@ class LPProfileSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
         extra_kwargs = {'user': {'write_only': True}}
+
+
+class LPKYCDocumentSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = LPKYCDocument
+        fields = (
+            'id', 'lp_profile', 'file', 'document_type', 'status',
+            'status_display', 'rejection_reason', 'uploaded_at', 'updated_at'
+        )
+        read_only_fields = ('id', 'status', 'rejection_reason', 'uploaded_at', 'updated_at', 'lp_profile')
+
+
+class EntrepreneurKYBDocumentSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = EntrepreneurKYBDocument
+        fields = (
+            'id', 'user', 'file', 'document_type', 'status',
+            'status_display', 'rejection_reason', 'uploaded_at', 'updated_at'
+        )
+        read_only_fields = ('id', 'status', 'rejection_reason', 'uploaded_at', 'updated_at', 'user')
+
+
+# ---------------------------------------------------------------------------
+# GP Governance & IR
+# ---------------------------------------------------------------------------
+
+class IRDocumentSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    uploaded_by_name = serializers.CharField(source='uploaded_by.get_full_name', read_only=True)
+
+    class Meta:
+        model = IRDocument
+        fields = (
+            'id', 'title', 'file', 'category', 'category_display',
+            'is_published', 'uploaded_by', 'uploaded_by_name',
+            'uploaded_at', 'updated_at'
+        )
+        read_only_fields = ('id', 'uploaded_by', 'uploaded_at', 'updated_at')
+
+
+class ProposalVoteSerializer(serializers.ModelSerializer):
+    shareholder_name = serializers.CharField(source='shareholder.user.get_full_name', read_only=True)
+
+    class Meta:
+        model = ProposalVote
+        fields = ('id', 'proposal', 'shareholder', 'shareholder_name', 'choice', 'shares_at_voting', 'voted_at')
+        read_only_fields = ('id', 'shares_at_voting', 'voted_at')
+
+
+class GovernanceProposalSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    vote_stats = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GovernanceProposal
+        fields = (
+            'id', 'title', 'description', 'status', 'status_display',
+            'expiry_date', 'created_by', 'created_at', 'updated_at',
+            'vote_stats'
+        )
+        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at')
+
+    def get_vote_stats(self, obj):
+        from django.db.models import Sum
+        votes = obj.votes.all()
+        total_shares = votes.aggregate(Sum('shares_at_voting'))['shares_at_voting__sum'] or 0
+        
+        choices = {}
+        for c in ProposalVote.Choice.values:
+            weight = votes.filter(choice=c).aggregate(Sum('shares_at_voting'))['shares_at_voting__sum'] or 0
+            choices[c] = {
+                'weight': float(weight),
+                'percent': float((weight / total_shares * 100)) if total_shares > 0 else 0
+            }
+            
+        return {
+            'total_votes': votes.count(),
+            'total_weight': float(total_shares),
+            'choices': choices
+        }
 
 
 # ---------------------------------------------------------------------------

@@ -35,7 +35,7 @@ export default function Footer() {
               <ul className="space-y-2 text-sm text-ls-white/80">
                 <li>contact@finlogiccapital.com</li>
                 <li>Kathmandu, Nepal</li>
-                <li>+977 1 4XXXXXX</li>
+                <li>+977-9851437351</li>
               </ul>
             </div>
           </div>

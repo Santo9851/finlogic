@@ -34,8 +34,11 @@ export default function LPProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await api.get('/auth/profile/');
-      setProfileData(res.data);
+      const [authRes, lpRes] = await Promise.all([
+        api.get('auth/profile/'),
+        api.get('lp/profile/')
+      ]);
+      setProfileData({ ...authRes.data, lp_profile: lpRes.data });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
       toast.error('Could not load profile data');
@@ -68,13 +71,14 @@ export default function LPProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.patch('/auth/profile/', {
+      await api.patch('lp/profile/', {
         full_name: profileData.lp_profile?.full_name,
         organization: profileData.lp_profile?.organization,
         country: profileData.lp_profile?.country,
       });
       toast.success('Profile updated successfully');
     } catch (error) {
+      console.error('Failed to update profile:', error);
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);
@@ -254,11 +258,14 @@ export default function LPProfilePage() {
               </div>
 
               <FileUploader 
-                fundId={userFunds[0]?.id} // Attach to the first fund found for context
                 category="KYC"
-                label="Select KYC Document"
-                hideCategory={true}
-                onSuccess={handleKycUploadComplete}
+                isLocal={true}
+                uploadUrl="lp/kyc/upload/"
+                onSuccess={() => {
+                  setShowKycModal(false);
+                  fetchProfile(); // Refresh profile to show updated KYC status if added later
+                }}
+                label="Upload Identification (Passport/Citizenship)"
               />
             </div>
           </div>

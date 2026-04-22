@@ -16,7 +16,7 @@ from django.db import models
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,6 +31,7 @@ from .models import (
     LPDocumentAccess,
     LPFundCommitment,
     LPProfile,
+    LPKYCDocument,
     PEFormTemplate,
     PEInvestment,
     PEProject,
@@ -47,6 +48,11 @@ from .models import (
     SEBONFilingDeadline,
     DealMemo,
     PortfolioKPIReport,
+    EntrepreneurKYBDocument,
+    GovernanceProposal,
+    ProposalVote,
+    IRDocument,
+    GPShareholder,
 )
 
 
@@ -71,6 +77,7 @@ from .serializers import (
     LPFundCommitmentSerializer,
     LPPortfolioSerializer,
     LPProfileSerializer,
+    LPKYCDocumentSerializer,
     PEFormTemplateSerializer,
     PEInvestmentSerializer,
     PEProjectDetailSerializer,
@@ -93,6 +100,10 @@ from .serializers import (
     SEBONFilingDeadlineSerializer,
     DealMemoSerializer,
     PortfolioKPIReportSerializer,
+    EntrepreneurKYBDocumentSerializer,
+    IRDocumentSerializer,
+    GovernanceProposalSerializer,
+    ProposalVoteSerializer,
 )
 
 from .valuation import calculate_dcf, calculate_lbo
@@ -1155,6 +1166,33 @@ class LPProfileDetailView(generics.RetrieveUpdateAPIView):
     queryset = LPProfile.objects.all()
 
 
+class LPProfileSelfView(generics.RetrieveUpdateAPIView):
+    """
+    GET /api/lp/profile/
+    Returns the authenticated user's LP profile.
+    Fixes "Member Since" N/A issue.
+    """
+    serializer_class = LPProfileSerializer
+    permission_classes = [permissions.IsAuthenticated, IsLPRole]
+
+    def get_object(self):
+        return get_object_or_404(LPProfile, user=self.request.user)
+
+
+class LPKYCUploadView(generics.CreateAPIView):
+    """
+    POST /api/lp/kyc/upload/
+    Handles local multipart/form-data upload of KYC documents.
+    Restricts to PDF/Images via model-level validation.
+    """
+    serializer_class = LPKYCDocumentSerializer
+    permission_classes = [permissions.IsAuthenticated, IsLPRole]
+
+    def perform_create(self, serializer):
+        lp_profile = get_object_or_404(LPProfile, user=self.request.user)
+        serializer.save(lp_profile=lp_profile)
+
+
 # ---------------------------------------------------------------------------
 # Utility: Form Template management (GP-only)
 # ---------------------------------------------------------------------------
@@ -1798,6 +1836,160 @@ class PortfolioKPIReportListView(generics.ListCreateAPIView):
             submitted_at=timezone.now(),
             status='SUBMITTED'
         )
+
+
+# ---------------------------------------------------------------------------
+# GP Shareholder / Investor Portal Views
+# ---------------------------------------------------------------------------
+
+class GPInvestorDashboardView(APIView):
+    """
+    GET /api/gp-investor/dashboard/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPInvestorRole]
+
+    def get(self, request):
+        user = request.user
+        shareholder = getattr(user, 'gp_shareholding', None)
+        
+        if not shareholder:
+            return Response({"detail": "User is not a registered GP Shareholder"}, status=403)
+
+        data = {
+            "shareholder": {
+                "shares_held": shareholder.shares_held,
+                "ownership_percentage": shareholder.ownership_percentage,
+                "vesting_status": shareholder.vesting_status,
+            },
+            "active_proposals_count": GovernanceProposal.objects.filter(status='ACTIVE').count(),
+            "latest_announcements": IRDocumentSerializer(
+                IRDocument.objects.filter(is_published=True).order_by('-uploaded_at')[:3],
+                many=True
+            ).data
+        }
+        return Response(data)
+
+
+class GPInvestorIRListView(generics.ListAPIView):
+    """
+    GET /api/gp-investor/ir-documents/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPInvestorRole]
+    serializer_class = IRDocumentSerializer
+
+    def get_queryset(self):
+        return IRDocument.objects.filter(is_published=True).order_by('-uploaded_at')
+
+
+class GPInvestorGovernanceListView(generics.ListAPIView):
+    """
+    GET /api/gp-investor/governance/proposals/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPInvestorRole]
+    serializer_class = GovernanceProposalSerializer
+
+    def get_queryset(self):
+        return GovernanceProposal.objects.filter(
+            status__in=['ACTIVE', 'CLOSED']
+        ).order_by('-created_at')
+
+
+class GPInvestorVoteView(APIView):
+    """
+    POST /api/gp-investor/governance/vote/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPInvestorRole]
+
+    def post(self, request):
+        proposal_id = request.data.get('proposal_id')
+        choice = request.data.get('choice')
+        
+        proposal = get_object_or_404(GovernanceProposal, pk=proposal_id)
+        if proposal.status != 'ACTIVE':
+            return Response({"detail": "Voting is not active for this proposal"}, status=400)
+            
+        shareholder = getattr(request.user, 'gp_shareholding', None)
+        if not shareholder:
+            return Response({"detail": "You must be a GP Shareholder to vote"}, status=403)
+        
+        # Check if already voted
+        if ProposalVote.objects.filter(proposal=proposal, shareholder=shareholder).exists():
+            return Response({"detail": "You have already cast your vote for this proposal"}, status=400)
+            
+        ProposalVote.objects.create(
+            proposal=proposal,
+            shareholder=shareholder,
+            choice=choice,
+            shares_at_voting=shareholder.shares_held
+        )
+        
+        return Response({"status": "Vote recorded"}, status=201)
+
+
+# ---------------------------------------------------------------------------
+# GP Admin / Staff Views for Shareholder Relations
+# ---------------------------------------------------------------------------
+
+class GPIRDocumentViewSet(viewsets.ModelViewSet):
+    """
+    Admin CRUD for IR Documents
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = IRDocumentSerializer
+    queryset = IRDocument.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+
+
+class GPGovernanceProposalViewSet(viewsets.ModelViewSet):
+    """
+    Admin CRUD for Governance Proposals
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = GovernanceProposalSerializer
+    queryset = GovernanceProposal.objects.all()
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+# ---------------------------------------------------------------------------
+# Entrepreneur Portal KYB Views
+# ---------------------------------------------------------------------------
+
+class EntrepreneurKYBUploadView(APIView):
+    """
+    POST /api/entrepreneur/kyc/upload/
+    Handle direct multipart/form-data KYB uploads.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsEntrepreneurRole]
+
+    def post(self, request):
+        if 'file' not in request.FILES:
+            return Response({"detail": "No file uploaded"}, status=400)
+            
+        doc_type = request.data.get('document_type', 'Other')
+        
+        doc = EntrepreneurKYBDocument.objects.create(
+            user=request.user,
+            file=request.FILES['file'],
+            document_type=doc_type,
+            status='PENDING'
+        )
+        
+        return Response(EntrepreneurKYBDocumentSerializer(doc).data, status=201)
+
+
+class EntrepreneurKYBListView(generics.ListAPIView):
+    """
+    GET /api/entrepreneur/kyc/
+    """
+    permission_classes = [permissions.IsAuthenticated, IsEntrepreneurRole]
+    serializer_class = EntrepreneurKYBDocumentSerializer
+
+    def get_queryset(self):
+        return EntrepreneurKYBDocument.objects.filter(user=self.request.user).order_by('-uploaded_at')
 
 
 class PortfolioKPIReportDetailView(generics.RetrieveUpdateAPIView):

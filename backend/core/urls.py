@@ -25,6 +25,9 @@ router.register(r'investor/commitments', views.InvestorCommitmentViewSet, basena
 # ---------------------------------------------------------------------------
 
 urlpatterns = [
+    # Health check
+    path('health/', views.HealthCheckView.as_view(), name='health-check'),
+
     # Dashboard
     path('dashboard/entrepreneur/', views.EntrepreneurDashboardView.as_view(), name='dashboard-entrepreneur'),
     path('dashboard/investor/', views.InvestorDashboardView.as_view(), name='dashboard-investor'),

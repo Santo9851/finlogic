@@ -10,6 +10,7 @@ import re
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 
@@ -301,7 +302,75 @@ class LPProfile(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# 5. LPFundCommitment
+# 5. LPKYCDocument (Local Storage)
+# ---------------------------------------------------------------------------
+
+class LPKYCDocument(models.Model):
+    """
+    KYC documents uploaded by LPs for verification.
+    Stored locally on the Django server.
+    """
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending Verification'
+        VERIFIED = 'VERIFIED', 'Verified'
+        REJECTED = 'REJECTED', 'Rejected'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    lp_profile = models.ForeignKey(LPProfile, on_delete=models.CASCADE, related_name='kyc_documents')
+    file = models.FileField(
+        upload_to='kyc/%Y/%m/%d/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])]
+    )
+    document_type = models.CharField(max_length=50, help_text="e.g. Passport, Citizenship, PAN")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    rejection_reason = models.TextField(blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_lp_kyc_documents'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f'{self.lp_profile.full_name} - {self.document_type} ({self.status})'
+
+
+# ---------------------------------------------------------------------------
+# 6. EntrepreneurKYBDocument (Local Storage)
+# ---------------------------------------------------------------------------
+
+class EntrepreneurKYBDocument(models.Model):
+    """
+    KYB (Know Your Business) documents uploaded by entrepreneurs for startup verification.
+    Stored locally on the Django server.
+    """
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending Verification'
+        VERIFIED = 'VERIFIED', 'Verified'
+        REJECTED = 'REJECTED', 'Rejected'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='entrepreneur_kyb_documents')
+    file = models.FileField(
+        upload_to='kyb/entrepreneur/%Y/%m/%d/',
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])]
+    )
+    document_type = models.CharField(max_length=50, help_text="e.g. Incorporation, PAN, Tax Clearance")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    rejection_reason = models.TextField(blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_entrepreneur_kyb_documents'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f'{self.user.email} - {self.document_type} ({self.status})'
+
+
+# ---------------------------------------------------------------------------
+# 7. LPFundCommitment
 # ---------------------------------------------------------------------------
 
 class LPFundCommitment(models.Model):
@@ -736,7 +805,91 @@ class GPDividend(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# 13. AI Infrastructure
+# 13. GP Governance & Voting
+# ---------------------------------------------------------------------------
+
+class GovernanceProposal(models.Model):
+    """Proposals that GP Shareholders can vote on."""
+    class Status(models.TextChoices):
+        DRAFT = 'DRAFT', 'Draft'
+        ACTIVE = 'ACTIVE', 'Active'
+        CLOSED = 'CLOSED', 'Closed'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    expiry_date = models.DateTimeField()
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_proposals')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_governance_proposals'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class ProposalVote(models.Model):
+    """Individual votes cast by GP Shareholders."""
+    class Choice(models.TextChoices):
+        FOR = 'FOR', 'For'
+        AGAINST = 'AGAINST', 'Against'
+        ABSTAIN = 'ABSTAIN', 'Abstain'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    proposal = models.ForeignKey(GovernanceProposal, on_delete=models.CASCADE, related_name='votes')
+    shareholder = models.ForeignKey(GPShareholder, on_delete=models.CASCADE, related_name='votes')
+    choice = models.CharField(max_length=20, choices=Choice.choices)
+    
+    # Snapshot of voting weight at time of vote
+    shares_at_voting = models.DecimalField(max_digits=15, decimal_places=2)
+    
+    voted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'pe_proposal_votes'
+        unique_together = ('proposal', 'shareholder')
+
+    def __str__(self):
+        return f'{self.shareholder.user.email} - {self.proposal.title} ({self.choice})'
+
+
+# ---------------------------------------------------------------------------
+# 14. IR Documents (Global Shareholder Relations)
+# ---------------------------------------------------------------------------
+
+class IRDocument(models.Model):
+    """Global documents for GP Shareholders (Annual Reports, Notices)."""
+    class Category(models.TextChoices):
+        FINANCIAL = 'FINANCIAL', 'Financial Report'
+        LEGAL = 'LEGAL', 'Legal/Regulatory'
+        MEETING = 'MEETING', 'Board/Shareholder Meeting'
+        GENERAL = 'GENERAL', 'General Announcement'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    file = models.FileField(upload_to='ir_docs/%Y/%m/%d/')
+    category = models.CharField(max_length=30, choices=Category.choices, default=Category.GENERAL)
+    is_published = models.BooleanField(default=False)
+    
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='uploaded_ir_docs')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_ir_documents'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f'{self.title} ({self.category})'
+
+
+# ---------------------------------------------------------------------------
+# 15. AI Infrastructure
 # ---------------------------------------------------------------------------
 
 class AICallLog(models.Model):

@@ -40,7 +40,9 @@ export default function FileUploader({
   token = null, 
   onSuccess = () => {},
   label = "Upload Document",
-  hideCategory = false
+  hideCategory = false,
+  isLocal = false,
+  uploadUrl = ''
 }) {
   const [file, setFile] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(category || 'OTHER');
@@ -77,19 +79,48 @@ export default function FileUploader({
   const uploadFile = async () => {
     if (!file) return;
 
+    // Handle Local Upload (Direct Multipart to Django)
+    if (isLocal) {
+      setStatus('uploading');
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('document_type', selectedCategory);
+
+        const res = await api.post(uploadUrl, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            const pct = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setProgress(pct);
+          },
+        });
+
+        setStatus('success');
+        toast.success(`${file.name} uploaded successfully.`);
+        onSuccess(res.data);
+        return;
+      } catch (err) {
+        console.error('Local Upload Error:', err);
+        setStatus('error');
+        setError(err.response?.data?.detail || err.message || 'Upload failed');
+        toast.error('Upload failed');
+        return;
+      }
+    }
+
+    // Handle B2 Upload (Pre-signed URL flow)
     setStatus('presigning');
     try {
       // 1. Get Pre-signed URL
       let urlPath = '';
       if (token) {
-        urlPath = `/deals/projects/invite/${token}/get-upload-url/`;
+        urlPath = `deals/projects/invite/${token}/get-upload-url/`;
       } else if (fundId) {
-        urlPath = `/deals/funds/${fundId}/get-upload-url/`;
+        urlPath = `deals/funds/${fundId}/get-upload-url/`;
       } else if (projectId) {
-        // Try entrepreneur-auth path first if not a GP (GP uses /deals/projects/...)
-        // But for simplicity in the new apply flow, we'll try the new endpoint
-        // If this is called from /entrepreneur/submissions/...
-        urlPath = `/entrepreneur/submissions/${projectId}/get-upload-url/`;
+        urlPath = `entrepreneur/submissions/${projectId}/get-upload-url/`;
       }
       
       const res = await api.post(urlPath, {
@@ -140,8 +171,8 @@ export default function FileUploader({
       // Only for projects - Fund documents are finalized via the page POST
       if (!fundId) {
         const confirmPath = token
-          ? `/deals/projects/invite/${token}/documents/${document_id}/confirm/`
-          : `/deals/projects/${projectId}/documents/${document_id}/confirm/`;
+          ? `deals/projects/invite/${token}/documents/${document_id}/confirm/`
+          : `deals/projects/${projectId}/documents/${document_id}/confirm/`;
         
         await api.post(confirmPath);
       }

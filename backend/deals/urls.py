@@ -6,7 +6,8 @@ Mount in finlogic_api/urls.py:
     path('api/', include('deals.urls')),
     path('api/', include('core.urls')),
 """
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
 from .views import (
     # Funds
@@ -42,6 +43,8 @@ from .views import (
     # LP Profile
     LPProfileListCreateView,
     LPProfileDetailView,
+    LPProfileSelfView,
+    LPKYCUploadView,
     # Form Templates
     PEFormTemplateListView,
     PEFormTemplateDetailView,
@@ -77,10 +80,22 @@ from .views import (
     GPGenerateMemoView,
     GPMemoDetailView,
     GPMemoFinalizeView,
+    GPFullAnalysisView,
     PortfolioKPIReportListView,
     PortfolioKPIReportDetailView,
-    GPFullAnalysisView,
+    # New Stakeholder views
+    GPInvestorIRListView,
+    GPInvestorGovernanceListView,
+    GPInvestorVoteView,
+    GPIRDocumentViewSet,
+    GPGovernanceProposalViewSet,
+    EntrepreneurKYBUploadView,
+    EntrepreneurKYBListView,
 )
+
+router = DefaultRouter()
+router.register(r'admin/ir-documents', GPIRDocumentViewSet, basename='admin-ir-docs')
+router.register(r'admin/governance-proposals', GPGovernanceProposalViewSet, basename='admin-proposals')
 
 
 
@@ -402,6 +417,16 @@ urlpatterns = [
         LPPortfolioView.as_view(),
         name='lp-portfolio',
     ),
+    path(
+        'lp/profile/',
+        LPProfileSelfView.as_view(),
+        name='lp-profile-self',
+    ),
+    path(
+        'lp/kyc/upload/',
+        LPKYCUploadView.as_view(),
+        name='lp-kyc-upload',
+    ),
 
     # ── GP Investor Portal ─────────────────────────────────────────────────
     path(
@@ -443,4 +468,17 @@ urlpatterns = [
         DocumentDeleteView.as_view(),
         name='document-delete',
     ),
+    
+    # ── Entrepreneur KYB ───────────────────────────────────────────────────
+    path('deals/entrepreneur/kyc/upload/', EntrepreneurKYBUploadView.as_view(), name='entrepreneur-kyc-upload'),
+    path('deals/entrepreneur/kyc/', EntrepreneurKYBListView.as_view(), name='entrepreneur-kyc-list'),
+
+    # ── GP Investor Portal Extensions ──────────────────────────────────────
+    path('deals/gp-investor/dashboard/', GPInvestorDashboardView.as_view(), name='gp-investor-dashboard'),
+    path('deals/gp-investor/ir-documents/', GPInvestorIRListView.as_view(), name='gp-invest-ir-list'),
+    path('deals/gp-investor/governance/proposals/', GPInvestorGovernanceListView.as_view(), name='gp-invest-gov-props'),
+    path('deals/gp-investor/governance/vote/', GPInvestorVoteView.as_view(), name='gp-invest-vote'),
+
+    # ── Admin Viewsets ─────────────────────────────────────────────────────
+    path('deals/', include(router.urls)),
 ]
