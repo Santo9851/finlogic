@@ -42,6 +42,10 @@ extra_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
 if extra_origins[0]:
     CSRF_TRUSTED_ORIGINS.extend(extra_origins)
 
+# Secure Proxy Settings for Nginx
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
 
 
 # Application definition
