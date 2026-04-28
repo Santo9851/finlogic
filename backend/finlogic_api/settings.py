@@ -28,9 +28,20 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key-for-local-development-only-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']  # Allow all hosts for development
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
+
+# CSRF Trusted Origins for production
+CSRF_TRUSTED_ORIGINS = [
+    'https://finlogiccapital.com',
+    'https://www.finlogiccapital.com',
+]
+# Allow adding more via env if needed
+extra_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+if extra_origins[0]:
+    CSRF_TRUSTED_ORIGINS.extend(extra_origins)
+
 
 
 # Application definition
