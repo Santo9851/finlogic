@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../styles/article-callouts.css";
+
 
 :root {
   --background: #ffffff;

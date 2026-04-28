@@ -1,220 +1,373 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Video, FileText, Bookmark } from "lucide-react";
-import ArticleCard from "@/components/insights/ArticleCard";
-import CourseCard from "@/components/insights/CourseCard";
-import WebinarCard from "@/components/insights/WebinarCard";
+import {
+  ArrowRight, BookOpen, Video, FileText, Bookmark,
+  Search, Clock, User, Calendar, Play, ChevronRight, Sparkles,
+} from "lucide-react";
+import { fetchArticles, fetchCourses, fetchWebinars, fetchFeaturedArticle, normaliseList, PILLAR_COLORS } from "@/services/insights";
 
-// Mock Data for the Landing Page
-const featuredArticle = {
-  slug: "south-asian-pe-beyond-tier-1",
-  title: "Private Equity Trends in South Asia: Beyond the Tier-1 Cities",
-  excerpt: "An in-depth analysis of emerging investment opportunities in secondary markets across Nepal, India, and Bangladesh as tech infrastructure bridges the urban-rural divide.",
-  pillar: "Deep Insight",
-  author: "Santosh Poudel",
-  date: "Oct 12, 2023",
-  image: "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=1200",
-};
+// ─── Skeleton loader ─────────────────────────────────────────────────────────
+function Skeleton({ className = "" }) {
+  return <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />;
+}
 
-const recentArticles = [
-  {
-    slug: "tech-enabled-infrastructure-nepal",
-    title: "The Rise of Tech-Enabled Infrastructure in Nepal",
-    excerpt: "How digital logistics and renewable energy micro-grids are reshaping the Himalayan economic landscape.",
-    pillar: "Unconventional Vision",
-    author: "Research Team",
-    date: "Sep 28, 2023",
-    image: "https://images.unsplash.com/photo-1588661849141-8ddfdf5e7ec9?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "sustainable-scaling-wisdom",
-    title: "Sustainable Scaling: Bridging Himalayan Traditions with Modern Venture Capital",
-    excerpt: "Applying principles of patience and community alignment to build modern, hyper-growth startups.",
-    pillar: "Wisdom-Backed Growth",
-    author: "Investment Committee",
-    date: "Sep 15, 2023",
-    image: "https://images.unsplash.com/photo-1526715006943-4e83c2a6d71b?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "cross-border-frameworks",
-    title: "Cross-Border Investment Frameworks for Emerging Economies",
-    excerpt: "A legal and strategic primer for structuring foreign direct investments in transitioning markets.",
-    pillar: "Harmonious Partnerships",
-    author: "Legal Advisory",
-    date: "Aug 30, 2023",
-    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=600",
-  }
-];
-
-const upcomingWebinar = {
-  slug: "navigating-regulatory-shifts",
-  title: "Navigating Regulatory Shifts in South Asian Tech Investments",
-  description: "Join our panel of legal experts and managing partners as they decode recent policy changes affecting foreign investments in the region.",
-  speaker: "Sumanth Rai & Legal Partners",
-  date: "Nov 15, 2023",
-  time: "14:00 NPT",
-  registrationUrl: "#register",
-  image: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=600",
-};
-
-const popularCourses = [
-  {
-    slug: "foundations-of-patient-capital",
-    title: "Foundations of Patient Capital",
-    description: "Learn how to structure your business model to attract long-term, value-aligned investors rather than quick exit seekers.",
-    level: "Beginner",
-    duration: "4 Weeks",
-    modules: 6,
-    image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "due-diligence-masterclass",
-    title: "The Founders Guide to Institutional Due Diligence",
-    description: "A comprehensive walkthrough of the financial, operational, and psychological metrics leading PE firms evaluate.",
-    level: "Advanced",
-    duration: "6 Weeks",
-    modules: 10,
-    image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=600",
-  }
-];
-
-const categories = [
-  { name: "Articles", icon: <FileText className="w-5 h-5 mb-3" />, link: "/insights/articles", desc: "Deep-dives and market research" },
-  { name: "Courses", icon: <BookOpen className="w-5 h-5 mb-3" />, link: "/insights/courses", desc: "Structured learning paths" },
-  { name: "Webinars", icon: <Video className="w-5 h-5 mb-3" />, link: "/insights/webinars", desc: "Live sessions and recordings" },
-  { name: "Frameworks", icon: <Bookmark className="w-5 h-5 mb-3" />, link: "/insights/articles?category=frameworks", desc: "Proprietary investment models" },
-];
-
-export default function InsightsLandingPage() {
+// ─── Pill badge ───────────────────────────────────────────────────────────────
+function PillarBadge({ pillar }) {
+  const color = PILLAR_COLORS[pillar?.toLowerCase()] || "#F59F01";
   return (
-    <div className="bg-ls-primary text-ls-white min-h-screen pb-24">
-      {/* Hero Section */}
+    <span
+      className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
+      style={{ background: `${color}18`, color }}
+    >
+      {pillar || "Insight"}
+    </span>
+  );
+}
+
+// ─── Hero featured article ────────────────────────────────────────────────────
+function FeaturedHero({ article, loading }) {
+  if (loading) {
+    return (
+      <div className="relative w-full rounded-[2rem] overflow-hidden">
+        <Skeleton className="w-full aspect-[21/9] rounded-[2rem]" />
+      </div>
+    );
+  }
+  if (!article) return null;
+
+  const displayDate = article.published_at
+    ? new Date(article.published_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : "";
+
+  return (
+    <Link
+      href={`/insights/articles/${article.slug}`}
+      className="relative block w-full rounded-[2rem] overflow-hidden group"
+    >
+      <div className="absolute inset-0 bg-gradient-to-t from-[#100226] via-[#100226]/70 to-transparent z-10" />
+      {article.featured_image ? (
+        <img
+          src={article.featured_image}
+          alt={article.title}
+          className="w-full aspect-video md:aspect-[21/9] object-cover brightness-75 group-hover:scale-105 transition-transform duration-700"
+        />
+      ) : (
+        <div className="w-full aspect-video md:aspect-[21/9] bg-gradient-to-br from-[#3A3153] to-[#100226]" />
+      )}
+      <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#100226]/40 via-transparent to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 z-20">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="px-3 py-1 rounded-full bg-[#F59F01] text-[#100226] text-xs font-black uppercase tracking-widest">
+            Featured Research
+          </span>
+          {article.read_time && (
+            <span className="text-white/60 text-sm flex items-center gap-1">
+              <Clock size={13} /> {article.read_time}
+            </span>
+          )}
+        </div>
+        <h2 className="text-3xl md:text-5xl font-bold mb-4 max-w-4xl group-hover:text-[#F59F01] transition-colors leading-tight">
+          {article.title}
+        </h2>
+        <p className="text-lg text-white/70 max-w-3xl mb-6 line-clamp-2">{article.excerpt}</p>
+        <div className="flex items-center gap-6 text-sm text-white/50">
+          {article.author_name && (
+            <span className="flex items-center gap-1.5 text-white/70 font-medium">
+              <User size={14} /> {article.author_name}
+            </span>
+          )}
+          {displayDate && <span className="flex items-center gap-1.5"><Calendar size={14} /> {displayDate}</span>}
+        </div>
+        <div className="mt-6 flex items-center font-bold text-[#F59F01] text-sm">
+          Read Full Paper <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-2 transition-transform" />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Small article card ───────────────────────────────────────────────────────
+function SmallArticleCard({ article }) {
+  const displayDate = article.published_at
+    ? new Date(article.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "";
+  return (
+    <Link
+      href={`/insights/articles/${article.slug}`}
+      className="group flex gap-4 p-4 rounded-2xl border border-white/5 hover:border-[#F59F01]/30 hover:bg-[#F59F01]/5 transition-all"
+    >
+      {article.featured_image && (
+        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+          <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <PillarBadge pillar={article.pillar} />
+        <h3 className="text-sm font-bold text-white mt-1.5 line-clamp-2 group-hover:text-[#F59F01] transition-colors leading-snug">
+          {article.title}
+        </h3>
+        <p className="text-xs text-white/40 mt-1">{displayDate} · {article.read_time}</p>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Course card ──────────────────────────────────────────────────────────────
+function CourseCard({ course }) {
+  const levelColors = { beginner: "#16c784", intermediate: "#F59F01", advanced: "#f43f5e" };
+  const color = levelColors[course.level?.toLowerCase()] || "#F59F01";
+  return (
+    <Link href={`/insights/courses/${course.slug}`}
+      className="group relative flex flex-col rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 bg-[#0D0120] hover:bg-[#160330] transition-all hover:-translate-y-1"
+    >
+      {course.featured_image ? (
+        <div className="h-44 overflow-hidden">
+          <img src={course.featured_image} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 brightness-75" />
+        </div>
+      ) : (
+        <div className="h-44 bg-gradient-to-br from-[#3A3153] to-[#100226] flex items-center justify-center">
+          <BookOpen size={40} className="text-white/20" />
+        </div>
+      )}
+      <div className="p-5 flex flex-col flex-1">
+        <span className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color }}>{course.level}</span>
+        <h3 className="font-bold text-white text-base leading-snug mb-2 flex-1 group-hover:text-[#F59F01] transition-colors">
+          {course.title}
+        </h3>
+        <p className="text-white/50 text-xs line-clamp-2 mb-4">{course.description}</p>
+        <div className="flex items-center justify-between text-xs text-white/40 border-t border-white/5 pt-3">
+          <span className="flex items-center gap-1"><BookOpen size={12} /> {course.module_count || "—"} modules</span>
+          <span className="flex items-center gap-1"><Clock size={12} /> {course.duration_hours}h</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Webinar card ─────────────────────────────────────────────────────────────
+function WebinarCard({ webinar }) {
+  const date = webinar.scheduled_at ? new Date(webinar.scheduled_at) : null;
+  const isPast = date && date < new Date();
+  const displayDate = date ? date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+  const displayTime = date ? date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "";
+
+  return (
+    <div className="group p-5 rounded-2xl border border-white/5 hover:border-[#F59F01]/20 bg-[#0D0120] hover:bg-[#160330] transition-all flex gap-4 items-start">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${isPast ? "bg-white/5" : "bg-[#F59F01]/10"}`}>
+        {isPast ? <Play size={20} className="text-white/30" /> : <Video size={20} className="text-[#F59F01]" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1.5">
+          {!isPast && <span className="flex items-center gap-1 text-[10px] font-black text-[#16c784] uppercase tracking-widest"><span className="w-1.5 h-1.5 rounded-full bg-[#16c784] animate-pulse inline-block" /> Live</span>}
+          {isPast && webinar.recording_url && <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Recording Available</span>}
+        </div>
+        <h3 className="font-bold text-white text-sm leading-snug group-hover:text-[#F59F01] transition-colors mb-1">
+          {webinar.title}
+        </h3>
+        <p className="text-white/40 text-xs mb-2">{webinar.speaker}</p>
+        <div className="flex items-center gap-4 text-xs text-white/30">
+          {displayDate && <span className="flex items-center gap-1"><Calendar size={11} /> {displayDate}</span>}
+          {displayTime && !isPast && <span>{displayTime} NPT</span>}
+        </div>
+      </div>
+      {!isPast && webinar.registration_url && (
+        <a href={webinar.registration_url} target="_blank" rel="noopener noreferrer"
+          className="flex-shrink-0 px-4 py-2 rounded-full bg-[#F59F01] text-[#100226] text-xs font-black hover:bg-[#F59F01]/80 transition-colors"
+        >
+          Register
+        </a>
+      )}
+      {isPast && webinar.recording_url && (
+        <a href={webinar.recording_url} target="_blank" rel="noopener noreferrer"
+          className="flex-shrink-0 px-4 py-2 rounded-full border border-white/10 text-white/50 text-xs font-bold hover:border-white/30 hover:text-white transition-colors flex items-center gap-1"
+        >
+          <Play size={11} /> Watch
+        </a>
+      )}
+    </div>
+  );
+}
+
+// ─── Category nav cards ───────────────────────────────────────────────────────
+// Categories shown in the hero nav — Courses & Frameworks hidden until ready
+const categories = [
+  { name: "Articles", icon: FileText, link: "/insights/articles", desc: "Research & deep-dives", color: "#F59F01" },
+  { name: "Webinars", icon: Video, link: "/insights/webinars", desc: "Live & recorded sessions", color: "#0B6EC3" },
+  // { name: "Courses", icon: BookOpen, link: "/insights/courses", desc: "Structured learning paths", color: "#16c784" },
+  // { name: "Frameworks", icon: Bookmark, link: "/insights/articles?pillar=insight", desc: "Proprietary investment models", color: "#a855f7" },
+];
+
+// ─── Main page ────────────────────────────────────────────────────────────────
+export default function InsightsLandingPage() {
+  const [featured, setFeatured]   = useState(null);
+  const [articles, setArticles]   = useState([]);
+  const [courses, setCourses]     = useState([]);
+  const [webinars, setWebinars]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [feat, art, crs, web] = await Promise.all([
+          fetchFeaturedArticle(),
+          fetchArticles({ ordering: "-published_at" }),
+          fetchCourses(),
+          fetchWebinars(),
+        ]);
+        setFeatured(feat);
+        setArticles(normaliseList(art).slice(1, 5)); // skip featured
+        setCourses(normaliseList(crs).slice(0, 4));
+        setWebinars(normaliseList(web).slice(0, 4));
+      } catch {
+        // fallback to empty — pages handle their own data
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  return (
+    <div className="bg-[#100226] text-white min-h-screen pb-24">
+
+      {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="relative pt-32 pb-16 overflow-hidden">
-        <div className="absolute inset-0 bg-abstract-gradient opacity-20 pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#F59F01]/5 rounded-full blur-[120px]" />
+          <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-[#3A3153]/40 rounded-full blur-[100px]" />
+        </div>
+
         <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-block px-4 py-1 rounded-full bg-ls-compliment/10 text-ls-compliment text-sm font-bold uppercase tracking-widest mb-6"
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#F59F01]/10 border border-[#F59F01]/20 text-[#F59F01] text-sm font-bold uppercase tracking-widest mb-6"
           >
-            Knowledge Center
+            <Sparkles size={14} /> Knowledge Center
           </motion.div>
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold mb-6"
+
+          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="text-5xl md:text-7xl font-black mb-6 leading-none tracking-tight"
           >
-            The Wisdom Hub
+            The <span className="text-[#F59F01]">Wisdom</span> Hub
           </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-xl text-ls-white/70 max-w-2xl mx-auto mb-16"
+
+          <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="text-xl text-white/60 max-w-2xl mx-auto mb-14"
           >
-            Where visionary thinking meets rigorous analysis. Explore our proprietary research, educational courses, and exclusive webinars.
+            Proprietary research, educational courses and exclusive webinars — where visionary thinking meets rigorous analysis.
           </motion.p>
-          
-          {/* Quick Category Navigation */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto"
+
+          {/* Category nav */}
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="grid grid-cols-2 gap-4 max-w-xl mx-auto"
           >
-            {categories.map((cat, i) => (
-               <Link key={i} href={cat.link} className="glass-card p-6 rounded-2xl flex flex-col items-center justify-center text-center group hover:bg-ls-supporting/30 border border-ls-supporting/20 hover:border-ls-compliment/50 transition-all hover:-translate-y-1">
-                 <div className="text-ls-compliment group-hover:scale-110 transition-transform">{cat.icon}</div>
-                 <h3 className="font-bold text-lg leading-tight mb-1">{cat.name}</h3>
-                 <p className="text-xs text-ls-white/50">{cat.desc}</p>
-               </Link>
-            ))}
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <Link key={cat.name} href={cat.link}
+                  className="group p-5 rounded-2xl flex flex-col items-center justify-center text-center bg-white/3 border border-white/8 hover:border-white/20 hover:-translate-y-1 transition-all"
+                  style={{ "--cat-color": cat.color }}
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-all group-hover:scale-110"
+                    style={{ background: `${cat.color}18`, color: cat.color }}
+                  >
+                    <Icon size={18} />
+                  </div>
+                  <h3 className="font-bold text-sm mb-1" style={{ color: cat.color }}>{cat.name}</h3>
+                  <p className="text-[11px] text-white/40">{cat.desc}</p>
+                </Link>
+              );
+            })}
           </motion.div>
         </div>
       </section>
 
-      {/* Featured Content Slider (Simplified for Landing) */}
-      <section className="py-16">
+      {/* ── Featured article ──────────────────────────────────────────────── */}
+      <section className="py-8">
         <div className="container mx-auto px-4 lg:px-8">
-           <Link href={`/insights/articles/${featuredArticle.slug}`} className="relative block w-full rounded-[2rem] overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-t from-ls-primary via-ls-primary/60 to-transparent z-10" />
-              <img src={featuredArticle.image} alt={featuredArticle.title} className="w-full aspect-video md:aspect-[21/9] object-cover filter brightness-[0.8] group-hover:scale-105 transition-transform duration-700" />
-              
-              <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 z-20">
-                 <div className="inline-block px-3 py-1 rounded-full bg-ls-compliment text-ls-primary text-xs font-bold uppercase tracking-widest mb-6">
-                   Featured Research
-                 </div>
-                 <h2 className="text-3xl md:text-5xl font-bold mb-4 max-w-4xl group-hover:text-ls-compliment transition-colors">{featuredArticle.title}</h2>
-                 <p className="text-lg text-ls-white/70 max-w-3xl mb-8 line-clamp-2 md:line-clamp-none">{featuredArticle.excerpt}</p>
-                 <div className="flex items-center text-sm font-bold text-ls-compliment">
-                   Read Full Paper <ArrowRight className="ml-2 w-4 h-4 transform group-hover:translate-x-2 transition-transform" />
-                 </div>
-              </div>
-           </Link>
+          <FeaturedHero article={featured} loading={loading} />
         </div>
       </section>
 
-      {/* Recent Articles Grid */}
-      <section className="py-16">
-         <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-12">
-               <div>
-                  <h2 className="text-3xl font-bold mb-2">Latest Insights</h2>
-                  <p className="text-ls-white/60">Emerging trends and timeless principles.</p>
-               </div>
-               <Link href="/insights/articles" className="mt-4 md:mt-0 flex items-center font-bold text-ls-compliment hover:text-ls-white transition-colors">
-                 View All Articles <ArrowRight className="ml-2 w-5 h-5" />
-               </Link>
+      {/* ── Latest articles ───────────────────────────────────────────────── */}
+      {(loading || articles.length > 0) && (
+        <section className="py-16">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold">Latest Insights</h2>
+                <p className="text-white/40 text-sm mt-1">Emerging trends and timeless principles</p>
+              </div>
+              <Link href="/insights/articles" className="flex items-center gap-1 text-sm font-bold text-[#F59F01] hover:text-white transition-colors">
+                View All <ArrowRight size={15} />
+              </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-               {recentArticles.map((article, i) => (
-                 <ArticleCard key={i} article={article} />
-               ))}
-            </div>
-         </div>
-      </section>
 
-      {/* Webinars Row */}
-      <section className="py-16 bg-ls-supporting/5 border-y border-ls-supporting/10">
-         <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-12">
-               <div>
-                  <h2 className="text-3xl font-bold mb-2">Exclusive Webinars</h2>
-                  <p className="text-ls-white/60">Live sessions with industry leaders and our investment committee.</p>
-               </div>
-               <Link href="/insights/webinars" className="mt-4 md:mt-0 flex items-center font-bold text-ls-compliment hover:text-ls-white transition-colors">
-                 View Webinar Library <ArrowRight className="ml-2 w-5 h-5" />
-               </Link>
-            </div>
-            
-            <div className="w-full">
-               <WebinarCard webinar={upcomingWebinar} />
-            </div>
-         </div>
-      </section>
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {articles.map((a, i) => (
+                  <motion.div key={a.id || a.slug} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+                    <SmallArticleCard article={a} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
-      {/* Popular Courses Grid */}
-      <section className="py-16">
-         <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex flex-col md:flex-row items-center justify-between mb-12">
-               <div>
-                  <h2 className="text-3xl font-bold mb-2">Featured Courses</h2>
-                  <p className="text-ls-white/60">Structured learning for visionary founders.</p>
-               </div>
-               <Link href="/insights/courses" className="mt-4 md:mt-0 flex items-center font-bold text-ls-compliment hover:text-ls-white transition-colors">
-                 Explore Campus <ArrowRight className="ml-2 w-5 h-5" />
-               </Link>
+      {/* ── Webinars ──────────────────────────────────────────────────────── */}
+      {(loading || webinars.length > 0) && (
+        <section className="py-16 border-y border-white/5 bg-white/[0.02]">
+          <div className="container mx-auto px-4 lg:px-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-bold">Live & On-Demand</h2>
+                <p className="text-white/40 text-sm mt-1">Sessions with industry experts</p>
+              </div>
+              <Link href="/insights/webinars" className="flex items-center gap-1 text-sm font-bold text-[#0B6EC3] hover:text-white transition-colors">
+                View All <ArrowRight size={15} />
+              </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-               {popularCourses.map((course, i) => (
-                 <CourseCard key={i} course={course} />
-               ))}
-            </div>
-         </div>
-      </section>
+
+            {loading ? (
+              <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
+            ) : (
+              <div className="space-y-3">
+                {webinars.map((w, i) => (
+                  <motion.div key={w.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}>
+                    <WebinarCard webinar={w} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── Courses ─── HIDDEN until campus is ready ──────────────────────────
+      {(loading || courses.length > 0) && (
+        <section className="py-16">
+          ...
+        </section>
+      )}
+      ────────────────────────────────────────────────────────────────────── */}
+
+
+      {/* ── No content state ─────────────────────────────────────────────── */}
+      {!loading && !featured && articles.length === 0 && webinars.length === 0 && (
+        <div className="text-center py-32 text-white/30">
+          <Sparkles size={40} className="mx-auto mb-4 opacity-30" />
+          <h3 className="text-xl font-bold mb-2">Content coming soon</h3>
+          <p className="text-sm">Publish articles, courses and webinars from the admin panel.</p>
+        </div>
+      )}
     </div>
   );
 }

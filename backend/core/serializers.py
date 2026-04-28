@@ -302,22 +302,59 @@ class CourseModuleSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     modules = CourseModuleSerializer(many=True, read_only=True)
+    module_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = ('id', 'title', 'slug', 'description', 'pillar', 'level',
                   'duration_hours', 'featured_image', 'is_published',
-                  'modules', 'created_at', 'updated_at')
+                  'module_count', 'modules', 'created_at', 'updated_at')
+
+    def get_module_count(self, obj):
+        return obj.modules.count()
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     author = serializers.StringRelatedField(read_only=True)
+    read_time    = serializers.SerializerMethodField()
+    author_name  = serializers.SerializerMethodField()
+    featured_image = serializers.SerializerMethodField()  # resolves upload > URL
 
     class Meta:
         model = Article
-        fields = ('id', 'author', 'title', 'slug', 'excerpt', 'content',
+        fields = ('id', 'author', 'author_name', 'title', 'slug', 'excerpt', 'content',
                   'featured_image', 'pillar', 'is_published', 'published_at',
-                  'created_at', 'updated_at')
+                  'read_time', 'created_at', 'updated_at')
+
+    def get_featured_image(self, obj):
+        """Return uploaded file URL if available, else the stored URL string."""
+        url = obj.cover_image_url
+        if not url:
+            return None
+        # If it's already an absolute URL (e.g. from Unsplash), return as is
+        if url.startswith('http'):
+            return url
+        # Build absolute URI for local media (/media/...)
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(url)
+        return url
+
+
+    def get_read_time(self, obj):
+        if not obj.content:
+            return '1 min read'
+        word_count = len(obj.content.split())
+        minutes = max(1, round(word_count / 200))
+        return f'{minutes} min read'
+
+    def get_author_name(self, obj):
+        if obj.author:
+            name = f'{obj.author.first_name} {obj.author.last_name}'.strip()
+            return name or obj.author.email
+        return 'Finlogic Research'
+
+
 
 
 class WebinarSerializer(serializers.ModelSerializer):

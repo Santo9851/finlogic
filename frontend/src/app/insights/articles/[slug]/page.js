@@ -1,154 +1,329 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ArrowLeft, Clock, User, Share2, Linkedin, Twitter } from "lucide-react";
+import { useState, useEffect, useRef, useCallback, use } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import ArticleCard from "@/components/insights/ArticleCard";
+import {
+  ArrowLeft, Clock, User, Calendar, Linkedin, Twitter,
+  Link2, List, X,
+} from "lucide-react";
+import { fetchArticle, fetchArticles, normaliseList, PILLAR_LABELS, PILLAR_COLORS } from "@/services/insights";
+import ArticleTOC, { extractHeadings, injectHeadingIds } from "@/components/ArticleTOC";
 
-// Mock Data for a single article
-const articleData = {
-  slug: "south-asian-pe-beyond-tier-1",
-  title: "Private Equity Trends in South Asia: Beyond the Tier-1 Cities",
-  pillar: "Deep Insight",
-  author: "Santosh Poudel",
-  date: "Oct 12, 2023",
-  readTime: "8 min read",
-  image: "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=1200",
-  content: `
-    <h3>Introduction</h3>
-    <p>The narrative of South Asian economic growth has long been dominated by its tier-1 mega-cities. Hubs like Mumbai, Bangalore, and increasingly Kathmandu, serve as the visible locus of technological and financial innovation. However, a silent revolution is brewing beyond these metropolitan borders. Driven by rapid digital penetration, improved infrastructure, and a burgeoning middle class, tier-2 and tier-3 cities are emerging as the new frontiers for private equity.</p>
-    
-    <h3>The Infrastructure Catalyst</h3>
-    <p>Our recent analysis of cross-border capital flows indicates a structural shift. The deployment of tech-enabled infrastructure—from digital payment rails to renewable energy micro-grids—has effectively collapsed the geographic distance between markets. In Nepal, for instance, localized agritech and logistics platforms are demonstrating unit economics that rival, and sometimes surpass, their urban counterparts.</p>
-    
-    <blockquote>
-      "The true alpha in the next decade of South Asian private equity won't come from fighting for deals in saturated capitals, but from identifying the silent compounders in secondary markets."
-    </blockquote>
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.finlogiccapital.com";
 
-    <h3>Strategic Implications for Patient Capital</h3>
-    <p>Investing in these emerging ecosystems requires a departure from standard Silicon Valley playbooks.</p>
-    <ul>
-      <li><strong>Hyper-local Nuance:</strong> Supply chains and consumer behaviors are deeply contextual. What works in a tier-1 city may fail completely in a tier-2 hub.</li>
-      <li><strong>Governance Engineering:</strong> Many high-potential regional businesses lack institutional governance frameworks. Capital must be paired with operational mentorship.</li>
-      <li><strong>Extended Horizons:</strong> Value creation in these markets is structural, not superficial. It requires patient, long-term alignment.</li>
-    </ul>
+function Skeleton({ className = "" }) {
+  return <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />;
+}
 
-    <h3>Conclusion</h3>
-    <p>As the primary markets become increasingly competitive and valuations stretch, the disciplined investor must look where others don't. By applying our 'Deep Insight' framework to these overlooked regions, Finlogic Capital is positioning itself to partner with the next generation of foundational South Asian enterprises.</p>
-  `
-};
+// ── Reading progress bar ────────────────────────────────────────────────────
+function ReadingProgress() {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    const fn = () => {
+      const el = document.documentElement;
+      setP(el.scrollHeight - el.clientHeight > 0 ? (el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100 : 0);
+    };
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+  return (
+    <div className="fixed top-0 left-0 w-full h-[3px] bg-white/5 z-[60]">
+      <motion.div className="h-full bg-gradient-to-r from-[#F59F01] to-[#F59F01]/50" style={{ width: `${p}%` }} />
+    </div>
+  );
+}
 
-const relatedArticles = [
-  {
-    slug: "tech-enabled-infrastructure-nepal",
-    title: "The Rise of Tech-Enabled Infrastructure in Nepal",
-    excerpt: "How digital logistics and renewable energy micro-grids are reshaping the Himalayan economic landscape.",
-    pillar: "Unconventional Vision",
-    author: "Research Team",
-    date: "Sep 28, 2023",
-    image: "https://images.unsplash.com/photo-1588661849141-8ddfdf5e7ec9?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "cross-border-frameworks",
-    title: "Cross-Border Investment Frameworks for Emerging Economies",
-    excerpt: "A legal and strategic primer for structuring foreign direct investments in transitioning markets like Nepal.",
-    pillar: "Harmonious Partnerships",
-    author: "Legal Advisory",
-    date: "Aug 30, 2023",
-    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=600",
-  }
-];
+// ── Related article card ────────────────────────────────────────────────────
+function RelatedCard({ article }) {
+  const color = PILLAR_COLORS[article.pillar?.toLowerCase()] || "#F59F01";
+  const date = article.published_at
+    ? new Date(article.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "";
+  return (
+    <Link href={`/insights/articles/${article.slug}`}
+      className="group flex gap-3 p-4 rounded-2xl border border-white/5 hover:border-[#F59F01]/20 hover:bg-[#F59F01]/5 transition-all"
+    >
+      {article.featured_image && (
+        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
+          <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        </div>
+      )}
+      <div className="min-w-0">
+        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color }}>{article.pillar}</span>
+        <h4 className="font-bold text-white text-xs leading-snug mt-0.5 group-hover:text-[#F59F01] transition-colors line-clamp-2">{article.title}</h4>
+        <p className="text-white/30 text-[10px] mt-1">{date}</p>
+      </div>
+    </Link>
+  );
+}
 
+// ── Mobile TOC drawer ───────────────────────────────────────────────────────
+function MobileTOC({ headings, accentColor, open, onClose }) {
+  const scrollTo = (id) => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); onClose(); };
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-end"
+          onClick={onClose}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30 }}
+            className="relative w-full bg-[#0D0120] border-t border-white/10 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <span className="text-xs font-black uppercase tracking-widest text-white/50">In This Article</span>
+              <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors"><X size={16} className="text-white/50" /></button>
+            </div>
+            <div className="space-y-1">
+              {headings.map(h => (
+                <button key={h.id} onClick={() => scrollTo(h.id)}
+                  className={`w-full text-left py-2 px-3 rounded-xl text-sm transition-all
+                    ${h.level >= 3 ? "pl-7 text-white/50 text-xs" : "font-bold text-white/80"}`}
+                >
+                  {h.text}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ── Main page ───────────────────────────────────────────────────────────────
 export default function ArticleDetailPage({ params }) {
-  // In a real app, you would fetch the article based on params.slug
-  const { slug } = params;
+  const { slug } = use(params);
+  const [article, setArticle]   = useState(null);
+  const [related, setRelated]   = useState([]);
+  const [headings, setHeadings] = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState(false);
+  const [copied, setCopied]     = useState(false);
+  const [tocOpen, setTocOpen]   = useState(false);
+  const articleRef = useRef(null);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true); setError(false);
+      try {
+        const [art, others] = await Promise.all([
+          fetchArticle(slug),
+          fetchArticles({ ordering: "-published_at" }),
+        ]);
+        setArticle(art);
+        const all = normaliseList(others).filter(a => a.slug !== slug);
+        const samePillar = all.filter(a => a.pillar === art.pillar);
+        setRelated([...samePillar, ...all.filter(a => a.pillar !== art.pillar)].slice(0, 3));
+        if (art?.content) setHeadings(extractHeadings(art.content));
+      } catch { setError(true); }
+      finally { setLoading(false); }
+    }
+    if (slug) load();
+  }, [slug]);
+
+  // Inject IDs into real DOM after render
+  useEffect(() => {
+    if (!loading && article?.content) {
+      requestAnimationFrame(() => injectHeadingIds(articleRef));
+    }
+  }, [loading, article]);
+
+  const color = PILLAR_COLORS[article?.pillar?.toLowerCase()] || "#F59F01";
+  const displayDate = article?.published_at
+    ? new Date(article.published_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+    : "";
+
+  const handleCopy = () => {
+    navigator.clipboard?.writeText(window.location.href);
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+  const shareX = () => article && window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(article.title)}&url=${encodeURIComponent(window.location.href)}`, "_blank");
+  const shareLI = () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, "_blank");
+
+  const articleSchema = article ? {
+    "@context": "https://schema.org", "@type": "Article",
+    headline: article.title, description: article.excerpt || "",
+    image: article.featured_image ? [article.featured_image] : [],
+    datePublished: article.published_at || article.created_at,
+    dateModified: article.updated_at || article.published_at,
+    author: { "@type": "Person", name: article.author_name || "Finlogic Capital" },
+    publisher: { "@type": "Organization", name: "Finlogic Capital", logo: { "@type": "ImageObject", url: `${SITE_URL}/og-image.png` } },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/insights/articles/${article?.slug}` },
+  } : null;
+
+  if (error) return (
+    <div className="bg-[#100226] text-white min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <p className="text-white/40 mb-4">Article not found.</p>
+        <Link href="/insights/articles" className="text-[#F59F01] text-sm font-bold hover:underline">← Back to Articles</Link>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="bg-ls-primary text-ls-white min-h-screen">
-      {/* Progress Bar (Optional nice touch for reading) */}
-      <div className="fixed top-0 left-0 w-full h-1 bg-ls-supporting/20 z-50">
-        <div className="h-full bg-ls-compliment w-1/3" /> {/* Fixed width for mock, usually controlled by scroll */}
-      </div>
+    <div className="bg-[#100226] text-white min-h-screen">
+      <ReadingProgress />
 
-      <div className="container mx-auto px-4 lg:px-8 py-24">
-        
-        {/* Back Link */}
-        <Link href="/insights/articles" className="inline-flex items-center text-ls-white/50 hover:text-ls-compliment mb-8 transition-colors">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Articles
+      {articleSchema && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
+      )}
+
+      {/* Mobile TOC floating button */}
+      {!loading && headings.length > 0 && (
+        <button onClick={() => setTocOpen(true)}
+          className="lg:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-[#F59F01] text-[#100226] font-black text-xs shadow-2xl shadow-[#F59F01]/20 hover:scale-105 transition-transform"
+        >
+          <List size={15} /> Contents
+        </button>
+      )}
+      <MobileTOC headings={headings} accentColor={color} open={tocOpen} onClose={() => setTocOpen(false)} />
+
+      <div className="container mx-auto px-4 lg:px-8 pt-28 pb-24 max-w-6xl">
+        <Link href="/insights/articles" className="inline-flex items-center gap-2 text-white/40 hover:text-[#F59F01] text-sm transition-colors mb-10">
+          <ArrowLeft size={15} /> Back to Articles
         </Link>
-        
-        <div className="max-w-4xl mx-auto">
-          {/* Article Header */}
-          <header className="mb-12">
-            <div className="inline-block px-3 py-1 rounded-full bg-ls-compliment/10 text-ls-compliment text-xs font-bold uppercase tracking-widest mb-6">
-              {articleData.pillar}
-            </div>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              {articleData.title}
-            </h1>
-            
-            <div className="flex flex-wrap items-center justify-between border-y border-ls-supporting/20 py-4 text-sm text-ls-white/60">
-              <div className="flex items-center space-x-6">
-                <span className="flex items-center font-bold text-ls-white"><User className="w-4 h-4 mr-2" /> {articleData.author}</span>
-                <span className="flex items-center"><Clock className="w-4 h-4 mr-2" /> {articleData.date}</span>
-                <span className="flex items-center">{articleData.readTime}</span>
-              </div>
-              
-              <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-                <span className="text-xs uppercase tracking-widest mr-2">Share:</span>
-                <button className="p-2 rounded-full hover:bg-ls-supporting/20 transition-colors"><Linkedin className="w-4 h-4" /></button>
-                <button className="p-2 rounded-full hover:bg-ls-supporting/20 transition-colors"><Twitter className="w-4 h-4" /></button>
-              </div>
-            </div>
-          </header>
 
-          {/* Featured Image */}
-          <div className="relative aspect-video w-full rounded-2xl overflow-hidden mb-12">
-            <img src={articleData.image} alt={articleData.title} className="w-full h-full object-cover" />
+        {/* Three-column layout: [article | toc+related] */}
+        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-14 items-start">
+
+          {/* ── Main content column ─────────────────────────────────────── */}
+          <div>
+            {/* Header skeleton */}
+            {loading ? (
+              <div className="space-y-4 mb-10">
+                <Skeleton className="h-5 w-24" /><Skeleton className="h-12 w-full" /><Skeleton className="h-8 w-4/5" /><Skeleton className="h-5 w-64" />
+              </div>
+            ) : (
+              <motion.header initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+                <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4"
+                  style={{ background: `${color}18`, color }}
+                >
+                  {PILLAR_LABELS[article.pillar?.toLowerCase()] || article.pillar}
+                </span>
+                <h1 className="text-3xl md:text-5xl font-black leading-tight mb-5">{article.title}</h1>
+                {article.excerpt && (
+                  <p className="text-xl text-white/55 leading-relaxed mb-7 border-l-4 pl-5" style={{ borderColor: `${color}60` }}>
+                    {article.excerpt}
+                  </p>
+                )}
+
+                {/* Meta + share row */}
+                <div className="flex flex-wrap items-center justify-between border-y border-white/6 py-4 gap-4">
+                  <div className="flex flex-wrap items-center gap-5 text-sm">
+                    <span className="flex items-center gap-1.5 font-bold text-white">
+                      <User size={13} className="text-white/40" /> {article.author_name || "Research Team"}
+                    </span>
+                    {displayDate && <span className="flex items-center gap-1.5 text-white/40"><Calendar size={12} /> {displayDate}</span>}
+                    {article.read_time && <span className="flex items-center gap-1.5 text-white/40"><Clock size={12} /> {article.read_time}</span>}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-white/25 uppercase tracking-widest mr-1">Share</span>
+                    <button onClick={shareLI} className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white"><Linkedin size={14} /></button>
+                    <button onClick={shareX} className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white"><Twitter size={14} /></button>
+                    <button onClick={handleCopy} className="relative p-2 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white">
+                      <Link2 size={14} />
+                      {copied && <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] bg-[#F59F01] text-black px-2 py-0.5 rounded font-bold whitespace-nowrap">Copied!</span>}
+                    </button>
+                  </div>
+                </div>
+              </motion.header>
+            )}
+
+            {/* Featured image */}
+            {loading ? <Skeleton className="w-full aspect-video mb-10" /> :
+              article?.featured_image && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+                  className="w-full aspect-video rounded-2xl overflow-hidden mb-12 shadow-2xl"
+                >
+                  <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover" />
+                </motion.div>
+              )
+            }
+
+            {/* Article body */}
+            {loading ? (
+              <div className="space-y-3">
+                {[...Array(10)].map((_, i) => <Skeleton key={i} className={`h-4 ${i % 4 === 3 ? "w-3/5" : "w-full"}`} />)}
+              </div>
+            ) : article?.content ? (
+              <motion.div ref={articleRef} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                className="article-body"
+                dangerouslySetInnerHTML={{ __html: article.content }}
+              />
+            ) : (
+              <p className="text-white/40 text-center py-20">Content not available.</p>
+            )}
+
+            {/* Author bio */}
+            {!loading && article && (
+              <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+                className="mt-16 p-6 rounded-2xl flex flex-col sm:flex-row items-center sm:items-start gap-5"
+                style={{ background: `${color}08`, border: `1px solid ${color}20` }}
+              >
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${color}18`, border: `1px solid ${color}30` }}
+                >
+                  <User size={22} style={{ color }} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-white mb-1">{article.author_name || "Finlogic Research"}</h4>
+                  <p className="text-white/50 text-sm leading-relaxed">
+                    Published by the Finlogic Capital Research & Investment Committee — bringing institutional-grade analysis to emerging markets across South Asia.
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Mobile related */}
+            {related.length > 0 && (
+              <div className="lg:hidden mt-14 border-t border-white/5 pt-10">
+                <h3 className="text-xl font-bold mb-5">Related Insights</h3>
+                <div className="space-y-3">{related.map(a => <RelatedCard key={a.id} article={a} />)}</div>
+              </div>
+            )}
           </div>
 
-          {/* Article Content */}
-          <article 
-            className="prose prose-invert prose-lg max-w-none 
-                       prose-headings:font-bold prose-headings:text-ls-white 
-                       prose-a:text-ls-compliment hover:prose-a:text-ls-compliment/80
-                       prose-blockquote:border-ls-compliment prose-blockquote:bg-ls-supporting/5 prose-blockquote:py-2 prose-blockquote:px-6 prose-blockquote:rounded-r-xl prose-blockquote:font-medium prose-blockquote:italic
-                       prose-li:marker:text-ls-compliment"
-            dangerouslySetInnerHTML={{ __html: articleData.content }}
-          />
+          {/* ── Right sidebar ────────────────────────────────────────────── */}
+          <aside className="hidden lg:block sticky top-28 space-y-6">
+            {/* Scroll-spy TOC */}
+            {!loading && headings.length > 0 && (
+              <ArticleTOC headings={headings} accentColor={color} />
+            )}
+            {loading && <Skeleton className="h-48" />}
 
-          {/* Author Bio Box */}
-          <div className="mt-16 p-8 rounded-2xl bg-ls-supporting/5 border border-ls-supporting/10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-             <div className="w-20 h-20 rounded-full bg-ls-supporting/20 flex items-center justify-center shrink-0 border border-ls-compliment/20">
-               <User className="w-10 h-10 text-ls-compliment" />
-             </div>
-             <div>
-               <h4 className="text-xl font-bold mb-2">About the Author: {articleData.author}</h4>
-               <p className="text-ls-white/70 text-sm leading-relaxed">
-                 Santosh brings decades of experience bridging traditional wisdom with modern venture capital frameworks across South Asia. Currently focusing on deep-tech integration within regional supply chains.
-               </p>
-             </div>
-          </div>
+            {/* Callout legend card */}
+            {!loading && (
+              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/6 space-y-3">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Content Blocks Used</h4>
+                {[
+                  { cls: "callout-data",    label: "Data Point",    color: "#F59F01" },
+                  { cls: "callout-key",     label: "Key Takeaway",  color: "#16c784" },
+                  { cls: "callout-insight", label: "Deep Insight",  color: "#a855f7" },
+                  { cls: "callout-quote",   label: "Pull Quote",    color: "#fff" },
+                  { cls: "callout-stat",    label: "Statistic",     color: "#F59F01" },
+                ].map(({ cls, label, color: c }) => (
+                  <div key={cls} className="flex items-center gap-2 text-xs text-white/40">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c }} />
+                    {label}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Related articles */}
+            {related.length > 0 && (
+              <div>
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-white/35 mb-3">Related Insights</h4>
+                <div className="space-y-3">{related.map(a => <RelatedCard key={a.id} article={a} />)}</div>
+              </div>
+            )}
+          </aside>
         </div>
       </div>
-
-      {/* Related Articles Section */}
-      <section className="py-24 bg-ls-supporting/5 border-t border-ls-supporting/10">
-        <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="text-3xl font-bold">Related Insights</h2>
-            <Link href="/insights/articles" className="text-ls-compliment font-bold hover:text-ls-white transition-colors">
-              View All
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {relatedArticles.map((article, i) => (
-              <ArticleCard key={i} article={article} />
-            ))}
-          </div>
-        </div>
-      </section>
-
     </div>
   );
 }

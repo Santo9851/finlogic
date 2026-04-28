@@ -537,24 +537,115 @@ class ProjectEvaluateView(APIView):
 # ═══════════════════════════════════════════════════════════════════════════
 
 class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/insights/articles/"""
+    """
+    GET /api/insights/articles/
+    Query params:
+      ?search=<q>        — title / excerpt / content full-text search
+      ?pillar=<pillar>   — filter by pillar (vision/growth/leadership/insight/partnership)
+      ?ordering=<field>  — published_at | -published_at | title (default: -published_at)
+      ?featured=1        — return only the single most-recent article (for homepage hero)
+    """
     serializer_class = ArticleSerializer
     permission_classes = [permissions.AllowAny]
-    queryset = Article.objects.filter(is_published=True)
+    lookup_field = 'slug'   # enables /articles/{slug}/ detail endpoint
+
+    def get_queryset(self):
+        qs = Article.objects.filter(is_published=True).select_related('author')
+
+        search = self.request.query_params.get('search', '').strip()
+        if search:
+            qs = qs.filter(
+                models.Q(title__icontains=search) |
+                models.Q(excerpt__icontains=search) |
+                models.Q(content__icontains=search)
+            )
+
+        pillar = self.request.query_params.get('pillar', '').strip()
+        if pillar:
+            qs = qs.filter(pillar__iexact=pillar)
+
+        ordering = self.request.query_params.get('ordering', '-published_at')
+        allowed_orderings = ('published_at', '-published_at', 'title', '-title')
+        if ordering in allowed_orderings:
+            qs = qs.order_by(ordering)
+        else:
+            qs = qs.order_by('-published_at')
+
+        featured = self.request.query_params.get('featured', '')
+        if featured in ('1', 'true', 'yes'):
+            qs = qs[:1]
+
+        return qs
 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/insights/courses/"""
+    """
+    GET /api/insights/courses/
+    Query params:
+      ?search=<q>       — title / description search
+      ?level=<level>    — beginner | intermediate | advanced
+      ?pillar=<pillar>  — filter by pillar
+    """
     serializer_class = CourseSerializer
     permission_classes = [permissions.AllowAny]
-    queryset = Course.objects.filter(is_published=True)
+    lookup_field = 'slug'   # enables /courses/{slug}/ detail endpoint
+
+    def get_queryset(self):
+        qs = Course.objects.filter(is_published=True).prefetch_related('modules__lessons')
+
+        search = self.request.query_params.get('search', '').strip()
+        if search:
+            qs = qs.filter(
+                models.Q(title__icontains=search) |
+                models.Q(description__icontains=search)
+            )
+
+        level = self.request.query_params.get('level', '').strip()
+        if level:
+            qs = qs.filter(level__iexact=level)
+
+        pillar = self.request.query_params.get('pillar', '').strip()
+        if pillar:
+            qs = qs.filter(pillar__iexact=pillar)
+
+        return qs.order_by('-created_at')
 
 
 class WebinarViewSet(viewsets.ReadOnlyModelViewSet):
-    """GET /api/insights/webinars/"""
+    """
+    GET /api/insights/webinars/
+    Query params:
+      ?upcoming=1   — only future webinars (scheduled_at > now)
+      ?past=1       — only past webinars (scheduled_at <= now)
+      ?search=<q>   — title / description / speaker search
+    """
     serializer_class = WebinarSerializer
     permission_classes = [permissions.AllowAny]
-    queryset = Webinar.objects.filter(is_published=True)
+
+    def get_queryset(self):
+        from django.utils import timezone as tz
+        qs = Webinar.objects.filter(is_published=True)
+
+        search = self.request.query_params.get('search', '').strip()
+        if search:
+            qs = qs.filter(
+                models.Q(title__icontains=search) |
+                models.Q(description__icontains=search) |
+                models.Q(speaker__icontains=search)
+            )
+
+        upcoming = self.request.query_params.get('upcoming', '')
+        past     = self.request.query_params.get('past', '')
+        now      = tz.now()
+
+        if upcoming in ('1', 'true', 'yes'):
+            qs = qs.filter(scheduled_at__gt=now).order_by('scheduled_at')
+        elif past in ('1', 'true', 'yes'):
+            qs = qs.filter(scheduled_at__lte=now).order_by('-scheduled_at')
+        else:
+            qs = qs.order_by('-scheduled_at')
+
+        return qs
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -1,0 +1,332 @@
+/**
+ * Article Callout Blocks — included in globals.css via @import or paste directly
+ * Authors add these HTML snippets in the Django admin rich text editor.
+ *
+ * Available blocks:
+ *   <div class="callout-data">…</div>       — Data Point (gold)
+ *   <div class="callout-key">…</div>        — Key Takeaway (green)
+ *   <div class="callout-insight">…</div>    — Deep Insight (purple)
+ *   <div class="callout-warning">…</div>    — Caution (red)
+ *   <div class="callout-quote">…</div>      — Pull Quote (large)
+ *   <div class="callout-stat">…</div>       — Big Stat highlight
+ *   <div class="callout-summary">…</div>    — Section summary box
+ */
+
+/* ── Base shared styles ───────────────────────────────────────────────────── */
+.article-body [class^="callout-"] {
+  position: relative;
+  margin: 2rem 0;
+  border-radius: 1rem;
+  padding: 1.5rem 1.75rem;
+  overflow: hidden;
+  page-break-inside: avoid;
+}
+
+.article-body [class^="callout-"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* ── DATA POINT ───────────────────────────────────────────────────────────── */
+.article-body .callout-data {
+  background: linear-gradient(135deg, rgba(245,159,1,0.08) 0%, rgba(245,159,1,0.03) 100%);
+  border: 1px solid rgba(245,159,1,0.25);
+  border-left: 4px solid #F59F01;
+}
+
+.article-body .callout-data::after {
+  content: "DATA POINT";
+  position: absolute;
+  top: 0;
+  left: -4px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  background: #F59F01;
+  color: #100226;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  padding: 10px 5px;
+  border-radius: 0 0 0 8px;
+}
+
+.article-body .callout-data p {
+  color: rgba(255,255,255,0.85) !important;
+  margin: 0;
+  padding-left: 1.5rem;
+  font-style: italic;
+  line-height: 1.7;
+}
+
+/* ── KEY TAKEAWAY ─────────────────────────────────────────────────────────── */
+.article-body .callout-key {
+  background: linear-gradient(135deg, rgba(22,199,132,0.08) 0%, rgba(22,199,132,0.02) 100%);
+  border: 1px solid rgba(22,199,132,0.2);
+  border-left: 4px solid #16c784;
+  padding-left: 2rem;
+}
+
+.article-body .callout-key::after {
+  content: "✦ KEY TAKEAWAY";
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: #16c784;
+  margin-bottom: 0.6rem;
+}
+
+.article-body .callout-key p {
+  color: rgba(255,255,255,0.85) !important;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* ── DEEP INSIGHT ─────────────────────────────────────────────────────────── */
+.article-body .callout-insight {
+  background: linear-gradient(135deg, rgba(168,85,247,0.1) 0%, rgba(168,85,247,0.03) 100%);
+  border: 1px solid rgba(168,85,247,0.25);
+  border-left: 4px solid #a855f7;
+}
+
+.article-body .callout-insight::after {
+  content: "◈ INSIGHT";
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: #a855f7;
+  margin-bottom: 0.6rem;
+}
+
+.article-body .callout-insight p {
+  color: rgba(255,255,255,0.85) !important;
+  margin: 0;
+}
+
+/* ── CAUTION / WARNING ────────────────────────────────────────────────────── */
+.article-body .callout-warning {
+  background: linear-gradient(135deg, rgba(244,63,94,0.08) 0%, rgba(244,63,94,0.02) 100%);
+  border: 1px solid rgba(244,63,94,0.2);
+  border-left: 4px solid #f43f5e;
+}
+
+.article-body .callout-warning::after {
+  content: "⚠ CAUTION";
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: #f43f5e;
+  margin-bottom: 0.6rem;
+}
+
+.article-body .callout-warning p {
+  color: rgba(255,255,255,0.85) !important;
+  margin: 0;
+}
+
+/* ── PULL QUOTE ───────────────────────────────────────────────────────────── */
+.article-body .callout-quote {
+  background: transparent;
+  border: none;
+  border-left: none;
+  padding: 1.5rem 0;
+  margin: 3rem 0;
+  text-align: center;
+}
+
+.article-body .callout-quote p {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  color: white !important;
+  font-style: italic;
+  margin: 0;
+  position: relative;
+}
+
+.article-body .callout-quote p::before {
+  content: "\201C";
+  font-size: 5rem;
+  color: rgba(245,159,1,0.2);
+  line-height: 0;
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-50%);
+  font-style: normal;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── BIG STAT ─────────────────────────────────────────────────────────────── */
+.article-body .callout-stat {
+  background: linear-gradient(135deg, rgba(245,159,1,0.06) 0%, transparent 100%);
+  border: 1px solid rgba(245,159,1,0.15);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.article-body .callout-stat .stat-number {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: #F59F01;
+  line-height: 1;
+  display: block;
+  letter-spacing: -0.02em;
+}
+
+.article-body .callout-stat .stat-label {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 0.5rem;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 600;
+}
+
+.article-body .callout-stat p {
+  color: rgba(255,255,255,0.6) !important;
+  font-size: 0.9rem !important;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+/* ── SECTION SUMMARY ──────────────────────────────────────────────────────── */
+.article-body .callout-summary {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 1rem;
+}
+
+.article-body .callout-summary::after {
+  content: "TL;DR";
+  display: block;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 0.75rem;
+}
+
+.article-body .callout-summary ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.article-body .callout-summary li {
+  color: rgba(255,255,255,0.75) !important;
+  margin-bottom: 0.4rem;
+  line-height: 1.5;
+}
+
+/* ── Prose overrides inside article-body ──────────────────────────────────── */
+.article-body h2 {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: white;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+  scroll-margin-top: 6rem;
+}
+
+.article-body h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: rgba(255,255,255,0.9);
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  scroll-margin-top: 6rem;
+}
+
+.article-body h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  scroll-margin-top: 6rem;
+}
+
+.article-body p {
+  color: rgba(255,255,255,0.7);
+  line-height: 1.85;
+  margin-bottom: 1.25rem;
+  font-size: 1.05rem;
+}
+
+.article-body a {
+  color: #F59F01;
+  text-decoration: none;
+}
+.article-body a:hover { text-decoration: underline; }
+
+.article-body strong { color: white; }
+.article-body em { color: rgba(255,255,255,0.8); }
+
+.article-body ul, .article-body ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.article-body li {
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+.article-body ul li::marker { color: #F59F01; }
+.article-body ol li::marker { color: #F59F01; font-weight: 700; }
+
+.article-body blockquote {
+  border-left: 4px solid #F59F01;
+  background: rgba(245,159,1,0.05);
+  border-radius: 0 0.75rem 0.75rem 0;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+}
+.article-body blockquote p {
+  color: rgba(255,255,255,0.85) !important;
+  font-weight: 600;
+  font-style: italic;
+  margin: 0 !important;
+}
+
+.article-body code {
+  color: #F59F01;
+  background: rgba(245,159,1,0.1);
+  padding: 0.15em 0.45em;
+  border-radius: 0.35rem;
+  font-size: 0.875em;
+}
+
+.article-body pre {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+.article-body pre code { background: none; padding: 0; color: rgba(255,255,255,0.8); }
+
+.article-body img {
+  border-radius: 0.75rem;
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+.article-body hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 2.5rem 0;
+}

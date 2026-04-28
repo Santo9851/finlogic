@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Clock, BookOpen, ChevronDown, CheckCircle, Video, FileText, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
@@ -97,7 +97,7 @@ function CurriculumAccordion({ module, index }) {
 }
 
 export default function CourseDetailPage({ params }) {
-  const { slug } = params;
+  const { slug } = use(params);
 
   return (
     <div className="bg-ls-primary text-ls-white min-h-screen">

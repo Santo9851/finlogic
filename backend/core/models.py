@@ -637,7 +637,14 @@ class Article(BaseModel):
     excerpt = models.TextField(blank=True, null=True)
     content = models.TextField(blank=True, default='')
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='articles')
-    featured_image = models.CharField(max_length=500, blank=True, null=True)
+    featured_image = models.CharField(max_length=500, blank=True, null=True,
+                                      help_text="Paste a public image URL here, OR upload a file below.")
+    featured_image_file = models.ImageField(
+        upload_to='articles/',
+        blank=True, null=True,
+        help_text="Upload an image file directly (JPG/PNG/WebP, ≥1200×630 px recommended). "
+                  "If both a URL and a file are provided, the uploaded file takes priority."
+    )
     pillar = models.CharField(max_length=20, choices=Pillar.choices, null=True, blank=True)
     is_published = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -649,6 +656,15 @@ class Article(BaseModel):
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
+
+    @property
+    def cover_image_url(self):
+        """Returns the best available image URL: uploaded file > URL field."""
+        if self.featured_image_file:
+            return self.featured_image_file.url
+        return self.featured_image or ''
+
+
 
 
 class Webinar(BaseModel):

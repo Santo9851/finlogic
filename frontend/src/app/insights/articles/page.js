@@ -1,160 +1,245 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
-import { Search } from "lucide-react";
-import ArticleCard from "@/components/insights/ArticleCard";
-import CategoryFilter from "@/components/insights/CategoryFilter";
-import SearchBar from "@/components/insights/SearchBar";
-import Pagination from "@/components/insights/Pagination";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { Search, X, Clock, User, Calendar, Filter, ChevronDown } from "lucide-react";
+import { fetchArticles, normaliseList, PILLAR_LABELS, PILLAR_COLORS } from "@/services/insights";
 
-// Comprehensive mock data
-const allArticles = [
-  {
-    slug: "south-asian-pe-beyond-tier-1",
-    title: "Private Equity Trends in South Asia: Beyond the Tier-1 Cities",
-    excerpt: "An in-depth analysis of emerging investment opportunities in secondary markets across Nepal, India, and Bangladesh as tech infrastructure bridges the urban-rural divide.",
-    pillar: "Deep Insight",
-    author: "Santosh Poudel",
-    date: "Oct 12, 2023",
-    image: "https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=1200",
-  },
-  {
-    slug: "tech-enabled-infrastructure-nepal",
-    title: "The Rise of Tech-Enabled Infrastructure in Nepal",
-    excerpt: "How digital logistics and renewable energy micro-grids are reshaping the Himalayan economic landscape.",
-    pillar: "Unconventional Vision",
-    author: "Research Team",
-    date: "Sep 28, 2023",
-    image: "https://images.unsplash.com/photo-1588661849141-8ddfdf5e7ec9?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "sustainable-scaling-wisdom",
-    title: "Sustainable Scaling: Bridging Himalayan Traditions with Modern Venture Capital",
-    excerpt: "Applying principles of patience and community alignment to build modern, hyper-growth startups.",
-    pillar: "Wisdom-Backed Growth",
-    author: "Investment Committee",
-    date: "Sep 15, 2023",
-    image: "https://images.unsplash.com/photo-1526715006943-4e83c2a6d71b?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "cross-border-frameworks",
-    title: "Cross-Border Investment Frameworks for Emerging Economies",
-    excerpt: "A legal and strategic primer for structuring foreign direct investments in transitioning markets like Nepal.",
-    pillar: "Harmonious Partnerships",
-    author: "Legal Advisory",
-    date: "Aug 30, 2023",
-    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "leadership-in-crisis",
-    title: "Leadership in Crisis: Lessons from Resilient Founders",
-    excerpt: "Case studies of South Asian founders who successfully navigated macroeconomic shocks.",
-    pillar: "Leadership Activation",
-    author: "Santosh Poudel",
-    date: "Aug 12, 2023",
-    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=600",
-  },
-  {
-    slug: "fintech-himalayas",
-    title: "Financial Inclusion: The Next Frontier of Himalayan FinTech",
-    excerpt: "Mapping the unbanked population and the startups creating bespoke structural solutions.",
-    pillar: "Unconventional Vision",
-    author: "Research Team",
-    date: "Jul 22, 2023",
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=600",
-  }
-];
+function Skeleton({ className = "" }) {
+  return <div className={`animate-pulse bg-white/5 rounded-xl ${className}`} />;
+}
 
-const categories = ["All", "Unconventional Vision", "Wisdom-Backed Growth", "Leadership Activation", "Deep Insight", "Harmonious Partnerships"];
-const ITEMS_PER_PAGE = 6;
+const PILLARS = ["All", "vision", "growth", "leadership", "insight", "partnership"];
 
-export default function ArticlesListPage() {
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Filter Logic
-  const filteredArticles = allArticles.filter(article => {
-    const matchesCategory = activeCategory === "All" || article.pillar === activeCategory;
-    const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          article.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
-
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE);
-  const currentArticles = filteredArticles.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE, 
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Reset page when filters change
-  const handleCategoryChange = (cat) => {
-    setActiveCategory(cat);
-    setCurrentPage(1);
-  };
-  
-  const handleSearchChange = (val) => {
-    setSearchQuery(val);
-    setCurrentPage(1);
-  };
+function ArticleCard({ article }) {
+  const color = PILLAR_COLORS[article.pillar?.toLowerCase()] || "#F59F01";
+  const displayDate = article.published_at
+    ? new Date(article.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : "";
 
   return (
-    <div className="bg-ls-primary text-ls-white min-h-screen">
-      
-      {/* Header */}
-      <section className="pt-32 pb-12 bg-ls-supporting/5 border-b border-ls-supporting/10">
-        <div className="container mx-auto px-4 lg:px-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Articles & Research</h1>
-          <p className="text-xl text-ls-white/60 mb-8 max-w-2xl">
-            Explore our latest market analysis, white papers, and essays on building enduring businesses in emerging markets.
-          </p>
-          
-          <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
-            <CategoryFilter 
-              categories={categories} 
-              activeCategory={activeCategory} 
-              onCategoryChange={handleCategoryChange} 
-            />
-            <SearchBar 
-              placeholder="Search articles..." 
-              value={searchQuery} 
-              onChange={handleSearchChange} 
-            />
+    <Link href={`/insights/articles/${article.slug}`}
+      className="group flex flex-col rounded-2xl overflow-hidden border border-white/5 hover:border-white/15 bg-[#0D0120] hover:bg-[#130225] transition-all hover:-translate-y-1"
+    >
+      <div className="h-48 overflow-hidden bg-[#3A3153]/30">
+        {article.featured_image ? (
+          <img src={article.featured_image} alt={article.title}
+            className="w-full h-full object-cover brightness-80 group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-[#3A3153] to-[#100226] flex items-center justify-center text-4xl">📰</div>
+        )}
+      </div>
+      <div className="p-5 flex flex-col flex-1">
+        <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-3"
+          style={{ background: `${color}18`, color }}
+        >
+          {PILLAR_LABELS[article.pillar?.toLowerCase()] || article.pillar}
+        </span>
+        <h3 className="font-bold text-white text-base leading-snug mb-2 flex-1 group-hover:text-[#F59F01] transition-colors">
+          {article.title}
+        </h3>
+        <p className="text-white/50 text-sm line-clamp-2 mb-4">{article.excerpt}</p>
+        <div className="flex items-center justify-between text-xs text-white/30 border-t border-white/5 pt-3">
+          <span className="flex items-center gap-1.5">
+            <User size={11} />
+            <span className="text-white/50">{article.author_name || "Research"}</span>
+          </span>
+          <div className="flex items-center gap-3">
+            {displayDate && <span className="flex items-center gap-1"><Calendar size={11} /> {displayDate}</span>}
+            {article.read_time && <span className="flex items-center gap-1"><Clock size={11} /> {article.read_time}</span>}
           </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ArticleCardSkeleton() {
+  return (
+    <div className="rounded-2xl overflow-hidden border border-white/5 bg-[#0D0120]">
+      <Skeleton className="h-48 rounded-none" />
+      <div className="p-5 space-y-3">
+        <Skeleton className="h-5 w-24" />
+        <Skeleton className="h-6 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="h-4 w-3/5" />
+      </div>
+    </div>
+  );
+}
+
+export default function ArticlesListPage() {
+  const [articles, setArticles]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState("");
+  const [pillar, setPillar]         = useState("");
+  const [ordering, setOrdering]     = useState("-published_at");
+  const [page, setPage]             = useState(1);
+  const [hasMore, setHasMore]       = useState(false);
+  const [totalCount, setTotalCount] = useState(null);
+  const searchRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  const load = useCallback(async (resetPage = true) => {
+    setLoading(true);
+    try {
+      const p = resetPage ? 1 : page;
+      const data = await fetchArticles({ search, pillar, ordering, page: p });
+      const results = normaliseList(data);
+      setArticles(resetPage ? results : prev => [...prev, ...results]);
+      if (data && data.count !== undefined) {
+        setTotalCount(data.count);
+        setHasMore(!!data.next);
+      } else {
+        setHasMore(false);
+      }
+      if (resetPage) setPage(1);
+    } catch {
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, pillar, ordering, page]);
+
+  // Debounced search
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => load(true), 400);
+    return () => clearTimeout(debounceRef.current);
+  }, [search, pillar, ordering]);
+
+  return (
+    <div className="bg-[#100226] text-white min-h-screen">
+      {/* Header */}
+      <section className="pt-32 pb-12 relative overflow-hidden border-b border-white/5">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-1/3 w-[500px] h-[300px] bg-[#F59F01]/4 rounded-full blur-[100px]" />
+        </div>
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#F59F01]/10 border border-[#F59F01]/20 text-[#F59F01] text-xs font-bold uppercase tracking-widest mb-4">
+            Research & Analysis
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black mb-3 leading-none">Articles & Research</h1>
+          <p className="text-white/50 text-lg max-w-2xl mb-8">
+            Market analysis, white papers, and essays on building enduring businesses in emerging markets.
+          </p>
+
+          {/* Search + Filter bar */}
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+              <input
+                ref={searchRef}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search articles, research, topics…"
+                className="w-full pl-10 pr-10 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#F59F01]/50 focus:bg-white/8 transition-all"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors">
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            {/* Ordering */}
+            <div className="relative">
+              <select
+                value={ordering}
+                onChange={e => setOrdering(e.target.value)}
+                className="pl-4 pr-8 py-3 rounded-xl bg-white/5 border border-white/10 text-white/70 text-sm focus:outline-none focus:border-[#F59F01]/50 appearance-none cursor-pointer"
+              >
+                <option value="-published_at">Newest First</option>
+                <option value="published_at">Oldest First</option>
+                <option value="title">A → Z</option>
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Pillar filter pills */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {PILLARS.map(p => {
+              const active = (p === "All" && !pillar) || p === pillar;
+              const color = p === "All" ? "#F59F01" : (PILLAR_COLORS[p] || "#F59F01");
+              return (
+                <button
+                  key={p}
+                  onClick={() => setPillar(p === "All" ? "" : p)}
+                  className="px-4 py-1.5 rounded-full text-xs font-bold transition-all border"
+                  style={{
+                    background: active ? `${color}22` : "transparent",
+                    borderColor: active ? `${color}60` : "rgba(255,255,255,0.08)",
+                    color: active ? color : "rgba(255,255,255,0.4)",
+                  }}
+                >
+                  {p === "All" ? "All Pillars" : (PILLAR_LABELS[p] || p)}
+                </button>
+              );
+            })}
+          </div>
+
+          {totalCount !== null && (
+            <p className="text-white/30 text-xs mt-4">{totalCount} article{totalCount !== 1 ? "s" : ""} found</p>
+          )}
         </div>
       </section>
 
-      {/* Article Grid */}
+      {/* Grid */}
       <section className="py-16">
         <div className="container mx-auto px-4 lg:px-8">
-          {filteredArticles.length === 0 ? (
-            <div className="text-center py-20 opacity-50">
-               <Search className="w-12 h-12 mx-auto mb-4" />
-               <h3 className="text-xl font-bold">No articles found</h3>
-               <p>Try adjusting your search or filters.</p>
+          {loading && articles.length === 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => <ArticleCardSkeleton key={i} />)}
+            </div>
+          ) : articles.length === 0 ? (
+            <div className="text-center py-32 text-white/30">
+              <Search size={40} className="mx-auto mb-4 opacity-40" />
+              <h3 className="text-xl font-bold mb-2">No articles found</h3>
+              <p className="text-sm">Try adjusting your search or pillar filter.</p>
+              <button onClick={() => { setSearch(""); setPillar(""); }} className="mt-6 px-6 py-2 rounded-full border border-white/10 text-sm hover:bg-white/5 transition-colors">
+                Clear filters
+              </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {currentArticles.map((article, i) => (
-                <motion.div
-                  key={article.slug}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <ArticleCard article={article} />
-                </motion.div>
-              ))}
+            <AnimatePresence mode="popLayout">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {articles.map((article, i) => (
+                  <motion.div
+                    key={article.id || article.slug}
+                    layout
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: i < 6 ? i * 0.06 : 0 }}
+                  >
+                    <ArticleCard article={article} />
+                  </motion.div>
+                ))}
+              </div>
+            </AnimatePresence>
+          )}
+
+          {/* Load more */}
+          {hasMore && !loading && (
+            <div className="text-center mt-12">
+              <button
+                onClick={() => { setPage(p => p + 1); load(false); }}
+                className="px-8 py-3 rounded-full border border-white/20 text-sm font-bold hover:bg-white/5 hover:border-white/40 transition-all"
+              >
+                Load More Articles
+              </button>
             </div>
           )}
 
-          <Pagination 
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+          {loading && articles.length > 0 && (
+            <div className="flex justify-center mt-12">
+              <div className="w-6 h-6 rounded-full border-2 border-[#F59F01] border-t-transparent animate-spin" />
+            </div>
+          )}
         </div>
       </section>
     </div>
