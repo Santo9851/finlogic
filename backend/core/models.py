@@ -1,6 +1,6 @@
 import uuid
 from django.db import models
-from django.contrib.auth.models import AbstractUser, UserManager
+from django.contrib.auth.models import AbstractUser
 from django.utils.text import slugify
 from django.utils import timezone
 
@@ -9,33 +9,17 @@ from django.utils import timezone
 # Abstract Base Models
 # ---------------------------------------------------------------------------
 
-class SoftDeleteQuerySet(models.QuerySet):
-    def delete(self):
-        return self.update(deleted_at=timezone.now())
-
-    def hard_delete(self):
-        return super().delete()
-
-
-class SoftDeleteUserManager(UserManager):
-    def get_queryset(self):
-        return SoftDeleteQuerySet(self.model, using=self._db).filter(deleted_at__isnull=True)
-
-    def delete(self):
-        return self.get_queryset().delete()
-
-
 class SoftDeleteManager(models.Manager):
     def get_queryset(self):
-        return SoftDeleteQuerySet(self.model, using=self._db).filter(deleted_at__isnull=True)
+        return super().get_queryset().filter(deleted_at__isnull=True)
 
 
 class SoftDeleteModel(models.Model):
     """Abstract model for soft delete."""
     deleted_at = models.DateTimeField(null=True, blank=True)
 
-    objects = SoftDeleteManager()  # Now filters by default
-    all_objects = models.Manager()  # For when you actually need everything
+    objects = models.Manager()  # The default manager
+    active_objects = SoftDeleteManager()  # Custom manager for non-deleted items
 
     class Meta:
         abstract = True
@@ -70,8 +54,6 @@ class User(AbstractUser, SoftDeleteModel):
     last_login_at (TIMESTAMP), created_at (TIMESTAMP), updated_at (TIMESTAMP),
     deleted_at (TIMESTAMP)
     """
-    objects = SoftDeleteUserManager()
-    all_objects = models.Manager()
     class Role(models.TextChoices):
         ENTREPRENEUR = 'entrepreneur', 'Entrepreneur'
         INVESTOR = 'investor', 'Investor'
