@@ -362,8 +362,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def get_author_name(self, obj):
         if obj.author:
-            name = f'{obj.author.first_name} {obj.author.last_name}'.strip()
-            return name or obj.author.email
+            return obj.author.username
         return 'Finlogic Research'
 
 

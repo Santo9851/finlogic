@@ -290,6 +290,7 @@ class LPProfile(models.Model):
     organization = models.CharField(max_length=255, blank=True)
     country = models.CharField(max_length=100, blank=True)
     accredited_status = models.BooleanField(default=False)
+    wants_notifications = models.BooleanField(default=True, help_text="Receive email notifications for new deals and updates.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -704,7 +705,8 @@ class FundDocument(models.Model):
         PPM = 'PPM', 'Private Placement Memorandum'
         CAPITAL_CALL = 'CAPITAL_CALL', 'Capital Call Notice'
         DISTRIBUTION = 'DISTRIBUTION', 'Distribution Notice'
-        QUARTERLY_REPORT = 'QUARTERLY_REPORT', 'Quarterly Progress Report'
+        QUARTERLY_REPORT = 'QUARTERLY_REPORT', 'LP Quarterly Progress Report'
+        GP_QUARTERLY_REPORT = 'GP_QUARTERLY_REPORT', 'GP Quarterly Report'
         ANNUAL_REPORT = 'ANNUAL_REPORT', 'Annual Audited Report'
         TAX_DOCUMENT = 'TAX_DOCUMENT', 'Tax Certificate/Document'
         KYC_AML = 'KYC_AML', 'KYC/AML Document'

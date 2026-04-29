@@ -84,7 +84,9 @@ class User(AbstractUser, SoftDeleteModel):
         ]
 
     def __str__(self):
-        return f'{self.email} ({self.roles})'
+        name = f'{self.first_name} {self.last_name}'.strip()
+        display = name or self.username
+        return f'{display} ({self.roles})'
 
     @property
     def role_list(self):
