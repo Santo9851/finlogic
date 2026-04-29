@@ -60,7 +60,12 @@ function RelatedCard({ article }) {
 
 // ── Mobile TOC drawer ───────────────────────────────────────────────────────
 function MobileTOC({ headings, accentColor, open, onClose }) {
-  const scrollTo = (id) => { document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); onClose(); };
+  const scrollTo = (id) => { 
+    onClose();
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); 
+    }, 150);
+  };
   return (
     <AnimatePresence>
       {open && (
