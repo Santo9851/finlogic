@@ -1,7 +1,37 @@
+'use client'
+
+import { useState } from 'react';
 import Link from 'next/link';
 import FinlogicLogo from '@/components/FinlogicLogo';
+import { contactService } from '@/services/contact';
+import { toast } from 'sonner';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setLoading(true);
+    try {
+      await contactService.submitInquiry({
+        email,
+        first_name: 'Network',
+        last_name: 'Subscriber',
+        source: 'footer_network_signup',
+        notes: 'User subscribed via footer "Stay Updated" form.'
+      });
+      toast.success('You have joined our network!');
+      setEmail('');
+    } catch (err) {
+      toast.error('Failed to subscribe. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <footer className="w-full bg-ls-supporting py-12 text-ls-white lg:py-20">
       <div className="container mx-auto px-4 lg:px-8">
@@ -13,7 +43,6 @@ export default function Footer() {
               "Where Vision Meets Wisdom"
             </p>
           </div>
-
 
           {/* Quick Links & Contact */}
           <div className="grid grid-cols-2 gap-8">
@@ -40,27 +69,31 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Newsletter */}
+          {/* Stay Updated */}
           <div className="space-y-6">
             <div className="space-y-2">
               <h3 className="text-sm font-bold uppercase tracking-wider text-ls-compliment">
-                Newsletter
+                Stay Updated
               </h3>
               <p className="text-sm text-ls-white/80">
-                Subscribe for the latest investment insights and updates.
+                Join our exclusive network to receive notifications about new investment opportunities and market insights.
               </p>
             </div>
-            <form className="flex w-full max-w-sm space-x-2">
+            <form onSubmit={handleSubmit} className="flex w-full max-w-sm space-x-2">
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your email address"
                 className="w-full rounded-md border border-ls-white/20 bg-ls-primary/30 px-4 py-2 text-sm focus:border-ls-compliment focus:outline-none"
               />
               <button
                 type="submit"
-                className="rounded-md bg-ls-compliment px-4 py-2 text-sm font-bold text-ls-primary transition-all hover:bg-ls-compliment/90"
+                disabled={loading}
+                className="rounded-md bg-ls-compliment px-4 py-2 text-sm font-bold text-ls-primary transition-all hover:bg-ls-compliment/90 disabled:opacity-50"
               >
-                Subscribe
+                {loading ? 'Joining...' : 'Join'}
               </button>
             </form>
           </div>

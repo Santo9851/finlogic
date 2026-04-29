@@ -216,7 +216,26 @@ export default function Header() {
                   {link.name}
                 </Link>
               ))}
-              {!user && (
+              {user ? (
+                <>
+                  <Link 
+                    href={getDashboardLink()}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-medium text-white/80 hover:text-[#F59F01] flex items-center gap-3"
+                  >
+                    <LayoutDashboard size={20} className="text-[#F59F01]" /> My Dashboard
+                  </Link>
+                  <button 
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="text-lg font-medium text-red-400 hover:text-red-300 flex items-center gap-3 text-left"
+                  >
+                    <LogOut size={20} /> Log Out
+                  </button>
+                </>
+              ) : (
                 <>
                   <Link 
                     href="/entrepreneurs" 
@@ -232,9 +251,17 @@ export default function Header() {
                   >
                     For Investors
                   </Link>
+                  <div className="h-px bg-white/5 my-2" />
+                  <Link 
+                    href="/auth/login" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-semibold text-[#F59F01]"
+                  >
+                    Sign In
+                  </Link>
                 </>
               )}
-              {(!user || user.role === 'entrepreneur') && (
+              {(!user || (user.roles && (user.roles.includes('entrepreneur') || user.roles.includes('admin')))) && (
                 <Link 
                   href="/entrepreneurs/submit"
                   onClick={() => setIsMobileMenuOpen(false)}

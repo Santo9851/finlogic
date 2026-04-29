@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  BarChart3, 
-  ShieldCheck, 
-  Users, 
-  Handshake, 
+import {
+  BarChart3,
+  ShieldCheck,
+  Users,
+  Handshake,
   RefreshCw,
   Globe,
   PieChart,
@@ -16,6 +16,9 @@ import {
   FileText
 } from "lucide-react";
 import Link from "next/link";
+
+import { contactService } from "@/services/contact";
+import { toast } from "sonner";
 
 const investorBenefits = [
   {
@@ -46,10 +49,10 @@ const investorBenefits = [
 ];
 
 const trackRecord = [
-  { label: "Investments", value: "15+", description: "Core portfolio companies" },
-  { label: "Capital Deployed", value: "$50M+", description: "Committed since inception" },
-  { label: "Exits", value: "5", description: "Successful liquidations" },
-  { label: "Average Gross IRR", value: "22%", description: "Benchmark performance" },
+  { label: "Investments", value: "2+", description: "Core portfolio companies" },
+  { label: "Capital Deployed", value: "$5M+", description: "Committed since inception" },
+  { label: "Exits", value: "0", description: "Successful liquidations" },
+  { label: "Average Gross IRR", value: "18%", description: "Benchmark performance" },
 ];
 
 const investmentSteps = [
@@ -78,10 +81,34 @@ const investmentSteps = [
 export default function InvestorsPage() {
   const [formStatus, setFormStatus] = useState("idle");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setFormStatus("submitting");
-    setTimeout(() => setFormStatus("success"), 1500);
+
+    const formData = new FormData(e.target);
+    const fullName = formData.get("name").trim();
+    const nameParts = fullName.split(' ');
+    const first_name = nameParts[0];
+    const last_name = nameParts.slice(1).join(' ') || ' ';
+
+    const payload = {
+      first_name,
+      last_name,
+      email: formData.get("email"),
+      company: formData.get("institution"),
+      source: 'investor_portal_request',
+      notes: formData.get("message"),
+    };
+
+    try {
+      await contactService.submitInquiry(payload);
+      setFormStatus("success");
+      toast.success("Request sent successfully!");
+    } catch (error) {
+      console.error("Submission error:", error);
+      setFormStatus("idle");
+      toast.error("Failed to send request. Please try again later.");
+    }
   };
 
   return (
@@ -97,15 +124,15 @@ export default function InvestorsPage() {
           >
             For Institutional & Private Investors
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl md:text-7xl font-bold mb-8 max-w-5xl mx-auto leading-tight"
           >
-            Partner with us to access <br className="hidden md:block"/>
+            Partner with us to access <br className="hidden md:block" />
             <span className="text-ls-compliment">exclusive, high‑potential deals.</span>
           </motion.h1>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -113,7 +140,7 @@ export default function InvestorsPage() {
           >
             Finlogic Capital offers a differentiated investment opportunity rooted in a proven, insight‑driven philosophy.
           </motion.p>
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -177,18 +204,18 @@ export default function InvestorsPage() {
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="text-3xl font-bold mb-20 text-center">Investment Process</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
-             {/* Connector Line for Desktop */}
-             <div className="absolute top-1/4 left-0 right-0 h-px bg-ls-compliment/20 hidden lg:block" />
-             
-             {investmentSteps.map((step, i) => (
-               <div key={i} className="relative z-10 text-center group">
-                 <div className="w-16 h-16 rounded-2xl bg-ls-primary border border-ls-supporting/30 flex items-center justify-center mx-auto mb-8 transition-all group-hover:border-ls-compliment group-hover:shadow-[0_0_20px_rgba(245,159,1,0.2)]">
-                   <div className="text-ls-compliment">{step.icon}</div>
-                 </div>
-                 <h3 className="text-xl font-bold mb-4">0{i+1}. {step.title}</h3>
-                 <p className="text-sm text-ls-white/60 leading-relaxed">{step.description}</p>
-               </div>
-             ))}
+            {/* Connector Line for Desktop */}
+            <div className="absolute top-1/4 left-0 right-0 h-px bg-ls-compliment/20 hidden lg:block" />
+
+            {investmentSteps.map((step, i) => (
+              <div key={i} className="relative z-10 text-center group">
+                <div className="w-16 h-16 rounded-2xl bg-ls-primary border border-ls-supporting/30 flex items-center justify-center mx-auto mb-8 transition-all group-hover:border-ls-compliment group-hover:shadow-[0_0_20px_rgba(245,159,1,0.2)]">
+                  <div className="text-ls-compliment">{step.icon}</div>
+                </div>
+                <h3 className="text-xl font-bold mb-4">0{i + 1}. {step.title}</h3>
+                <p className="text-sm text-ls-white/60 leading-relaxed">{step.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -208,12 +235,12 @@ export default function InvestorsPage() {
             </div>
             <div className="w-full lg:w-2/5 grid grid-cols-2 gap-4">
               <div className="p-6 bg-white/5 rounded-xl text-center flex flex-col items-center">
-                 <FileText className="w-8 h-8 mb-4 text-ls-secondary" />
-                 <span className="text-xs font-bold uppercase tracking-tighter">White Papers</span>
+                <FileText className="w-8 h-8 mb-4 text-ls-secondary" />
+                <span className="text-xs font-bold uppercase tracking-tighter">White Papers</span>
               </div>
               <div className="p-6 bg-white/5 rounded-xl text-center flex flex-col items-center">
-                 <TrendingUp className="w-8 h-8 mb-4 text-ls-up" />
-                 <span className="text-xs font-bold uppercase tracking-tighter">Market Reports</span>
+                <TrendingUp className="w-8 h-8 mb-4 text-ls-up" />
+                <span className="text-xs font-bold uppercase tracking-tighter">Market Reports</span>
               </div>
             </div>
           </div>
@@ -232,25 +259,25 @@ export default function InvestorsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Name</label>
-                <input required type="text" placeholder="John Doe" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
+                <input name="name" required type="text" placeholder="John Doe" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Email</label>
-                <input required type="email" placeholder="john@company.com" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
+                <input name="email" required type="email" placeholder="john@company.com" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
               </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Institution (Optional)</label>
-              <input type="text" placeholder="e.g. Acme Family Office" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
+              <input name="institution" type="text" placeholder="e.g. Acme Family Office" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Message</label>
-              <textarea required rows={4} placeholder="I am interested in learning about upcoming co-investment vehicles..." className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors resize-none"></textarea>
+              <textarea name="message" required rows={4} placeholder="I am interested in learning about upcoming co-investment vehicles..." className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors resize-none"></textarea>
             </div>
-            
-            <button 
+
+            <button
               disabled={formStatus !== "idle"}
-              type="submit" 
+              type="submit"
               className="w-full rounded-xl bg-ls-compliment text-ls-primary font-bold py-5 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 flex items-center justify-center"
             >
               {formStatus === "idle" && "Send Message"}

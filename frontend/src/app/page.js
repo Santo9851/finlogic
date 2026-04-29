@@ -22,9 +22,9 @@ const HERO_SLIDES = [
     title: "Strategic Leadership Activation",
     subtitle: "We go beyond capital, empowering leaders to orchestrate excellence and drive sustained growth across our portfolio.",
     primaryCTA: "Our Approach",
-    secondaryCTA: "Portfolio Companies",
-    primaryHref: "/approach",
-    secondaryHref: "/portfolio",
+    secondaryCTA: "Our Story",
+    primaryHref: "/philosophy",
+    secondaryHref: "/about",
     accent: "bg-ls-secondary",
     visual: <GeometricEnergy />
   },
@@ -33,7 +33,7 @@ const HERO_SLIDES = [
     subtitle: "Built on a foundation of trust, shared values, and long-term alignment to create enduring success.",
     primaryCTA: "Partner With Us",
     secondaryCTA: "Contact Us",
-    primaryHref: "/partner",
+    primaryHref: "/investors",
     secondaryHref: "/contact",
     accent: "bg-ls-up",
     visual: <FluidHarmony />
