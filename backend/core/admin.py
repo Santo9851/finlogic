@@ -46,6 +46,32 @@ admin.site.index_title = "Content Management"
 
 
 # ---------------------------------------------------------------------------
+# Mixins & Filters
+# ---------------------------------------------------------------------------
+
+class DeletedListFilter(admin.SimpleListFilter):
+    title = 'Deletion Status'
+    parameter_name = 'is_deleted'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('no', 'Active (Non-deleted)'),
+            ('yes', 'Deleted'),
+            ('all', 'Show All'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'no':
+            return queryset.filter(deleted_at__isnull=True)
+        if self.value() == 'yes':
+            # Use the underlying manager to bypass the default soft-delete filter
+            return queryset.model.all_objects.filter(deleted_at__isnull=False)
+        if self.value() == 'all':
+            return queryset.model.all_objects.all()
+        return queryset
+
+
+# ---------------------------------------------------------------------------
 # User & Profile
 # ---------------------------------------------------------------------------
 
@@ -64,7 +90,7 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ('Platform Access', {'fields': ('is_approved', 'roles')}),
     )
-    list_filter = ('roles', 'is_approved', 'is_active', 'deleted_at')
+    list_filter = (DeletedListFilter, 'roles', 'is_approved', 'is_active')
     search_fields = ('email', 'username', 'first_name', 'last_name')
     ordering = ('-created_at',)
 
@@ -335,7 +361,7 @@ class ArticleAdmin(admin.ModelAdmin):
         'pillar', 'reading_time_est', 'publish_status', 'published_at',
     )
     list_display_links = ('title',)
-    list_filter   = ('pillar', 'is_published', 'author')
+    list_filter   = (DeletedListFilter, 'pillar', 'is_published', 'author')
     search_fields = ('title', 'excerpt', 'content', 'author__email')
     prepopulated_fields  = {'slug': ('title',)}
     raw_id_fields  = ('author',)
