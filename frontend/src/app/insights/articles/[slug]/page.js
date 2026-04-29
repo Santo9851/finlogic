@@ -59,12 +59,28 @@ function RelatedCard({ article }) {
 }
 
 // ── Mobile TOC drawer ───────────────────────────────────────────────────────
-function MobileTOC({ headings, accentColor, open, onClose }) {
+function MobileTOC({ headings, accentColor, open, onClose, articleRef }) {
   const scrollTo = (id) => { 
     onClose();
     setTimeout(() => {
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }); 
-    }, 150);
+      let el = document.getElementById(id);
+      
+      // Aggressive fallback: if ID fails, try to find by text content
+      if (!el) {
+        const headingIndex = parseInt(id.split('-')[1]);
+        const articleDiv = articleRef.current;
+        if (articleDiv) {
+          const allHeadings = articleDiv.querySelectorAll('h2, h3, h4');
+          el = allHeadings[headingIndex];
+        }
+      }
+
+      if (el) {
+        const yOffset = -100; 
+        const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 350);
   };
   return (
     <AnimatePresence>
@@ -84,12 +100,18 @@ function MobileTOC({ headings, accentColor, open, onClose }) {
             </div>
             <div className="space-y-1">
               {headings.map(h => (
-                <button key={h.id} onClick={() => scrollTo(h.id)}
-                  className={`w-full text-left py-2 px-3 rounded-xl text-sm transition-all
-                    ${h.level >= 3 ? "pl-7 text-white/50 text-xs" : "font-bold text-white/80"}`}
+                <a 
+                  key={h.id} 
+                  href={`#${h.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    scrollTo(h.id);
+                  }}
+                  className={`block w-full text-left py-3 px-4 rounded-xl text-sm transition-all active:bg-white/10
+                    ${h.level >= 3 ? "pl-8 text-white/50 text-xs" : "font-bold text-white/80"}`}
                 >
                   {h.text}
-                </button>
+                </a>
               ))}
             </div>
           </motion.div>
@@ -186,7 +208,13 @@ export default function ArticleDetailPage({ params }) {
           <List size={15} /> Contents
         </button>
       )}
-      <MobileTOC headings={headings} accentColor={color} open={tocOpen} onClose={() => setTocOpen(false)} />
+      <MobileTOC 
+        headings={headings} 
+        accentColor={color} 
+        open={tocOpen} 
+        onClose={() => setTocOpen(false)} 
+        articleRef={articleRef}
+      />
 
       <div className="container mx-auto px-4 lg:px-8 pt-28 pb-24 max-w-6xl">
         <Link href="/insights/articles" className="inline-flex items-center gap-2 text-white/40 hover:text-[#F59F01] text-sm transition-colors mb-10">

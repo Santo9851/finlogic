@@ -36,16 +36,20 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 CSRF_TRUSTED_ORIGINS = [
     'https://finlogiccapital.com',
     'https://www.finlogiccapital.com',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:3000',
+    'http://localhost:3001',
 ]
 # Allow adding more via env if needed
 extra_origins = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
 if extra_origins[0]:
     CSRF_TRUSTED_ORIGINS.extend(extra_origins)
 
-# Secure Proxy Settings for Nginx
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-USE_X_FORWARDED_HOST = True
-
+# Secure Proxy Settings for Nginx (Only enforce in Production/when DEBUG is False)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    USE_X_FORWARDED_HOST = True
 
 
 # Application definition
