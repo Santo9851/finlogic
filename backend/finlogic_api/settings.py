@@ -282,7 +282,10 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@finlogiccapit
 # ---------------------------------------------------------------------------
 # Frontend base URL (used in invitation email links)
 # ---------------------------------------------------------------------------
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://finlogiccapital.com')
 
+# Where contact form submissions should be sent
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'info@finlogiccapital.com')
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://localhost:3000')
 
 

@@ -4,14 +4,39 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, Mail, Phone, Clock, Send, ArrowRight, Building } from "lucide-react";
 import Link from "next/link";
+import { contactService } from "@/services/contact";
+import { toast } from "sonner";
 
 export default function ContactPage() {
    const [formStatus, setFormStatus] = useState("idle");
 
-   const handleSubmit = (e) => {
+   const handleSubmit = async (e) => {
       e.preventDefault();
       setFormStatus("submitting");
-      setTimeout(() => setFormStatus("success"), 1500);
+      
+      const formData = new FormData(e.target);
+      const fullName = formData.get("fullName").trim();
+      const nameParts = fullName.split(' ');
+      const first_name = nameParts[0];
+      const last_name = nameParts.slice(1).join(' ') || ' '; // API requires last_name
+
+      const payload = {
+         first_name,
+         last_name,
+         email: formData.get("email"),
+         source: formData.get("subject"),
+         notes: formData.get("message"),
+      };
+
+      try {
+         await contactService.submitInquiry(payload);
+         setFormStatus("success");
+         e.target.reset();
+      } catch (error) {
+         console.error("Contact submission error:", error);
+         setFormStatus("idle");
+         toast?.error("Failed to send inquiry. Please try again later.");
+      }
    };
 
    return (
@@ -112,18 +137,18 @@ export default function ContactPage() {
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                               <div className="space-y-2">
                                  <label className="text-xs font-bold text-ls-white/40 uppercase tracking-widest pl-2">Full Name</label>
-                                 <input required type="text" className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white" />
+                                 <input name="fullName" required type="text" className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white" />
                               </div>
                               <div className="space-y-2">
                                  <label className="text-xs font-bold text-ls-white/40 uppercase tracking-widest pl-2">Email Address</label>
-                                 <input required type="email" className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white" />
+                                 <input name="email" required type="email" className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white" />
                               </div>
                            </div>
 
                            <div className="space-y-2">
                               <label className="text-xs font-bold text-ls-white/40 uppercase tracking-widest pl-2">Subject</label>
-                              <select required className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white appearance-none">
-                                 <option value="" disabled selected hidden>Select an inquiry type...</option>
+                              <select name="subject" required defaultValue="" className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white appearance-none">
+                                 <option value="" disabled hidden>Select an inquiry type...</option>
                                  <option value="press" className="text-ls-primary">Press & Media</option>
                                  <option value="partnership" className="text-ls-primary">Strategic Partnership</option>
                                  <option value="career" className="text-ls-primary">Career Opportunities</option>
@@ -133,7 +158,7 @@ export default function ContactPage() {
 
                            <div className="space-y-2">
                               <label className="text-xs font-bold text-ls-white/40 uppercase tracking-widest pl-2">Message</label>
-                              <textarea required rows={5} className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white resize-none"></textarea>
+                              <textarea name="message" required rows={5} className="w-full bg-ls-supporting/10 border border-ls-supporting/30 rounded-xl px-5 py-4 outline-none focus:border-ls-compliment focus:bg-ls-supporting/20 transition-all text-ls-white resize-none"></textarea>
                            </div>
 
                            <button

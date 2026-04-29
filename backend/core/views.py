@@ -20,7 +20,12 @@ from .models import (
     InvestorCommitment,
     Enrollment,
     WebinarRegistration,
+    Contact,
 )
+from django.core.mail import send_mail
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 
 from .serializers import (
@@ -38,6 +43,7 @@ from .serializers import (
     WebinarSerializer,
     FundSerializer,
     InvestorCommitmentSerializer,
+    ContactSerializer,
 )
 
 User = get_user_model()
@@ -165,6 +171,55 @@ class RegisterView(generics.CreateAPIView):
             )
             
         self.perform_create(serializer)
+        
+        # --- Send Welcome Email ---
+        try:
+            new_user = User.objects.get(email=email)
+            subject = "Welcome to Finlogic Capital"
+            
+            # Simple but elegant text fallback
+            text_content = f"""Welcome to Finlogic Capital, {new_user.first_name}!
+            
+Thank you for joining our platform. Your account has been created successfully.
+
+Please note that your account is currently pending administrator approval. Our team will review your details shortly.
+
+If you have any urgent inquiries, feel free to contact us directly via WhatsApp or mobile at:
++977-9851437351
+
+Best regards,
+The Finlogic Capital Team
+"""
+            # Styled HTML version matching brand colors
+            html_content = f"""
+            <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #100226; color: #ffffff; padding: 40px; border-radius: 12px; border-top: 4px solid #F59F01;">
+                <h2 style="color: #F59F01; margin-top: 0;">Welcome to Finlogic</h2>
+                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">Hello {new_user.first_name},</p>
+                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">Thank you for joining our exclusive platform. Your account has been successfully created.</p>
+                
+                <div style="background-color: rgba(245, 159, 1, 0.1); border-left: 3px solid #F59F01; padding: 15px; margin: 25px 0;">
+                    <p style="margin: 0; font-size: 15px; color: #ffffff;"><strong>Account Status: Pending Approval</strong><br>Our administration team is currently reviewing your application. You will be notified once your access is granted.</p>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">If you need immediate assistance or have urgent inquiries, please contact us directly via Mobile or WhatsApp:</p>
+                <p style="font-size: 18px; font-weight: bold; color: #F59F01;">+977-9851437351</p>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
+                <p style="font-size: 13px; color: #94a3b8; margin: 0;">&copy; Finlogic Capital Limited. All rights reserved.<br>Kathmandu, Nepal</p>
+            </div>
+            """
+            
+            send_mail(
+                subject=subject,
+                message=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                html_message=html_content,
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Failed to send welcome email: {e}")
+            
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -212,9 +267,8 @@ class ForgotPasswordView(generics.GenericAPIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
 
-        # In production, send this via email.
-        # For now, the console email backend will print it.
-        reset_url = f'http://localhost:3000/reset-password?uid={uid}&token={token}'
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://finlogiccapital.com').rstrip('/')
+        reset_url = f'{frontend_url}/auth/reset-password?uid={uid}&token={token}'
         print(f'\n[PASSWORD RESET] {user.email}\n  URL: {reset_url}\n')
 
         user.email_user(
@@ -672,3 +726,45 @@ class InvestorCommitmentViewSet(viewsets.ReadOnlyModelViewSet):
         return InvestorCommitment.objects.filter(
             investor__user=self.request.user,
         ).select_related('fund', 'project')
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Contact
+# ═══════════════════════════════════════════════════════════════════════════
+
+class ContactCreateView(generics.CreateAPIView):
+    """POST /api/contact/"""
+    queryset = Contact.objects.all()
+    serializer_class = ContactSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def perform_create(self, serializer):
+        contact = serializer.save()
+        
+        # Send email to admin
+        subject = f"New Inquiry from {contact.first_name} {contact.last_name}"
+        if contact.source:
+            subject += f" [{contact.source.title()}]"
+            
+        message = f"""
+New inquiry received via the Finlogic platform.
+
+Name: {contact.first_name} {contact.last_name}
+Email: {contact.email}
+Company: {contact.company or 'N/A'}
+Inquiry Type: {contact.source or 'General'}
+
+Message / Notes:
+{contact.notes or 'No additional message provided.'}
+        """
+        
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.ADMIN_EMAIL],
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Failed to send contact notification email: {e}")

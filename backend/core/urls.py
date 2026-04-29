@@ -40,6 +40,9 @@ urlpatterns = [
     path('auth/forgot-password/', views.ForgotPasswordView.as_view(), name='auth-forgot-password'),
     path('auth/reset-password/', views.ResetPasswordView.as_view(), name='auth-reset-password'),
 
+    # Contact
+    path('contact/', views.ContactCreateView.as_view(), name='contact-create'),
+
     # Evaluation endpoints — must be declared BEFORE include(router.urls) so the
     # router's /projects/<pk>/ pattern does not shadow them.
     path(

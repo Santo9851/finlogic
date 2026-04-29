@@ -180,6 +180,18 @@ class ResetPasswordSerializer(serializers.Serializer):
         return user
 
 
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = ['id', 'first_name', 'last_name', 'email', 'company', 'source', 'status', 'notes', 'created_at']
+        read_only_fields = ['id', 'created_at', 'status']
+    
+    def create(self, validated_data):
+        # Set default status for new web inquiries
+        validated_data['status'] = Contact.Status.LEAD
+        return super().create(validated_data)
+
+
 # ---------------------------------------------------------------------------
 # Projects
 # ---------------------------------------------------------------------------
