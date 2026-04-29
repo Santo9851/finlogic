@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, Zap, Target, Users, BookOpen, ShieldCheck } from 'lucide-react';
 import { NeuralNetwork, GeometricEnergy, FluidHarmony } from '@/components/HeroVisuals';
+import { fetchArticles, normaliseList, PILLAR_LABELS } from '@/services/insights';
 
 const HERO_SLIDES = [
   {
@@ -43,6 +44,8 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [mounted, setMounted] = useState(false);
+  const [latestInsights, setLatestInsights] = useState([]);
+  const [loadingInsights, setLoadingInsights] = useState(true);
   const containerRef = useRef(null);
 
   const { scrollYProgress } = useScroll({
@@ -56,6 +59,20 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+
+    async function loadInsights() {
+      try {
+        const data = await fetchArticles({ ordering: '-published_at' });
+        const list = normaliseList(data);
+        setLatestInsights(list.slice(0, 3));
+      } catch (err) {
+        console.error("Failed to load insights:", err);
+      } finally {
+        setLoadingInsights(false);
+      }
+    }
+    loadInsights();
+
     const handleMouseMove = (e) => {
       setMousePos({
         x: (e.clientX / window.innerWidth - 0.5) * 40,
@@ -418,47 +435,57 @@ export default function Home() {
           </motion.div>
 
           <div className="grid gap-12 md:grid-cols-3">
-            {[
-              {
-                title: 'The Future of Deep Tech in Southeast Asia',
-                category: 'Market Trends',
-                date: 'March 10, 2026',
-              },
-              {
-                title: 'Sustainable Scaling: Lessons from Global Leaders',
-                category: 'Leadership',
-                date: 'March 05, 2026',
-              },
-              {
-                title: 'Unconventional Asset Classes in a Volatile Economy',
-                category: 'Investment Strategy',
-                date: 'February 28, 2026',
-              },
-            ].map((post, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.1 }}
-                className="group cursor-pointer space-y-6"
-              >
-                <div className="relative h-80 overflow-hidden rounded-[2.5rem] bg-ls-supporting/5 transition-all group-hover:shadow-2xl">
-                  {/* Abstract Post Image Placeholder */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-ls-supporting/20 to-ls-primary/10 transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute left-8 top-8 rounded-full bg-ls-white/90 backdrop-blur-md px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-ls-primary">
-                    {post.category}
+            {loadingInsights ? (
+              // Skeletons
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse space-y-6">
+                  <div className="h-80 rounded-[2.5rem] bg-ls-supporting/5" />
+                  <div className="space-y-4 px-2">
+                    <div className="h-4 w-24 bg-ls-supporting/10 rounded" />
+                    <div className="h-6 w-full bg-ls-supporting/10 rounded" />
+                    <div className="h-6 w-2/3 bg-ls-supporting/10 rounded" />
                   </div>
                 </div>
-                <div className="space-y-4 px-2">
-                  <span className="font-mono text-xs text-ls-supporting/40 tracking-tighter">{post.date}</span>
-                  <h4 className="text-2xl font-bold leading-[1.3] text-ls-primary transition-colors group-hover:text-ls-compliment">
-                    {post.title}
-                  </h4>
-                  <div className="h-1 w-12 bg-ls-supporting/10 transition-all group-hover:w-24 group-hover:bg-ls-compliment" />
-                </div>
-              </motion.div>
-            ))}
+              ))
+            ) : latestInsights.length > 0 ? (
+              latestInsights.map((post, i) => (
+                <Link key={post.id || i} href={`/insights/articles/${post.slug}`}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: i * 0.1 }}
+                    className="group cursor-pointer space-y-6"
+                  >
+                    <div className="relative h-80 overflow-hidden rounded-[2.5rem] bg-ls-supporting/5 transition-all group-hover:shadow-2xl">
+                      {post.featured_image ? (
+                        <img 
+                          src={post.featured_image} 
+                          alt={post.title} 
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-gradient-to-br from-ls-supporting/20 to-ls-primary/10 transition-transform duration-700 group-hover:scale-110" />
+                      )}
+                      <div className="absolute left-8 top-8 rounded-full bg-ls-white/90 backdrop-blur-md px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-ls-primary">
+                        {PILLAR_LABELS[post.pillar?.toLowerCase()] || post.pillar || 'Insight'}
+                      </div>
+                    </div>
+                    <div className="space-y-4 px-2">
+                      <span className="font-mono text-xs text-ls-supporting/40 tracking-tighter">
+                        {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
+                      </span>
+                      <h4 className="text-2xl font-bold leading-[1.3] text-ls-primary transition-colors group-hover:text-ls-compliment line-clamp-3">
+                        {post.title}
+                      </h4>
+                      <div className="h-1 w-12 bg-ls-supporting/10 transition-all group-hover:w-24 group-hover:bg-ls-compliment" />
+                    </div>
+                  </motion.div>
+                </Link>
+              ))
+            ) : (
+              <p className="text-ls-primary/40 col-span-3 text-center py-10">No insights published yet.</p>
+            )}
           </div>
         </div>
       </section>
