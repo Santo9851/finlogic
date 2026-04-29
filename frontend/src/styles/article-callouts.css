@@ -55,7 +55,7 @@
 }
 
 .article-body .callout-data p {
-  color: rgba(255,255,255,0.85) !important;
+  color: rgba(255,255,255,0.85);
   margin: 0;
   padding-left: 1.5rem;
   font-style: italic;
@@ -81,7 +81,7 @@
 }
 
 .article-body .callout-key p {
-  color: rgba(255,255,255,0.85) !important;
+  color: rgba(255,255,255,0.85);
   margin: 0;
   font-weight: 600;
 }
@@ -104,7 +104,7 @@
 }
 
 .article-body .callout-insight p {
-  color: rgba(255,255,255,0.85) !important;
+  color: rgba(255,255,255,0.85);
   margin: 0;
 }
 
@@ -126,7 +126,7 @@
 }
 
 .article-body .callout-warning p {
-  color: rgba(255,255,255,0.85) !important;
+  color: rgba(255,255,255,0.85);
   margin: 0;
 }
 
@@ -144,7 +144,7 @@
   font-size: 1.5rem !important;
   font-weight: 700 !important;
   line-height: 1.4 !important;
-  color: white !important;
+  color: white;
   font-style: italic;
   margin: 0;
   position: relative;
@@ -196,7 +196,7 @@
 }
 
 .article-body .callout-stat p {
-  color: rgba(255,255,255,0.6) !important;
+  color: rgba(255,255,255,0.6);
   font-size: 0.9rem !important;
   margin-top: 0.75rem;
   margin-bottom: 0;
@@ -225,7 +225,7 @@
 }
 
 .article-body .callout-summary li {
-  color: rgba(255,255,255,0.75) !important;
+  color: rgba(255,255,255,0.75);
   margin-bottom: 0.4rem;
   line-height: 1.5;
 }
@@ -295,7 +295,7 @@
   margin: 1.5rem 0;
 }
 .article-body blockquote p {
-  color: rgba(255,255,255,0.85) !important;
+  color: rgba(255,255,255,0.85);
   font-weight: 600;
   font-style: italic;
   margin: 0 !important;

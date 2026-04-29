@@ -128,6 +128,7 @@ export default function ArticleDetailPage({ params }) {
   // Inject IDs into real DOM after render
   useEffect(() => {
     if (!loading && article?.content) {
+      document.title = `${article.title} | Finlogic Capital`;
       requestAnimationFrame(() => injectHeadingIds(articleRef));
     }
   }, [loading, article]);
