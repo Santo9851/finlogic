@@ -9,14 +9,18 @@ import {
   ChevronDown,
   Briefcase,
   TrendingUp,
-  ShieldCheck
+  ShieldCheck,
+  Menu,
+  X
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import FinlogicLogo from '@/components/FinlogicLogo';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Header() {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
   const navLinks = [
@@ -180,8 +184,69 @@ export default function Header() {
               Submit Project
             </Link>
           )}
+
+          {/* Mobile Menu Toggle Button */}
+          <button
+            className="xl:hidden ml-4 p-2 text-white/70 hover:text-white transition-colors"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Navigation Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="xl:hidden border-t border-white/10 bg-[#100226]/95 backdrop-blur-md overflow-hidden"
+          >
+            <nav className="flex flex-col px-4 py-6 space-y-4">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-lg font-medium text-white/80 hover:text-[#F59F01]"
+                >
+                  {link.name}
+                </Link>
+              ))}
+              {!user && (
+                <>
+                  <Link 
+                    href="/entrepreneurs" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-medium text-white/80 hover:text-[#F59F01]"
+                  >
+                    For Entrepreneurs
+                  </Link>
+                  <Link 
+                    href="/investors" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-medium text-white/80 hover:text-[#F59F01]"
+                  >
+                    For Investors
+                  </Link>
+                </>
+              )}
+              {(!user || user.role === 'entrepreneur') && (
+                <Link 
+                  href="/entrepreneurs/submit"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="inline-flex justify-center items-center gap-2 rounded-full border border-[#F59F01]/30 px-6 py-3 mt-4 text-sm font-bold text-[#F59F01] transition-all hover:bg-[#F59F01] hover:text-[#100226]"
+                >
+                  Submit Project
+                </Link>
+              )}
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
