@@ -63,34 +63,34 @@ export default function PortfolioCoDashboard() {
   );
 
   return (
-    <div className="max-w-5xl mx-auto py-12 px-6 space-y-12 animate-in fade-in duration-1000">
+    <div className="max-w-5xl mx-auto py-6 md:py-12 px-4 md:px-6 space-y-8 md:space-y-12 animate-in fade-in duration-1000">
        {/* Header */}
        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
-             <div className="w-16 h-16 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-[#F59F01] shadow-2xl">
-                <Building2 size={32} />
+          <div className="flex items-center gap-4 md:gap-6">
+             <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl md:rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center text-[#F59F01] shadow-2xl">
+                <Building2 size={24} className="md:w-8 md:h-8" />
              </div>
              <div>
-                <h1 className="text-4xl font-black text-white tracking-tighter uppercase">{project.legal_name}</h1>
-                <p className="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">Portfolio Performance Portal</p>
+                <h1 className="text-2xl md:text-4xl font-black text-white tracking-tighter uppercase">{project.legal_name}</h1>
+                <p className="text-white/40 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">Portfolio Performance Portal</p>
              </div>
           </div>
-          <div className="bg-[#10b981]/10 border border-[#10b981]/20 px-4 py-2 rounded-full flex items-center gap-2">
+          <div className="bg-[#10b981]/10 border border-[#10b981]/20 px-4 py-2 rounded-full flex items-center gap-2 self-start md:self-center">
              <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
              <span className="text-[9px] font-black text-[#10b981] uppercase tracking-widest">Active Investment</span>
           </div>
        </div>
 
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:gap-12">
           {/* Submission Form */}
           <div className="lg:col-span-2 space-y-8">
-             <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 shadow-2xl space-y-8">
+             <div className="bg-white/5 border border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] p-6 md:p-10 shadow-2xl space-y-8">
                 <div>
-                   <h3 className="text-xl font-black text-white uppercase tracking-tight mb-2">Monthly Reporting</h3>
+                   <h3 className="text-lg md:text-xl font-black text-white uppercase tracking-tight mb-2">Monthly Reporting</h3>
                    <p className="text-white/40 text-xs leading-relaxed">Submit your financial and operational KPIs for the previous month by the 5th business day.</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                    <div className="space-y-2">
                       <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Reporting Period</label>
                       <input 
