@@ -1855,12 +1855,24 @@ class GPInvestorDashboardView(APIView):
         if not shareholder:
             return Response({"detail": "User is not a registered GP Shareholder"}, status=403)
 
+        from django.db.models import Sum
+        from .models import Fund, GPDividend
+
+        total_dividends = GPDividend.objects.filter(
+            shareholder=shareholder, 
+            status='PAID'
+        ).aggregate(total=Sum('amount_npr'))['total'] or 0
+
+        total_aum = Fund.objects.aggregate(total=Sum('committed_capital_npr'))['total'] or 0
+
         data = {
             "shareholder": {
                 "shares_held": shareholder.shares_held,
                 "ownership_percentage": shareholder.ownership_percentage,
                 "vesting_status": shareholder.vesting_status,
+                "total_dividends_npr": float(total_dividends),
             },
+            "total_committed_npr": float(total_aum),
             "active_proposals_count": GovernanceProposal.objects.filter(status='ACTIVE').count(),
             "latest_announcements": IRDocumentSerializer(
                 IRDocument.objects.filter(is_published=True).order_by('-uploaded_at')[:3],

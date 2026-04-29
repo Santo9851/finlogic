@@ -62,13 +62,13 @@ export default function GPInvestorDashboard() {
         />
         <MetricCard 
           label="Dividends Received" 
-          value={`NPR ${(dashboard?.shareholder?.total_dividends_npr / 1e5).toFixed(1)}L`} 
+          value={`NPR ${((dashboard?.shareholder?.total_dividends_npr || 0) / 1e5).toFixed(1)}L`} 
           icon={ArrowUpRight} 
           color="#16c784" 
         />
         <MetricCard 
           label="Total AUM" 
-          value={`NPR ${(dashboard?.total_committed_npr / 1e7).toFixed(1)}Cr`} 
+          value={`NPR ${((dashboard?.total_committed_npr || 0) / 1e7).toFixed(1)}Cr`} 
           icon={BarChart3} 
           color="#8b5cf6" 
         />

@@ -66,7 +66,7 @@ class User(AbstractUser, SoftDeleteModel):
     roles = models.CharField(
         max_length=255, 
         default='entrepreneur', 
-        help_text="Comma-separated roles (e.g., 'entrepreneur,investor')"
+        help_text="Comma-separated roles. Valid roles: 'entrepreneur', 'investor' (LP), 'gp_investor' (GP Shareholder), 'admin', 'super_admin'."
     )
     is_approved = models.BooleanField(default=False)
     email_verified_at = models.DateTimeField(null=True, blank=True)
