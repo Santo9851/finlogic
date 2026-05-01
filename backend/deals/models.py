@@ -12,6 +12,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 User = settings.AUTH_USER_MODEL
@@ -541,6 +542,13 @@ class Distribution(models.Model):
         choices=DistributionType.choices,
         default=DistributionType.RETURN_OF_CAPITAL,
     )
+    waterfall_run = models.ForeignKey(
+        'WaterfallRun',
+        on_delete=models.SET_NULL,
+        related_name='distributions',
+        null=True,
+        blank=True,
+    )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -712,6 +720,7 @@ class FundDocument(models.Model):
         KYC_AML = 'KYC_AML', 'KYC/AML Document'
         SHAREHOLDER_REPORT = 'SHAREHOLDER_REPORT', 'GP Shareholder Report'
         BOARD_MINUTES = 'BOARD_MINUTES', 'Board Meeting Minutes'
+        CAPITAL_ACCOUNT = 'CAPITAL_ACCOUNT', 'Capital Account Statement'
         OTHER = 'OTHER', 'Other Fund Document'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -1347,6 +1356,167 @@ class PortfolioKPIReport(models.Model):
 
     def __str__(self):
         return f"KPI Report {self.reporting_period} - {self.project.legal_name}"
+
+
+# ---------------------------------------------------------------------------
+# Waterfall
+# ---------------------------------------------------------------------------
+
+class WaterfallModel(models.Model):
+    """Configuration for a fund waterfall calculation."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='waterfall_models')
+    name = models.CharField(max_length=200)
+    assumptions = models.JSONField(
+        default=dict,
+        help_text="hurdle_rate, carry_pct, catchup_pct, etc."
+    )
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'pe_waterfall_models'
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.name} - {self.fund.name}"
+
+
+class WaterfallRun(models.Model):
+    """A specific execution of a waterfall calculation on an exit."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    waterfall_model = models.ForeignKey(WaterfallModel, on_delete=models.CASCADE, related_name='runs', null=True, blank=True)
+    investment = models.ForeignKey('PEInvestment', on_delete=models.CASCADE, related_name='waterfall_runs')
+    exit_proceeds = models.DecimalField(max_digits=20, decimal_places=2)
+    exit_date = models.DateField(null=True, blank=True)
+    years_held = models.FloatField(null=True, blank=True)
+    outputs = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'pe_waterfall_runs'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Waterfall Run on {self.investment} - NPR {self.exit_proceeds}"
+
+
+# ---------------------------------------------------------------------------
+# 11. ValuationRecord
+# ---------------------------------------------------------------------------
+
+class ValuationRecord(models.Model):
+    """Tracking periodic fair value adjustments for an investment."""
+
+    class Methodology(models.TextChoices):
+        DCF = 'DCF', 'Discounted Cash Flow'
+        MARKET = 'MARKET', 'Market Comparables'
+        COST = 'COST', 'Cost / Book Value'
+        RECENT_TRANSACTION = 'RECENT_TRANSACTION', 'Recent Transaction'
+        OTHER = 'OTHER', 'Other'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    investment = models.ForeignKey(
+        PEInvestment, on_delete=models.CASCADE, related_name='valuations'
+    )
+    valuation_date = models.DateField()
+    fair_value_npr = models.DecimalField(max_digits=20, decimal_places=2)
+    methodology = models.CharField(
+        max_length=20, choices=Methodology.choices, default=Methodology.MARKET
+    )
+    discount_rate_pct = models.FloatField(null=True, blank=True)
+    exit_multiple_used = models.FloatField(null=True, blank=True)
+    assumptions = models.JSONField(default=dict, blank=True)
+    previous_valuation_npr = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True, blank=True
+    )
+    valuer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='valuations'
+    )
+    is_audited = models.BooleanField(default=False)
+    auditor_name = models.CharField(max_length=200, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_valuation_records'
+        ordering = ['-valuation_date']
+        unique_together = [('investment', 'valuation_date')]
+
+    def __str__(self):
+        return f"{self.investment.project.legal_name} - {self.valuation_date} (NPR {self.fair_value_npr:,})"
+
+    @property
+    def valuation_change_pct(self):
+        if self.previous_valuation_npr and self.previous_valuation_npr > 0:
+            return (float(self.fair_value_npr - self.previous_valuation_npr) / float(self.previous_valuation_npr)) * 100
+        return None
+
+    @property
+    def moic_implied(self):
+        if self.investment.investment_amount_npr > 0:
+            return float(self.fair_value_npr) / float(self.investment.investment_amount_npr)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# 12. ExitScenario
+# ---------------------------------------------------------------------------
+
+class ExitScenario(models.Model):
+    """Potential exit strategies and outcomes for an investment."""
+
+    class ExitType(models.TextChoices):
+        TRADE_SALE = 'TRADE_SALE', 'Trade Sale / Strategic Acquisition'
+        IPO = 'IPO', 'Initial Public Offering (NEPSE)'
+        SECONDARY = 'SECONDARY', 'Secondary Sale to Financial Sponsor'
+        WRITE_OFF = 'WRITE_OFF', 'Write-Off / Liquidation'
+        DIVIDEND_RECAP = 'DIVIDEND_RECAP', 'Dividend Recapitalisation'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    investment = models.ForeignKey(
+        PEInvestment, on_delete=models.CASCADE, related_name='exit_scenarios'
+    )
+    name = models.CharField(max_length=200)
+    exit_type = models.CharField(max_length=20, choices=ExitType.choices)
+    target_year = models.IntegerField()  # BS year
+    target_date = models.DateField(null=True, blank=True)
+    expected_exit_value_npr = models.DecimalField(max_digits=20, decimal_places=2)
+    exit_multiple = models.FloatField()
+    expected_irr_pct = models.FloatField(null=True, blank=True)
+    probability_pct = models.FloatField(default=50.0)
+    is_base_case = models.BooleanField(default=False)
+    is_approved_by_ic = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='exit_scenarios'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # IPO-specific fields
+    ipo_paid_up_capital_npr = models.DecimalField(max_digits=20, decimal_places=2, null=True, blank=True)
+    ipo_years_profitable = models.IntegerField(null=True, blank=True)
+    ipo_net_worth_per_share_npr = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    ipo_face_value_per_share_npr = models.DecimalField(max_digits=10, decimal_places=2, default=100)
+    ipo_credit_rating = models.CharField(max_length=20, null=True, blank=True)
+    ipo_is_eligible = models.BooleanField(null=True, blank=True)
+    ipo_eligibility_notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'pe_exit_scenarios'
+        ordering = ['target_year', '-expected_exit_value_npr']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['investment'],
+                condition=Q(is_base_case=True),
+                name='unique_base_case_per_investment'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.get_exit_type_display()}) - {self.target_year}"
 
 
 

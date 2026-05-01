@@ -269,7 +269,11 @@ SPECTACULAR_SETTINGS = {
 # ---------------------------------------------------------------------------
 # Email – Brevo (Sendinblue) via django-anymail
 # ---------------------------------------------------------------------------
-EMAIL_BACKEND = 'anymail.backends.sendinblue.EmailBackend'
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'anymail.backends.sendinblue.EmailBackend'
+
 ANYMAIL = {
     'SENDINBLUE_API_KEY': os.environ.get('BREVO_API_KEY', ''),
 }

@@ -69,7 +69,8 @@ setup_base() {
 install_deps() {
     log_info "Installing dependencies..."
     apt update && apt upgrade -y
-    apt install -y curl git nginx certbot python3-certbot-nginx fail2ban ca-certificates gnupg lsb-release
+    apt install -y curl git nginx certbot python3-certbot-nginx fail2ban ca-certificates gnupg lsb-release \
+        libpango-1.0-0 libharfbuzz0b libpangoft2-1.0-0 libcairo2
 
     if ! command -v docker &> /dev/null; then
         mkdir -p /etc/apt/keyrings

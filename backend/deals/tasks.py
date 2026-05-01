@@ -20,7 +20,13 @@ from .models import (
     ComplianceGate,
     RegulatoryChecklist,
     DealMemo,
+    Fund,
+    LPFundCommitment,
+    LPProfile,
+    FundDocument,
 )
+from .pdf_utils import generate_capital_account_pdf, upload_pdf_to_b2
+from .mail_utils import send_statement_notification
 
 
 
@@ -627,6 +633,53 @@ def run_full_analysis(project_id, user_id=None):
     )
     
     return f"Full analysis chain started for {project.legal_name}"
+
+
+@shared_task
+def generate_lp_statements(fund_id, quarter, year, lpprofile_id=None, gp_user_id=None):
+    """
+    Generate capital account statements for one or all LPs in a fund.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    try:
+        fund = Fund.objects.get(id=fund_id)
+        gp_user = User.objects.get(id=gp_user_id) if gp_user_id else None
+        
+        # Determine LPs to process
+        if lpprofile_id:
+            commitments = LPFundCommitment.objects.filter(fund=fund, lp_profile_id=lpprofile_id)
+        else:
+            commitments = LPFundCommitment.objects.filter(fund=fund)
+            
+        count = 0
+        for lp_commitment in commitments:
+            lp_profile = lp_commitment.lp_profile
+            file_name = f"Statement_{fund.name.replace(' ', '_')}_{quarter}_{year}_{lp_profile.id}"
+            
+            # 1. Generate PDF
+            pdf_bytes = generate_capital_account_pdf(lp_commitment, quarter, year)
+            
+            # 2. Upload to B2 and create record
+            upload_pdf_to_b2(pdf_bytes, file_name, fund, lp_commitment, quarter, year, gp_user)
+            
+            # 3. Send email notification
+            send_statement_notification(lp_profile, fund, quarter, year)
+            
+            count += 1
+            
+        return {
+            "status": "success",
+            "message": f"Generated {count} statements for {fund.name} ({quarter} {year})",
+            "count": count
+        }
+    except Exception as e:
+        logger.error(f"Error in generate_lp_statements: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
 
 

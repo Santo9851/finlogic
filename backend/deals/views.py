@@ -20,6 +20,7 @@ from rest_framework import generics, permissions, status, viewsets
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import action
 
 from .b2_utils import generate_presigned_upload_url, generate_presigned_download_url
 from .models import (
@@ -53,6 +54,10 @@ from .models import (
     ProposalVote,
     IRDocument,
     GPShareholder,
+    WaterfallModel,
+    WaterfallRun,
+    ValuationRecord,
+    ExitScenario,
 )
 
 
@@ -100,6 +105,11 @@ from .serializers import (
     SEBONFilingDeadlineSerializer,
     DealMemoSerializer,
     PortfolioKPIReportSerializer,
+    WaterfallModelSerializer,
+    WaterfallRunSerializer,
+    ValuationRecordSerializer,
+    ExitScenarioSerializer,
+    IPOEligibilitySerializer,
     EntrepreneurKYBDocumentSerializer,
     IRDocumentSerializer,
     GovernanceProposalSerializer,
@@ -107,6 +117,7 @@ from .serializers import (
 )
 
 from .valuation import calculate_dcf, calculate_lbo
+from .ipo_eligibility import check_ipo_eligibility
 
 
 from .tasks import (
@@ -2012,10 +2023,375 @@ class PortfolioKPIReportDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = PortfolioKPIReportSerializer
     queryset = PortfolioKPIReport.objects.all()
 
+# ---------------------------------------------------------------------------
+# Waterfall & Distributions
+# ---------------------------------------------------------------------------
+from .waterfall import calculate_distribution
+from .models import WaterfallRun, Distribution
+from .serializers import WaterfallRunSerializer, DistributionSerializer
+
+class WaterfallCalculateView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request):
+        investment_id = request.data.get('investment_id')
+        exit_proceeds = request.data.get('exit_proceeds')
+        fund_id = request.data.get('fund_id')
+        
+        if not investment_id or not exit_proceeds:
+            return Response({'detail': 'investment_id and exit_proceeds are required.'}, status=400)
+            
+        try:
+            outputs, run = calculate_distribution(investment_id, exit_proceeds, fund_id)
+            return Response(WaterfallRunSerializer(run).data, status=200)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=400)
 
 
+class WaterfallHistoryView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = WaterfallRunSerializer
+
+    def get_queryset(self):
+        qs = WaterfallRun.objects.all().order_by('-created_at')
+        fund_id = self.request.query_params.get('fund_id')
+        if fund_id:
+            qs = qs.filter(investment__fund_id=fund_id)
+        return qs
 
 
+class DistributionCreateView(generics.CreateAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    queryset = Distribution.objects.all()
+    serializer_class = DistributionSerializer
+    
+    def perform_create(self, serializer):
+        dist = serializer.save()
+        ImmutableAuditEvent.objects.create(
+            event_type=ImmutableAuditEvent.EventType.DISTRIBUTION_MADE,
+            actor=self.request.user,
+            object_id=dist.id,
+            object_repr=str(dist),
+            content_type_label='deals.Distribution',
+            payload={'amount': float(dist.amount_npr)}
+        )
 
 
+class LPDistributionListView(generics.ListAPIView):
+    permission_classes = [permissions.IsAuthenticated, IsLPRole]
+    serializer_class = DistributionSerializer
+    
+    def get_queryset(self):
+        user = self.request.user
+        if not hasattr(user, 'lp_profile'):
+            return Distribution.objects.none()
+        return Distribution.objects.filter(lp_commitment__lp_profile=user.lp_profile).order_by('-distribution_date')
 
+# ---------------------------------------------------------------------------
+# LP Statements
+# ---------------------------------------------------------------------------
+from .tasks import generate_lp_statements
+from .b2_utils import generate_presigned_download_url
+
+class LPStatementGenerateView(APIView):
+    """
+    POST /api/deals/lp/generate-statement/
+    Queue statement generation task.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request):
+        fund_id = request.data.get('fund_id')
+        quarter = request.data.get('quarter')
+        year = request.data.get('year')
+        lp_profile_id = request.data.get('lp_profile_id')
+        
+        if not all([fund_id, quarter, year]):
+            return Response({'detail': 'fund_id, quarter, and year are required.'}, status=400)
+            
+        task = generate_lp_statements.delay(
+            fund_id=fund_id,
+            quarter=quarter,
+            year=year,
+            lpprofile_id=lp_profile_id,
+            gp_user_id=request.user.id
+        )
+        
+        return Response({
+            'task_id': task.id,
+            'message': 'Statement generation started'
+        }, status=status.HTTP_202_ACCEPTED)
+
+
+class LPStatementListView(generics.ListAPIView):
+    """
+    GET /api/deals/lp/me/statements/
+    List capital account statements for current LP.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsLPRole]
+    serializer_class = FundDocumentSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if not hasattr(user, 'lp_profile'):
+            return FundDocument.objects.none()
+            
+        lp_profile = user.lp_profile
+        fund_ids = lp_profile.fund_commitments.values_list('fund_id', flat=True)
+        
+        qs = FundDocument.objects.filter(
+            fund_id__in=fund_ids,
+            document_type=FundDocument.DocType.CAPITAL_ACCOUNT,
+            is_published=True
+        ).order_by('-publish_date')
+        
+        fund_id = self.request.query_params.get('fund_id')
+        if fund_id:
+            qs = qs.filter(fund_id=fund_id)
+            
+        return qs
+
+
+class LPStatementDownloadView(APIView):
+    """
+    GET /api/deals/lp/me/statements/<uuid:doc_id>/download/
+    Verify access and return pre-signed B2 download URL.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsLPRole]
+
+    def get(self, request, doc_id):
+        user = self.request.user
+        if not hasattr(user, 'lp_profile'):
+            raise PermissionDenied()
+            
+        lp_profile = user.lp_profile
+        doc = get_object_or_404(FundDocument, pk=doc_id, document_type=FundDocument.DocType.CAPITAL_ACCOUNT)
+        
+        # Verify LP is committed to this fund
+        if not lp_profile.fund_commitments.filter(fund=doc.fund).exists():
+            raise PermissionDenied("You do not have access to this document.")
+            
+        # Log access in LPDocumentAccess
+        from .models import LPDocumentAccess
+        from .views import _get_client_ip
+        
+        LPDocumentAccess.objects.update_or_create(
+            lp_profile=lp_profile,
+            document=doc,
+            defaults={'ip_address': _get_client_ip(request)}
+        )
+        
+        # Audit log
+        _log_audit_event(
+            ImmutableAuditEvent.EventType.DOCUMENT_DOWNLOADED,
+            doc,
+            actor=user,
+            payload={'type': 'CAPITAL_ACCOUNT'}
+        )
+        
+        url = generate_presigned_download_url(doc.file_key, filename=doc.file_name)
+        return Response({'url': url})
+
+
+class GPFundLPsView(generics.ListAPIView):
+    """
+    GET /api/deals/funds/<uuid:fund_id>/lps/
+    List LPs committed to a specific fund.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = LPProfileSerializer
+
+    def get_queryset(self):
+        fund_id = self.kwargs.get('fund_id')
+        return LPProfile.objects.filter(fund_commitments__fund_id=fund_id).distinct()
+
+
+from .monte_carlo import run_monte_carlo
+
+class MonteCarloSimulationView(APIView):
+    """
+    POST /api/deals/portfolio/monte-carlo/
+    Runs a Monte Carlo simulation for a specific investment.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request):
+        investment_id = request.data.get('investment_id')
+        num_simulations = request.data.get('num_simulations', 10000)
+        custom_assumptions = request.data.get('assumptions', {})
+        
+        if not investment_id:
+            return Response({"error": "investment_id is required"}, status=400)
+            
+        results = run_monte_carlo(
+            investment_id=investment_id,
+            num_simulations=int(num_simulations),
+            custom_assumptions=custom_assumptions
+        )
+        
+        if "error" in results:
+            return Response(results, status=404)
+            
+        return Response(results)
+
+
+# ---------------------------------------------------------------------------
+# 16. Valuation & Exit Views
+# ---------------------------------------------------------------------------
+
+class ValuationRecordViewSet(viewsets.ModelViewSet):
+    """
+    CRUD for investment valuations.
+    GP staff only. Investors see restricted info via a separate endpoint/serializer.
+    """
+    queryset = ValuationRecord.objects.all()
+    serializer_class = ValuationRecordSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        inv_id = self.kwargs.get('investment_id')
+        if inv_id:
+            qs = qs.filter(investment_id=inv_id)
+        return qs
+
+    def get_permissions(self):
+        if self.action == 'destroy':
+            return [permissions.IsAuthenticated(), IsGPStaff()]
+        return [permissions.IsAuthenticated(), IsGPStaff()]
+
+    def perform_create(self, serializer):
+        investment_id = self.kwargs.get('investment_id') or self.request.data.get('investment')
+        investment = get_object_or_404(PEInvestment, id=investment_id)
+        
+        # Auto-populate previous valuation
+        prev = ValuationRecord.objects.filter(investment=investment).order_by('-valuation_date').first()
+        prev_val = prev.fair_value_npr if prev else None
+        
+        val_record = serializer.save(
+            valuer=self.request.user,
+            previous_valuation_npr=prev_val
+        )
+        
+        ImmutableAuditEvent.objects.create(
+            event_type='VALUATION_CREATED',
+            project=investment.project,
+            user=self.request.user,
+            metadata={
+                "investment_id": str(investment.id),
+                "valuation_id": str(val_record.id),
+                "fair_value": str(val_record.fair_value_npr)
+            }
+        )
+
+    def perform_update(self, serializer):
+        val_record = serializer.save()
+        ImmutableAuditEvent.objects.create(
+            event_type='VALUATION_UPDATED',
+            project=val_record.investment.project,
+            user=self.request.user,
+            metadata={"valuation_id": str(val_record.id)}
+        )
+
+    def perform_destroy(self, instance):
+        if not self.request.user.has_role('super_admin'):
+            raise PermissionDenied("Only super admins can delete valuations.")
+        
+        ImmutableAuditEvent.objects.create(
+            event_type='VALUATION_DELETED',
+            project=instance.investment.project,
+            user=self.request.user,
+            metadata={"valuation_id": str(instance.id), "fair_value": str(instance.fair_value_npr)}
+        )
+        instance.delete()
+
+
+class ExitScenarioViewSet(viewsets.ModelViewSet):
+    queryset = ExitScenario.objects.all()
+    serializer_class = ExitScenarioSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        inv_id = self.kwargs.get('investment_id')
+        if inv_id:
+            qs = qs.filter(investment_id=inv_id)
+        return qs
+
+    def perform_create(self, serializer):
+        investment_id = self.kwargs.get('investment_id') or self.request.data.get('investment')
+        investment = get_object_or_404(PEInvestment, id=investment_id)
+        
+        # Handle base case uniqueness
+        is_base = self.request.data.get('is_base_case', False)
+        if is_base:
+            ExitScenario.objects.filter(investment=investment, is_base_case=True).update(is_base_case=False)
+            
+        scenario = serializer.save(created_by=self.request.user)
+        
+        # IPO Eligibility check
+        if scenario.exit_type == 'IPO':
+            report = check_ipo_eligibility(investment.project, investment)
+            scenario.ipo_is_eligible = report['is_eligible']
+            scenario.ipo_eligibility_notes = report['overall_requirements']
+            scenario.save()
+            
+        ImmutableAuditEvent.objects.create(
+            event_type='EXIT_SCENARIO_CREATED',
+            project=investment.project,
+            user=self.request.user,
+            metadata={"scenario_id": str(scenario.id), "name": scenario.name}
+        )
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        if not request.user.has_role('super_admin'):
+            raise PermissionDenied("Only super admins can approve exit scenarios.")
+        
+        scenario = self.get_object()
+        scenario.is_approved_by_ic = True
+        scenario.save()
+        
+        ImmutableAuditEvent.objects.create(
+            event_type='EXIT_SCENARIO_APPROVED',
+            project=scenario.investment.project,
+            user=request.user,
+            metadata={"scenario_id": str(scenario.id)}
+        )
+        return Response({"status": "approved"})
+
+
+class IPOEligibilityView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, investment_id):
+        investment = get_object_or_404(PEInvestment, id=investment_id)
+        report = check_ipo_eligibility(investment.project, investment)
+        
+        ImmutableAuditEvent.objects.create(
+            event_type='IPO_ELIGIBILITY_CHECKED',
+            project=investment.project,
+            user=request.user,
+            metadata={"investment_id": str(investment_id)}
+        )
+        return Response(report)
+
+
+class ExitSummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request):
+        fund_id = request.query_params.get('fund_id')
+        scenarios = ExitScenario.objects.filter(is_base_case=True)
+        if fund_id:
+            scenarios = scenarios.filter(investment__fund_id=fund_id)
+            
+        total_exit_value = scenarios.aggregate(Sum('expected_exit_value_npr'))['expected_exit_value_npr__sum'] or 0
+        
+        # Aggregations
+        exit_types = scenarios.values('exit_type').annotate(count=models.Count('id'), total_value=Sum('expected_exit_value_npr'))
+        
+        return Response({
+            "total_projected_exit_value_npr": total_exit_value,
+            "scenario_count": scenarios.count(),
+            "exit_type_distribution": list(exit_types)
+        })

@@ -20,6 +20,10 @@ WORKDIR /app
 # Only the minimal runtime C libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
+    libpango-1.0-0 \
+    libharfbuzz0b \
+    libpangoft2-1.0-0 \
+    libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages from the deps stage

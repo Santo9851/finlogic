@@ -91,11 +91,26 @@ from .views import (
     GPGovernanceProposalViewSet,
     EntrepreneurKYBUploadView,
     EntrepreneurKYBListView,
+    WaterfallCalculateView,
+    WaterfallHistoryView,
+    DistributionCreateView,
+    LPDistributionListView,
+    LPStatementGenerateView,
+    LPStatementListView,
+    LPStatementDownloadView,
+    GPFundLPsView,
+    MonteCarloSimulationView,
+    ValuationRecordViewSet,
+    ExitScenarioViewSet,
+    IPOEligibilityView,
+    ExitSummaryView,
 )
 
 router = DefaultRouter()
 router.register(r'admin/ir-documents', GPIRDocumentViewSet, basename='admin-ir-docs')
-router.register(r'admin/governance-proposals', GPGovernanceProposalViewSet, basename='admin-proposals')
+router.register(r'governance-proposals', GPGovernanceProposalViewSet, basename='gp-governance-proposal')
+router.register(r'valuations', ValuationRecordViewSet, basename='valuation-record')
+router.register(r'exit-scenarios', ExitScenarioViewSet, basename='exit-scenario')
 
 
 
@@ -289,6 +304,21 @@ urlpatterns = [
         GPFullAnalysisView.as_view(),
         name='gp-project-run-full-analysis',
     ),
+    path(
+        'portfolio/waterfall/calculate/',
+        WaterfallCalculateView.as_view(),
+        name='waterfall-calculate',
+    ),
+    path(
+        'portfolio/waterfall/history/',
+        WaterfallHistoryView.as_view(),
+        name='waterfall-history',
+    ),
+    path(
+        'portfolio/distributions/',
+        DistributionCreateView.as_view(),
+        name='distribution-create',
+    ),
 
 
 
@@ -387,6 +417,11 @@ urlpatterns = [
         name='gp-fund-documents',
     ),
     path(
+        'deals/funds/<uuid:fund_id>/lps/',
+        GPFundLPsView.as_view(),
+        name='gp-fund-lps',
+    ),
+    path(
         'deals/funds/documents/<uuid:doc_id>/',
         GPFundDocumentDetailView.as_view(),
         name='gp-fund-document-detail',
@@ -427,6 +462,33 @@ urlpatterns = [
         LPKYCUploadView.as_view(),
         name='lp-kyc-upload',
     ),
+    path(
+        'lp/distributions/',
+        LPDistributionListView.as_view(),
+        name='lp-distribution-list',
+    ),
+    path(
+        'lp/generate-statement/',
+        LPStatementGenerateView.as_view(),
+        name='lp-generate-statement',
+    ),
+    path(
+        'lp/me/statements/',
+        LPStatementListView.as_view(),
+        name='lp-me-statements',
+    ),
+    path(
+        'lp/me/statements/<uuid:doc_id>/download/',
+        LPStatementDownloadView.as_view(),
+        name='lp-me-statement-download',
+    ),
+    path('portfolio/monte-carlo/', MonteCarloSimulationView.as_view(), name='monte-carlo'),
+    
+    # Valuation & Exit Planning
+    path('portfolio/investments/<uuid:investment_id>/valuations/', ValuationRecordViewSet.as_view({'get': 'list', 'post': 'create'}), name='investment-valuations'),
+    path('portfolio/investments/<uuid:investment_id>/exit-scenarios/', ExitScenarioViewSet.as_view({'get': 'list', 'post': 'create'}), name='investment-exit-scenarios'),
+    path('portfolio/investments/<uuid:investment_id>/ipo-eligibility/', IPOEligibilityView.as_view(), name='ipo-eligibility'),
+    path('portfolio/exit-summary/', ExitSummaryView.as_view(), name='exit-summary'),
 
     # ── GP Investor Portal ─────────────────────────────────────────────────
     path(

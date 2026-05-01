@@ -1,0 +1,54 @@
+{
+  "nodes": [
+    {
+      "id": "models_user",
+      "label": "User Model",
+      "file_type": "code",
+      "source_file": "backend/core/models.py"
+    },
+    {
+      "id": "models_project",
+      "label": "Project Model",
+      "file_type": "code",
+      "source_file": "backend/core/models.py"
+    },
+    {
+      "id": "models_investor",
+      "label": "Investor Model",
+      "file_type": "code",
+      "source_file": "backend/core/models.py"
+    },
+    {
+      "id": "core_auth",
+      "label": "Authentication System",
+      "file_type": "concept",
+      "source_file": "backend/core/models.py"
+    }
+  ],
+  "edges": [
+    {
+      "source": "models_user",
+      "target": "core_auth",
+      "relation": "participates_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9
+    },
+    {
+      "source": "models_project",
+      "target": "models_user",
+      "relation": "owned_by",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "models_investor",
+      "target": "models_user",
+      "relation": "extends",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

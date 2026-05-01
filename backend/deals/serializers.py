@@ -42,6 +42,10 @@ from .models import (
     SEBONFilingDeadline,
     DealMemo,
     PortfolioKPIReport,
+    WaterfallModel,
+    WaterfallRun,
+    ValuationRecord,
+    ExitScenario,
 )
 
 
@@ -782,6 +786,65 @@ class PortfolioKPIReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = PortfolioKPIReport
         fields = '__all__'
+
+class WaterfallModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WaterfallModel
+        fields = '__all__'
+
+class WaterfallRunSerializer(serializers.ModelSerializer):
+    investment_name = serializers.CharField(source='investment.project.legal_name', read_only=True)
+    fund_name = serializers.CharField(source='investment.fund.name', read_only=True)
+    
+    class Meta:
+        model = WaterfallRun
+        fields = '__all__'
+
+
+# ---------------------------------------------------------------------------
+# 11. Valuation & Exit Planning Serializers
+# ---------------------------------------------------------------------------
+
+class ValuationRecordSerializer(serializers.ModelSerializer):
+    valuer_name = serializers.ReadOnlyField(source='valuer.get_full_name')
+    valuation_change_pct = serializers.ReadOnlyField()
+    moic_implied = serializers.ReadOnlyField()
+    methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
+
+    class Meta:
+        model = ValuationRecord
+        fields = (
+            'id', 'investment', 'valuation_date', 'fair_value_npr',
+            'methodology', 'methodology_display', 'discount_rate_pct',
+            'exit_multiple_used', 'assumptions', 'previous_valuation_npr',
+            'valuer', 'valuer_name', 'is_audited', 'auditor_name', 'notes',
+            'valuation_change_pct', 'moic_implied', 'created_at', 'updated_at'
+        )
+        read_only_fields = ('id', 'valuer', 'previous_valuation_npr', 'created_at', 'updated_at')
+
+
+class ExitScenarioSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.ReadOnlyField(source='created_by.get_full_name')
+    exit_type_display = serializers.CharField(source='get_exit_type_display', read_only=True)
+
+    class Meta:
+        model = ExitScenario
+        fields = '__all__'
+        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at', 'ipo_is_eligible', 'ipo_eligibility_notes')
+
+    def validate_probability_pct(self, value):
+        if not (0 <= value <= 100):
+            raise serializers.ValidationError("Probability must be between 0 and 100.")
+        return value
+
+
+class IPOEligibilitySerializer(serializers.Serializer):
+    is_eligible = serializers.BooleanField()
+    criteria = serializers.ListField(child=serializers.DictField())
+    overall_requirements = serializers.CharField()
+    missing_requirements = serializers.ListField(child=serializers.CharField())
+    regulatory_basis = serializers.CharField()
+
 
 
 

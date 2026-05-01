@@ -119,18 +119,24 @@ def _send_invitation_email(project: PEProject) -> None:
             )
             return
 
-        from anymail.message import AnymailMessage
+        from django.core.mail import EmailMultiAlternatives
         from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@finlogiccapital.com')
         
-        msg = AnymailMessage(
+        msg = EmailMultiAlternatives(
             subject=subject,
             body=text_body,
             from_email=from_email,
             to=[entrepreneur_email],
-            tags=['pe-deal-invitation'],
-            template_id=getattr(settings, 'BREVO_INVITE_TEMPLATE_ID', None),
         )
         msg.attach_alternative(html_body, 'text/html')
+
+        # Add Anymail-specific features if using an Anymail backend
+        if 'anymail' in getattr(settings, 'EMAIL_BACKEND', ''):
+            msg.tags = ['pe-deal-invitation']
+            template_id = getattr(settings, 'BREVO_INVITE_TEMPLATE_ID', None)
+            if template_id:
+                msg.template_id = template_id
+
         msg.send(fail_silently=False)
         logger.info(
             "Invitation email sent to %s for project %s",

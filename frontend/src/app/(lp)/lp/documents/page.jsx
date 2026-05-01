@@ -40,9 +40,12 @@ export default function LPDocumentsPage() {
     }
   };
 
-  const handleDownload = async (docId, fileName) => {
+  const handleDownload = async (docId, fileName, docType) => {
     try {
-      const res = await api.get(`/lp/documents/${docId}/download/`);
+      const endpoint = docType === 'CAPITAL_ACCOUNT' 
+        ? `/lp/me/statements/${docId}/download/` 
+        : `/lp/documents/${docId}/download/`;
+      const res = await api.get(endpoint);
       const link = document.createElement('a');
       link.href = res.data.url;
       link.setAttribute('download', fileName);
@@ -92,7 +95,7 @@ export default function LPDocumentsPage() {
         
         <div className="flex items-center gap-3">
           <div className="bg-white/5 border border-white/10 rounded-xl p-1 flex">
-            {['ALL', 'LPA', 'CAPITAL_CALL', 'QUARTERLY_REPORT'].map(type => (
+            {['ALL', 'LPA', 'CAPITAL_CALL', 'QUARTERLY_REPORT', 'CAPITAL_ACCOUNT'].map(type => (
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
@@ -102,7 +105,7 @@ export default function LPDocumentsPage() {
                   : 'text-white/40 hover:text-white'
                 }`}
               >
-                {type === 'ALL' ? 'All Files' : type.replace('_', ' ')}
+                {type === 'ALL' ? 'All Files' : type === 'CAPITAL_ACCOUNT' ? 'Statements' : type.replace('_', ' ')}
               </button>
             ))}
           </div>
@@ -209,7 +212,7 @@ export default function LPDocumentsPage() {
                       </div>
                     )}
                     <button 
-                      onClick={() => handleDownload(doc.id, doc.file_name)}
+                      onClick={() => handleDownload(doc.id, doc.file_name, doc.document_type)}
                       className="p-3 bg-white/5 border border-white/10 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-90"
                       title="Download"
                     >

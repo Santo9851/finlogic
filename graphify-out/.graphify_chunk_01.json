@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {
+      "id": "deals_models",
+      "label": "Deals Module",
+      "file_type": "code",
+      "source_file": "backend/deals/models.py"
+    },
+    {
+      "id": "deals_ai_client",
+      "label": "AI Client",
+      "file_type": "code",
+      "source_file": "backend/deals/ai_client.py"
+    },
+    {
+      "id": "deals_valuation",
+      "label": "Valuation Logic",
+      "file_type": "code",
+      "source_file": "backend/deals/valuation.py"
+    }
+  ],
+  "edges": [
+    {
+      "source": "deals_ai_client",
+      "target": "deals_models",
+      "relation": "augments",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85
+    },
+    {
+      "source": "deals_valuation",
+      "target": "deals_models",
+      "relation": "operates_on",
+      "confidence": "INFERRED",
+      "confidence_score": 0.9
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}
