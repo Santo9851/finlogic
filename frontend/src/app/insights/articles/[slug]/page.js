@@ -5,10 +5,20 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
   ArrowLeft, Clock, User, Calendar, Linkedin, Twitter,
-  Link2, List, X,
+  Link2, List, X, ChevronLeft, ChevronRight, Download, Lock, CheckCircle2,
 } from "lucide-react";
-import { fetchArticle, fetchArticles, normaliseList, PILLAR_LABELS, PILLAR_COLORS } from "@/services/insights";
+import { 
+  fetchArticle, 
+  fetchArticles, 
+  fetchSeriesDetail,
+  completeArticle,
+  normaliseList, 
+  PILLAR_LABELS, 
+  PILLAR_COLORS 
+} from "@/services/insights";
 import ArticleTOC, { extractHeadings, injectHeadingIds } from "@/components/ArticleTOC";
+import Cliffhanger from "@/components/insights/Cliffhanger";
+import { useAuth } from "@/lib/AuthContext";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.finlogiccapital.com";
 
@@ -124,13 +134,16 @@ function MobileTOC({ headings, accentColor, open, onClose, articleRef }) {
 // ── Main page ───────────────────────────────────────────────────────────────
 export default function ArticleDetailPage({ params }) {
   const { slug } = use(params);
-  const [article, setArticle]   = useState(null);
-  const [related, setRelated]   = useState([]);
-  const [headings, setHeadings] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState(false);
-  const [copied, setCopied]     = useState(false);
-  const [tocOpen, setTocOpen]   = useState(false);
+  const { user } = useAuth();
+  const [article, setArticle]     = useState(null);
+  const [seriesData, setSeriesData] = useState(null);
+  const [related, setRelated]     = useState([]);
+  const [headings, setHeadings]   = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState(false);
+  const [copied, setCopied]       = useState(false);
+  const [tocOpen, setTocOpen]     = useState(false);
+  const [completing, setCompleting] = useState(false);
   const articleRef = useRef(null);
 
   useEffect(() => {
@@ -142,10 +155,22 @@ export default function ArticleDetailPage({ params }) {
           fetchArticles({ ordering: "-published_at" }),
         ]);
         setArticle(art);
+        
+        // If part of a series, fetch series details for nav
+        if (art?.series_info?.slug) {
+          try {
+            const series = await fetchSeriesDetail(art.series_info.slug);
+            setSeriesData(series);
+          } catch (e) {
+            console.error("Failed to fetch series details", e);
+          }
+        }
+
         const all = normaliseList(others).filter(a => a.slug !== slug);
         const samePillar = all.filter(a => a.pillar === art.pillar);
         setRelated([...samePillar, ...all.filter(a => a.pillar !== art.pillar)].slice(0, 3));
-        if (art?.content) setHeadings(extractHeadings(art.content));
+        
+        if (art?.full_content) setHeadings(extractHeadings(art.full_content));
       } catch { setError(true); }
       finally { setLoading(false); }
     }
@@ -154,11 +179,38 @@ export default function ArticleDetailPage({ params }) {
 
   // Inject IDs into real DOM after render
   useEffect(() => {
-    if (!loading && article?.content) {
+    if (!loading && article?.full_content) {
       document.title = `${article.title} | Finlogic Capital`;
       requestAnimationFrame(() => injectHeadingIds(articleRef));
     }
   }, [loading, article]);
+
+  const handleComplete = async () => {
+    if (!user || completing || article.is_completed) return;
+    setCompleting(true);
+    try {
+      await completeArticle(slug);
+      setArticle(prev => ({ ...prev, is_completed: true }));
+    } catch (e) {
+      console.error("Failed to mark article as completed", e);
+    } finally {
+      setCompleting(false);
+    }
+  };
+
+  // Find next/prev in series
+  const getSeriesNav = () => {
+    if (!seriesData || !article?.article_number) return { prev: null, next: null };
+    const articles = seriesData.articles || [];
+    const sorted = [...articles].sort((a, b) => a.article_number - b.article_number);
+    const idx = sorted.findIndex(a => a.slug === slug);
+    return {
+      prev: idx > 0 ? sorted[idx - 1] : null,
+      next: idx < sorted.length - 1 ? sorted[idx + 1] : null
+    };
+  };
+
+  const { prev, next } = getSeriesNav();
 
   const color = PILLAR_COLORS[article?.pillar?.toLowerCase()] || "#F59F01";
   const displayDate = article?.published_at
@@ -217,9 +269,22 @@ export default function ArticleDetailPage({ params }) {
       />
 
       <div className="container mx-auto px-4 lg:px-8 pt-28 pb-24 max-w-6xl">
-        <Link href="/insights/articles" className="inline-flex items-center gap-2 text-white/40 hover:text-[#F59F01] text-sm transition-colors mb-10">
-          <ArrowLeft size={15} /> Back to Articles
-        </Link>
+        {/* Breadcrumbs / Series Nav */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
+          <Link href="/insights/articles" className="inline-flex items-center gap-2 text-white/40 hover:text-[#F59F01] text-sm transition-colors">
+            <ArrowLeft size={15} /> Back to Articles
+          </Link>
+          
+          {!loading && article?.series_info && (
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+              <Link href={`/insights/series/${article.series_info.slug}`} className="hover:text-[#F59F01] transition-colors">
+                {article.series_info.title}
+              </Link>
+              <span className="text-white/10">/</span>
+              <span className="text-[#F59F01]">Chapter {article.article_number}</span>
+            </div>
+          )}
+        </div>
 
         {/* Three-column layout: [article | toc+related] */}
         <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-14 items-start">
@@ -233,12 +298,21 @@ export default function ArticleDetailPage({ params }) {
               </div>
             ) : (
               <motion.header initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-                <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4"
-                  style={{ background: `${color}18`, color }}
-                >
-                  {PILLAR_LABELS[article.pillar?.toLowerCase()] || article.pillar}
-                </span>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+                    style={{ background: `${color}18`, color }}
+                  >
+                    {PILLAR_LABELS[article.pillar?.toLowerCase()] || article.pillar}
+                  </span>
+                  {article.is_completed && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#16c784]/10 text-[#16c784] text-[10px] font-black uppercase tracking-widest border border-[#16c784]/20">
+                      <CheckCircle2 size={10} /> Completed
+                    </span>
+                  )}
+                </div>
+                
                 <h1 className="text-3xl md:text-5xl font-black leading-tight mb-5">{article.title}</h1>
+                
                 {article.excerpt && (
                   <p className="text-xl text-white/55 leading-relaxed mb-7 border-l-4 pl-5" style={{ borderColor: `${color}60` }}>
                     {article.excerpt}
@@ -278,16 +352,111 @@ export default function ArticleDetailPage({ params }) {
               )
             }
 
-            {/* Article body */}
+            {/* Article Content / Cliffhanger Logic */}
             {loading ? (
               <div className="space-y-3">
                 {[...Array(10)].map((_, i) => <Skeleton key={i} className={`h-4 ${i % 4 === 3 ? "w-3/5" : "w-full"}`} />)}
               </div>
-            ) : article?.content ? (
-              <motion.div ref={articleRef} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                className="article-body"
-                dangerouslySetInnerHTML={{ __html: article.content }}
-              />
+            ) : article?.access_level === "cliffhanger" ? (
+              <div className="space-y-8">
+                <div className="article-body opacity-50 select-none pointer-events-none mask-fade-bottom">
+                  {article.snippet && (
+                    <div dangerouslySetInnerHTML={{ __html: article.snippet }} />
+                  )}
+                </div>
+                <Cliffhanger 
+                  title={article.title}
+                  teaserBullets={article.teaser_bullets}
+                  seriesSlug={article.slug}
+                  ctaType={user ? "subscribe" : "register"}
+                />
+              </div>
+            ) : article?.full_content ? (
+              <>
+                <motion.div ref={articleRef} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                  className="article-body"
+                  dangerouslySetInnerHTML={{ __html: article.full_content }}
+                />
+
+                {/* Completion CTA */}
+                {user && !article.is_completed && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    className="mt-16 p-8 rounded-3xl bg-[#16c784]/5 border border-[#16c784]/20 flex flex-col items-center text-center"
+                  >
+                    <CheckCircle2 size={40} className="text-[#16c784] mb-4" />
+                    <h4 className="text-xl font-bold text-white mb-2">Finished reading?</h4>
+                    <p className="text-white/60 mb-6 text-sm">Mark this article as completed to track your progress in the series.</p>
+                    <button 
+                      onClick={handleComplete}
+                      disabled={completing}
+                      className="px-8 py-3 rounded-full bg-[#16c784] text-[#100226] font-black text-xs hover:scale-105 transition-transform disabled:opacity-50"
+                    >
+                      {completing ? "Saving..." : "Mark as Completed"}
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Downloadable Tools */}
+                {article.tools && article.tools.length > 0 && (
+                  <div className="mt-20">
+                    <h3 className="text-xl font-black uppercase tracking-widest mb-8 flex items-center gap-3">
+                      <Download size={20} className="text-[#F59F01]" /> Series Resources
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {article.tools.map(tool => {
+                        const hasAccess = !tool.requires_subscription || (user && (user.roles?.includes('investor') || user.roles?.includes('admin')));
+                        return (
+                          <div key={tool.id} className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-[#F59F01]/30 transition-all group">
+                            <div className="flex justify-between items-start mb-4">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-[#F59F01] bg-[#F59F01]/10 px-2 py-1 rounded">
+                                {tool.file_type}
+                              </span>
+                              {!hasAccess && <Lock size={14} className="text-white/30" />}
+                            </div>
+                            <h4 className="font-bold text-white text-sm mb-2 group-hover:text-[#F59F01] transition-colors">{tool.title}</h4>
+                            <p className="text-white/40 text-xs mb-5 line-clamp-2">{tool.description}</p>
+                            
+                            {hasAccess ? (
+                              <a href={tool.file} download className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white hover:text-[#F59F01] transition-colors">
+                                <Download size={12} /> Download Tool
+                              </a>
+                            ) : (
+                              <Link href="/investors" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#F59F01] hover:underline">
+                                Subscribe to Unlock
+                              </Link>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Series Navigation */}
+                {(prev || next) && (
+                  <div className="mt-16 pt-10 border-t border-white/5 grid grid-cols-2 gap-4">
+                    {prev ? (
+                      <Link href={`/insights/articles/${prev.slug}`} className="group p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-[#F59F01]/20 transition-all text-left">
+                        <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30 mb-3 group-hover:text-[#F59F01] transition-colors">
+                          <ChevronLeft size={14} /> Previous Chapter
+                        </span>
+                        <h4 className="text-sm font-bold text-white line-clamp-1">Chapter {prev.article_number}: {prev.title}</h4>
+                      </Link>
+                    ) : <div />}
+                    
+                    {next ? (
+                      <Link href={`/insights/articles/${next.slug}`} className="group p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-[#F59F01]/20 transition-all text-right">
+                        <span className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-white/30 mb-3 group-hover:text-[#F59F01] transition-colors">
+                          Next Chapter <ChevronRight size={14} />
+                        </span>
+                        <h4 className="text-sm font-bold text-white line-clamp-1">Chapter {next.article_number}: {next.title}</h4>
+                      </Link>
+                    ) : <div />}
+                  </div>
+                )}
+              </>
             ) : (
               <p className="text-white/40 text-center py-20">Content not available.</p>
             )}

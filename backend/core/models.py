@@ -57,6 +57,7 @@ class User(AbstractUser, SoftDeleteModel):
     class Role(models.TextChoices):
         ENTREPRENEUR = 'entrepreneur', 'Entrepreneur'
         INVESTOR = 'investor', 'Investor'
+        READER = 'reader', 'Reader'
         ADMIN = 'admin', 'Admin'
         SUPER_ADMIN = 'super_admin', 'Super Admin'
 
@@ -66,7 +67,7 @@ class User(AbstractUser, SoftDeleteModel):
     roles = models.CharField(
         max_length=255, 
         default='entrepreneur', 
-        help_text="Comma-separated roles. Valid roles: 'entrepreneur', 'investor' (LP), 'gp_investor' (GP Shareholder), 'admin', 'super_admin'."
+        help_text="Comma-separated roles. Valid roles: 'entrepreneur', 'investor' (LP), 'gp_investor' (GP Shareholder), 'reader', 'admin', 'super_admin'."
     )
     is_approved = models.BooleanField(default=False)
     email_verified_at = models.DateTimeField(null=True, blank=True)
@@ -648,6 +649,13 @@ class Article(BaseModel):
                   "If both a URL and a file are provided, the uploaded file takes priority."
     )
     pillar = models.CharField(max_length=20, choices=Pillar.choices, null=True, blank=True)
+    
+    # Metered Series Fields
+    series = models.ForeignKey('Series', on_delete=models.SET_NULL, null=True, blank=True, related_name='articles')
+    article_number = models.IntegerField(null=True, blank=True)
+    is_free = models.BooleanField(default=False)
+    teaser_text = models.TextField(blank=True, null=True, help_text="Short preview. If empty, auto-generated from content.")
+    
     is_published = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True, blank=True)
 
@@ -665,6 +673,80 @@ class Article(BaseModel):
         if self.featured_image_file:
             return self.featured_image_file.url
         return self.featured_image or ''
+
+
+class Series(BaseModel):
+    """
+    Groups articles into a logical sequence (e.g., "The VC Fundamentals Series").
+    """
+    title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=300, unique=True, blank=True)
+    description = models.TextField(blank=True, null=True)
+    pillar = models.CharField(max_length=20, choices=Article.Pillar.choices)
+    order = models.IntegerField(default=0)
+    total_articles = models.IntegerField(default=10)
+    is_published = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'article_series'
+        verbose_name_plural = "Series"
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title)
+        super().save(*args, **kwargs)
+
+
+class ArticleCompletion(models.Model):
+    """Tracks which user completed which article."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='article_completions')
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='completions')
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'article_completions'
+        unique_together = ('user', 'article')
+
+    def __str__(self):
+        return f"{self.user.email} completed {self.article.title}"
+
+
+class DownloadableTool(BaseModel):
+    """Tools/Files attached to articles (e.g., Excel models, PDF guides)."""
+    class FileType(models.TextChoices):
+        PDF = 'pdf', 'PDF Document'
+        EXCEL = 'excel', 'Excel Spreadsheet'
+
+    article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='tools')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to='tools/')
+    file_type = models.CharField(max_length=20, choices=FileType.choices)
+    requires_subscription = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'downloadable_tools'
+
+    def __str__(self):
+        return self.title
+
+
+class ReaderProfile(models.Model):
+    """Extended profile for readers to track engagement."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='reader_profile')
+    completed_articles = models.IntegerField(default=0)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'reader_profiles'
+
+    def __str__(self):
+        return f"Reader: {self.user.email}"
 
 
 

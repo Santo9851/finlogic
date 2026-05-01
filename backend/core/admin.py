@@ -28,6 +28,10 @@ from .models import (
     Enrollment,
     LessonCompletion,
     Article,
+    Series,
+    ArticleCompletion,
+    DownloadableTool,
+    ReaderProfile,
     Webinar,
     WebinarRegistration,
     Contact,
@@ -321,6 +325,19 @@ class EnrollmentAdmin(admin.ModelAdmin):
 # Insights CMS  ── Articles  (WordPress-style)
 # ---------------------------------------------------------------------------
 
+@admin.register(Series)
+class SeriesAdmin(admin.ModelAdmin):
+    list_display = ('title', 'pillar', 'order', 'total_articles', 'is_published')
+    list_filter = ('pillar', 'is_published')
+    prepopulated_fields = {'slug': ('title',)}
+    ordering = ('order', 'created_at')
+
+
+class DownloadableToolInline(admin.TabularInline):
+    model = DownloadableTool
+    extra = 1
+
+
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
     """
@@ -330,17 +347,18 @@ class ArticleAdmin(admin.ModelAdmin):
     - Reading-time estimate
     - Full fieldset layout like WP's classic editor
     """
+    inlines = [DownloadableToolInline]
     list_display = (
-        'thumbnail_preview', 'title', 'author',
+        'thumbnail_preview', 'title', 'author', 'series', 'article_number',
         'pillar', 'reading_time_est', 'publish_status', 'published_at',
     )
     list_display_links = ('title',)
-    list_filter   = ('pillar', 'is_published', 'author')
+    list_filter   = ('series', 'pillar', 'is_published', 'author')
     search_fields = ('title', 'excerpt', 'content', 'author__email')
     prepopulated_fields  = {'slug': ('title',)}
-    raw_id_fields  = ('author',)
+    raw_id_fields  = ('author', 'series')
     date_hierarchy = 'published_at'
-    ordering       = ('-published_at', '-created_at')
+    ordering       = ('series', 'article_number', '-published_at')
     actions = ['publish_articles', 'unpublish_articles']
     save_on_top = True
 
@@ -352,7 +370,7 @@ class ArticleAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('✍  Article Content', {
-            'fields': ('title', 'slug', 'excerpt', 'content'),
+            'fields': ('title', 'slug', 'excerpt', 'content', 'teaser_text'),
             'description': mark_safe(
                 '<div style="background:#1a1a2e;border:1px solid #333;border-radius:8px;padding:16px;margin-bottom:16px;font-size:12px;line-height:1.6;color:#ccc;">'
                 '<strong style="color:#F59F01;display:block;margin-bottom:8px;">📝 HTML Content Guide</strong>'
@@ -398,6 +416,10 @@ class ArticleAdmin(admin.ModelAdmin):
         }),
         ('Author & Classification', {
             'fields': ('author', 'pillar'),
+        }),
+        ('Metered Series Settings', {
+            'fields': ('series', 'article_number', 'is_free'),
+            'description': 'Configure if this article belongs to a series and its sequential position.',
         }),
         ('Featured Image', {
             'fields': ('featured_image_file', 'featured_image', 'featured_image_preview'),
@@ -477,6 +499,25 @@ class ArticleAdmin(admin.ModelAdmin):
         if obj.is_published and not obj.published_at:
             obj.published_at = timezone.now()
         super().save_model(request, obj, form, change)
+
+
+@admin.register(ArticleCompletion)
+class ArticleCompletionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'article', 'completed_at')
+    raw_id_fields = ('user', 'article')
+
+
+@admin.register(DownloadableTool)
+class DownloadableToolAdmin(admin.ModelAdmin):
+    list_display = ('title', 'article', 'file_type', 'requires_subscription')
+    list_filter = ('file_type', 'requires_subscription')
+    raw_id_fields = ('article',)
+
+
+@admin.register(ReaderProfile)
+class ReaderProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'completed_articles', 'joined_at')
+    raw_id_fields = ('user',)
 
 
 # ---------------------------------------------------------------------------

@@ -11,7 +11,8 @@ import {
   TrendingUp,
   ShieldCheck,
   Menu,
-  X
+  X,
+  Library
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import FinlogicLogo from '@/components/FinlogicLogo';
@@ -147,6 +148,17 @@ export default function Header() {
                     Profile Settings
                   </Link>
 
+                  {(user.role === 'reader' || (user.roles && user.roles.includes('reader')) || (user.role === 'admin' || (user.roles && user.roles.includes('admin')))) && (
+                    <Link 
+                      href="/wisdom-hub"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#F59F01] hover:text-[#F59F01]/80 hover:bg-white/5 transition-colors"
+                    >
+                      <Library size={16} />
+                      My Library
+                    </Link>
+                  )}
+
                   {/* Superadmin specific link */}
                   {(user.role === 'super_admin' || (user.roles && user.roles.includes('super_admin'))) && (
                     <Link 
@@ -238,6 +250,15 @@ export default function Header() {
                   >
                     <LayoutDashboard size={20} className="text-[#F59F01]" /> My Dashboard
                   </Link>
+                  {(user.role === 'reader' || (user.roles && user.roles.includes('reader')) || (user.role === 'admin' || (user.roles && user.roles.includes('admin')))) && (
+                    <Link 
+                      href="/wisdom-hub"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-lg font-medium text-white/80 hover:text-[#F59F01] flex items-center gap-3"
+                    >
+                      <Library size={20} className="text-[#F59F01]" /> My Library
+                    </Link>
+                  )}
                   <button 
                     onClick={() => {
                       logout();

@@ -15,6 +15,26 @@ export async function fetchArticle(slug) {
   return res.data;
 }
 
+export async function completeArticle(slug) {
+  const res = await api.post(`/insights/articles/${slug}/complete/`);
+  return res.data;
+}
+
+export async function fetchSeriesList() {
+  const res = await api.get('/insights/series/');
+  return res.data;
+}
+
+export async function fetchSeriesDetail(slug) {
+  const res = await api.get(`/insights/series/${slug}/`);
+  return res.data;
+}
+
+export async function fetchWisdomHubDashboard() {
+  const res = await api.get('/wisdom-hub/dashboard/');
+  return res.data;
+}
+
 export async function fetchFeaturedArticle() {
   const res = await api.get('/insights/articles/', { params: { featured: '1' } });
   const data = res.data;

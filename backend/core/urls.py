@@ -15,6 +15,7 @@ router = DefaultRouter()
 router.register(r'projects', views.ProjectViewSet, basename='project')
 router.register(r'project-files', views.ProjectFileViewSet, basename='project-file')
 router.register(r'insights/articles', views.ArticleViewSet, basename='article')
+router.register(r'insights/series', views.SeriesViewSet, basename='series')
 router.register(r'insights/courses', views.CourseViewSet, basename='course')
 router.register(r'insights/webinars', views.WebinarViewSet, basename='webinar')
 router.register(r'investor/funds', views.InvestorFundViewSet, basename='investor-fund')
@@ -42,6 +43,9 @@ urlpatterns = [
 
     # Contact
     path('contact/', views.ContactCreateView.as_view(), name='contact-create'),
+
+    # Wisdom Hub Data
+    path('wisdom-hub/dashboard/', views.WisdomHubDashboardView.as_view(), name='wisdom-hub-dashboard'),
 
     # Evaluation endpoints — must be declared BEFORE include(router.urls) so the
     # router's /projects/<pk>/ pattern does not shadow them.

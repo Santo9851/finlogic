@@ -14,6 +14,10 @@ from .models import (
     UserProfile,
     Project,
     Article,
+    Series,
+    ArticleCompletion,
+    DownloadableTool,
+    ReaderProfile,
     Course,
     Webinar,
     Fund,
@@ -39,6 +43,9 @@ from .serializers import (
     ProjectCreateSerializer,
     ProjectFileSerializer,
     ArticleSerializer,
+    SeriesSerializer,
+    ReaderProfileSerializer,
+    ArticleCompletionSerializer,
     CourseSerializer,
     WebinarSerializer,
     FundSerializer,
@@ -630,6 +637,109 @@ class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs[:1]
 
         return qs
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def complete(self, request, slug=None):
+        article = self.get_object()
+        completion, created = ArticleCompletion.objects.get_or_create(
+            user=request.user,
+            article=article
+        )
+        return Response({
+            'status': 'completed',
+            'completed_at': completion.completed_at,
+            'is_new': created
+        }, status=status.HTTP_200_OK)
+
+
+class SeriesViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    GET /api/insights/series/
+    """
+    queryset = Series.objects.filter(is_published=True).order_by('order')
+    serializer_class = SeriesSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = 'slug'
+
+
+class WisdomHubDashboardView(generics.RetrieveAPIView):
+    """
+    GET /api/wisdom-hub/dashboard/
+    Returns comprehensive reader dashboard data.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        profile, _ = ReaderProfile.objects.get_or_create(user=user)
+        
+        # 1. Recent completions
+        completions = ArticleCompletion.objects.filter(user=user).select_related('article__series').order_by('-completed_at')
+        recent_completions = completions[:5]
+        
+        # 2. In-progress series logic
+        # Get all series the user has interacted with
+        user_article_ids = completions.values_list('article_id', flat=True)
+        series_interacted = Series.objects.filter(articles__id__in=user_article_ids).distinct()
+        
+        in_progress_series = []
+        for s in series_interacted:
+            total = s.total_articles
+            # Count how many articles in THIS series the user completed
+            completed_in_series = completions.filter(article__series=s).count()
+            
+            if 0 < completed_in_series < total:
+                in_progress_series.append({
+                    "id": str(s.id),
+                    "title": s.title,
+                    "slug": s.slug,
+                    "pillar": s.pillar,
+                    "completed_count": completed_in_series,
+                    "total_count": total,
+                    "progress_percent": round((completed_in_series / total) * 100)
+                })
+
+        # 3. Continue Learning (Most recent incomplete article in the last started series)
+        continue_learning = None
+        if completions.exists():
+            last_completion = completions.first()
+            if last_completion.article.series:
+                current_series = last_completion.article.series
+                next_article = Article.objects.filter(
+                    series=current_series, 
+                    article_number__gt=last_completion.article.article_number,
+                    is_published=True
+                ).order_by('article_number').first()
+                
+                if next_article:
+                    continue_learning = {
+                        "title": next_article.title,
+                        "slug": next_article.slug,
+                        "series_title": current_series.title,
+                        "article_number": next_article.article_number
+                    }
+
+        data = {
+            "profile": ReaderProfileSerializer(profile).data,
+            "stats": {
+                "total_completed": profile.completed_articles,
+                "joined_days": (models.timezone.now() - profile.joined_at).days,
+                "in_progress_count": len(in_progress_series)
+            },
+            "recent_completions": [
+                {
+                    "title": c.article.title,
+                    "slug": c.article.slug,
+                    "completed_at": c.completed_at,
+                    "series_title": c.article.series.title if c.article.series else None
+                } for c in recent_completions
+            ],
+            "in_progress_series": in_progress_series,
+            "continue_learning": continue_learning,
+            "recent_downloads": [], # Future: add download tracking
+            "certificates": [] # Future: add certificates
+        }
+        return Response(data)
 
 
 class CourseViewSet(viewsets.ReadOnlyModelViewSet):

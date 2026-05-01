@@ -3,7 +3,7 @@ from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
-from core.models import User, Project, ProjectFile, Deal
+from core.models import User, Project, ProjectFile, Deal, ArticleCompletion, ReaderProfile
 from deals.models import FundDocument, IRDocument, GovernanceProposal, GPDividend, GPShareholder, PEProject, PEProjectDocument
 
 logger = logging.getLogger(__name__)
@@ -371,3 +371,15 @@ def notify_shareholder_changes(sender, instance, created, **kwargs):
         </div>
         """
         dispatch_styled_email(subject, text_content, html_content, [user.email])
+        
+# ---------------------------------------------------------------------------
+# 10. Article Completion (Update ReaderProfile)
+# ---------------------------------------------------------------------------
+@receiver(post_save, sender=ArticleCompletion)
+def update_reader_stats(sender, instance, created, **kwargs):
+    if created:
+        profile, _ = ReaderProfile.objects.get_or_create(user=instance.user)
+        # Recalculate total completed articles for this user
+        count = ArticleCompletion.objects.filter(user=instance.user).count()
+        profile.completed_articles = count
+        profile.save()
