@@ -5,16 +5,24 @@ from decimal import Decimal
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.utils import timezone
-from weasyprint import HTML
+logger = logging.getLogger(__name__)
+
+try:
+    from weasyprint import HTML
+except (ImportError, OSError):
+    HTML = None
+    logger.warning("WeasyPrint or its dependencies (libgobject) not found. PDF generation will be unavailable.")
+
 from .models import FundDocument, PEInvestment, PEProject, LPFundCommitment, ImmutableAuditEvent
 from .b2_utils import get_b2_client
-
-logger = logging.getLogger(__name__)
 
 def generate_capital_account_pdf(lp_commitment, quarter, year):
     """
     Render a capital account statement PDF for a specific LP.
     """
+    if HTML is None:
+        raise ImportError("PDF generation dependencies are missing (WeasyPrint/libgobject).")
+    
     fund = lp_commitment.fund
     lp_profile = lp_commitment.lp_profile
     period = f"{quarter} {year}"

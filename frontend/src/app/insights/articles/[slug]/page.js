@@ -174,7 +174,10 @@ export default function ArticleDetailPage({ params }) {
       } catch { setError(true); }
       finally { setLoading(false); }
     }
-    if (slug) load();
+    if (slug) {
+      window.scrollTo(0, 0);
+      load();
+    }
   }, [slug]);
 
   // Inject IDs into real DOM after render

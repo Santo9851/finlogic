@@ -148,7 +148,7 @@ export default function Header() {
                     Profile Settings
                   </Link>
 
-                  {(user.role === 'reader' || (user.roles && user.roles.includes('reader')) || (user.role === 'admin' || (user.roles && user.roles.includes('admin')))) && (
+                  {user && (
                     <Link 
                       href="/wisdom-hub"
                       onClick={() => setIsMenuOpen(false)}
@@ -250,7 +250,7 @@ export default function Header() {
                   >
                     <LayoutDashboard size={20} className="text-[#F59F01]" /> My Dashboard
                   </Link>
-                  {(user.role === 'reader' || (user.roles && user.roles.includes('reader')) || (user.role === 'admin' || (user.roles && user.roles.includes('admin')))) && (
+                  {user && (
                     <Link 
                       href="/wisdom-hub"
                       onClick={() => setIsMobileMenuOpen(false)}

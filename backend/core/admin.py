@@ -325,12 +325,33 @@ class EnrollmentAdmin(admin.ModelAdmin):
 # Insights CMS  ── Articles  (WordPress-style)
 # ---------------------------------------------------------------------------
 
+class ArticleInline(admin.TabularInline):
+    model = Article
+    extra = 0
+    fields = ('article_number', 'title', 'pillar', 'is_published', 'published_at')
+    readonly_fields = ('published_at',)
+    ordering = ('article_number',)
+    show_change_link = True
+
+
 @admin.register(Series)
 class SeriesAdmin(admin.ModelAdmin):
-    list_display = ('title', 'pillar', 'order', 'total_articles', 'is_published')
+    inlines = [ArticleInline]
+    list_display = ('title', 'pillar', 'order', 'total_articles', 'article_count', 'publish_status')
     list_filter = ('pillar', 'is_published')
     prepopulated_fields = {'slug': ('title',)}
     ordering = ('order', 'created_at')
+    save_on_top = True
+
+    @admin.display(description='Chapters')
+    def article_count(self, obj):
+        return obj.articles.count()
+
+    @admin.display(description='Status')
+    def publish_status(self, obj):
+        if obj.is_published:
+            return format_html('<span style="color:#16c784;font-weight:600;">● Live</span>')
+        return format_html('<span style="color:#aaa;font-weight:600;">● Draft</span>')
 
 
 class DownloadableToolInline(admin.TabularInline):

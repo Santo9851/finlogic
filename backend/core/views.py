@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
+from django.utils import timezone
 from rest_framework import generics, permissions, status, viewsets, views
 from rest_framework.views import APIView
 from rest_framework.decorators import action
@@ -645,6 +646,11 @@ class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
             user=request.user,
             article=article
         )
+        if created:
+            profile, _ = ReaderProfile.objects.get_or_create(user=request.user)
+            profile.completed_articles += 1
+            profile.save()
+
         return Response({
             'status': 'completed',
             'completed_at': completion.completed_at,
@@ -723,7 +729,7 @@ class WisdomHubDashboardView(generics.RetrieveAPIView):
             "profile": ReaderProfileSerializer(profile).data,
             "stats": {
                 "total_completed": profile.completed_articles,
-                "joined_days": (models.timezone.now() - profile.joined_at).days,
+                "joined_days": (timezone.now() - profile.joined_at).days,
                 "in_progress_count": len(in_progress_series)
             },
             "recent_completions": [

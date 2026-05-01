@@ -26,7 +26,10 @@ export default function SeriesLandingPage({ params }) {
         setLoading(false);
       }
     }
-    if (slug) load();
+    if (slug) {
+      window.scrollTo(0, 0);
+      load();
+    }
   }, [slug]);
 
   if (loading) return (

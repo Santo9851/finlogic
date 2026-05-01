@@ -299,7 +299,7 @@ class InvestorCommitmentSerializer(serializers.ModelSerializer):
 
 
 # ---------------------------------------------------------------------------
-# Educational Platform
+# Educational Platform finlogic
 # ---------------------------------------------------------------------------
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -330,13 +330,7 @@ class CourseSerializer(serializers.ModelSerializer):
         return obj.modules.count()
 
 
-class SeriesSerializer(serializers.ModelSerializer):
-    article_count = serializers.IntegerField(read_only=True, source='articles.count')
 
-    class Meta:
-        model = Series
-        fields = ('id', 'title', 'slug', 'description', 'pillar', 'order',
-                  'total_articles', 'is_published', 'article_count', 'created_at')
 
 
 class DownloadableToolSerializer(serializers.ModelSerializer):
@@ -352,7 +346,7 @@ class DownloadableToolSerializer(serializers.ModelSerializer):
         user = request.user if request else None
         
         # Staff/Admin/Superadmin always have access
-        if user and (user.is_staff or user.has_role('admin') or user.has_role('super_admin')):
+        if user and user.is_authenticated and (user.is_staff or user.has_role('admin') or user.has_role('super_admin')):
             return True
             
         # Article context
@@ -441,7 +435,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def get_access_level(self, obj):
         request = self.context.get('request')
-        user = request.user if request else None
+        user = getattr(request, 'user', None)
 
         # Rule: If not in a series, it's always full
         if not obj.series:
@@ -452,7 +446,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             return 'full'
 
         # Rule: Staff/Admin/Superadmin always have full access
-        if user and (user.is_staff or user.has_role('admin') or user.has_role('super_admin')):
+        if user and user.is_authenticated and (user.is_staff or user.has_role('admin') or user.has_role('super_admin')):
             return 'full'
 
         # Rule: Anonymous users only get article 1
@@ -478,7 +472,7 @@ class ArticleSerializer(serializers.ModelSerializer):
 
     def get_is_completed(self, obj):
         request = self.context.get('request')
-        user = request.user if request else None
+        user = getattr(request, 'user', None)
         if user and user.is_authenticated:
             return ArticleCompletion.objects.filter(user=user, article=obj).exists()
         return False
@@ -489,6 +483,16 @@ class ArticleSerializer(serializers.ModelSerializer):
         if data.get('access_level') == 'cliffhanger':
             data['full_content'] = None
         return data
+
+
+class SeriesSerializer(serializers.ModelSerializer):
+    articles = ArticleSerializer(many=True, read_only=True)
+    article_count = serializers.IntegerField(read_only=True, source='articles.count')
+
+    class Meta:
+        model = Series
+        fields = ('id', 'title', 'slug', 'description', 'pillar', 'order',
+                  'total_articles', 'is_published', 'article_count', 'articles', 'created_at')
 
 
 class ReaderProfileSerializer(serializers.ModelSerializer):

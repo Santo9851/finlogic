@@ -238,7 +238,7 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10/min',
+        'anon': '100/min',
         'user': '100/min',
         'auth': '5/min', # Specific rate for auth endpoints like login/register
     }

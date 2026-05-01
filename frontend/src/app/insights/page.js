@@ -7,7 +7,7 @@ import {
   ArrowRight, BookOpen, Video, FileText, Bookmark,
   Search, Clock, User, Calendar, Play, ChevronRight, Sparkles,
 } from "lucide-react";
-import { fetchArticles, fetchCourses, fetchWebinars, fetchFeaturedArticle, normaliseList, PILLAR_COLORS } from "@/services/insights";
+import { fetchArticles, fetchCourses, fetchWebinars, fetchSeriesList, fetchFeaturedArticle, normaliseList, PILLAR_COLORS } from "@/services/insights";
 
 // ─── Skeleton loader ─────────────────────────────────────────────────────────
 function Skeleton({ className = "" }) {
@@ -200,41 +200,124 @@ const categories = [
   // { name: "Frameworks", icon: Bookmark, link: "/insights/articles?pillar=insight", desc: "Proprietary investment models", color: "#a855f7" },
 ];
 
+// ─── Filter Tabs ─────────────────────────────────────────────────────────────
+function FilterTabs({ activeTab, setActiveTab }) {
+  const tabs = [
+    { id: 'all', label: 'All Knowledge' },
+    { id: 'articles', label: 'Research Papers' },
+    { id: 'series', label: 'Learning Series' },
+    { id: 'courses', label: 'Courses' },
+    { id: 'webinars', label: 'Webinars' },
+  ];
+
+  return (
+    <div className="flex flex-wrap justify-center gap-2 mb-12">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => setActiveTab(tab.id)}
+          className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all ${
+            activeTab === tab.id
+              ? 'bg-[#F59F01] text-[#100226] shadow-lg shadow-[#F59F01]/20'
+              : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white border border-white/5'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Series card ──────────────────────────────────────────────────────────────
+function SeriesCard({ series }) {
+  const color = PILLAR_COLORS[series.pillar?.toLowerCase()] || "#F59F01";
+  return (
+    <Link href={`/insights/series/${series.slug}`}
+      className="group relative flex flex-col rounded-3xl overflow-hidden border border-white/5 hover:border-[#F59F01]/30 bg-gradient-to-br from-[#1A0B36] to-[#0D0120] transition-all hover:-translate-y-1"
+    >
+      <div className="p-8">
+        <div className="flex items-center gap-2 mb-4">
+          <PillarBadge pillar={series.pillar} />
+          <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em]">Learning Series</span>
+        </div>
+        <h3 className="text-2xl font-bold text-white mb-4 leading-tight group-hover:text-[#F59F01] transition-colors">
+          {series.title}
+        </h3>
+        <p className="text-white/50 text-sm mb-8 line-clamp-3 leading-relaxed">
+          {series.description}
+        </p>
+        <div className="mt-auto flex items-center justify-between">
+          <div className="flex items-center gap-4 text-xs font-bold text-white/40">
+            <span className="flex items-center gap-1.5"><FileText size={14} /> {series.article_count} Chapters</span>
+            <span className="flex items-center gap-1.5"><Clock size={14} /> Self-paced</span>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-[#F59F01]/10 flex items-center justify-center text-[#F59F01] group-hover:bg-[#F59F01] group-hover:text-[#100226] transition-all">
+            <ArrowRight size={18} />
+          </div>
+        </div>
+      </div>
+      <div className="absolute bottom-0 left-0 w-full h-1" style={{ backgroundColor: color }} />
+    </Link>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function InsightsLandingPage() {
   const [featured, setFeatured]   = useState(null);
   const [articles, setArticles]   = useState([]);
+  const [series, setSeries]       = useState([]);
   const [courses, setCourses]     = useState([]);
   const [webinars, setWebinars]   = useState([]);
+  
+  const [activeTab, setActiveTab] = useState('all');
+  const [activePillar, setActivePillar] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  
   const [loading, setLoading]     = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [feat, art, crs, web] = await Promise.all([
-          fetchFeaturedArticle(),
-          fetchArticles({ ordering: "-published_at" }),
-          fetchCourses(),
-          fetchWebinars(),
-        ]);
-        setFeatured(feat);
-        setArticles(normaliseList(art).slice(1, 5)); // skip featured
-        setCourses(normaliseList(crs).slice(0, 4));
-        setWebinars(normaliseList(web).slice(0, 4));
-      } catch {
-        // fallback to empty — pages handle their own data
-      } finally {
-        setLoading(false);
-      }
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const pillarParam = activePillar === 'all' ? '' : activePillar;
+      
+      const [feat, art, ser, crs, web] = await Promise.all([
+        fetchFeaturedArticle(),
+        fetchArticles({ search: searchQuery, pillar: pillarParam, ordering: "-published_at" }),
+        fetchSeriesList(),
+        fetchCourses({ search: searchQuery, pillar: pillarParam }),
+        fetchWebinars({ search: searchQuery }),
+      ]);
+      
+      setFeatured(feat);
+      setArticles(normaliseList(art));
+      setSeries(normaliseList(ser));
+      setCourses(normaliseList(crs));
+      setWebinars(normaliseList(web));
+    } catch (err) {
+      console.error("Failed to load insights:", err);
+    } finally {
+      setLoading(false);
     }
-    load();
-  }, []);
+  }, [activePillar, searchQuery]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Classification logic
+  const showArticles = activeTab === 'all' || activeTab === 'articles';
+  const showSeries   = activeTab === 'all' || activeTab === 'series';
+  const showCourses  = activeTab === 'all' || activeTab === 'courses';
+  const showWebinars = activeTab === 'all' || activeTab === 'webinars';
+
+  const pillars = ['all', 'vision', 'growth', 'leadership', 'insight', 'partnership'];
 
   return (
     <div className="bg-[#100226] text-white min-h-screen pb-24">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-16 overflow-hidden">
+      <section className="relative pt-32 pb-8 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#F59F01]/5 rounded-full blur-[120px]" />
           <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-[#3A3153]/40 rounded-full blur-[100px]" />
@@ -248,7 +331,7 @@ export default function InsightsLandingPage() {
           </motion.div>
 
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-black mb-6 leading-none tracking-tight"
+            className="text-5xl md:text-8xl font-black mb-6 leading-none tracking-tight"
           >
             The <span className="text-[#F59F01]">Wisdom</span> Hub
           </motion.h1>
@@ -256,118 +339,165 @@ export default function InsightsLandingPage() {
           <motion.p initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             className="text-xl text-white/60 max-w-2xl mx-auto mb-14"
           >
-            Proprietary research, educational courses and exclusive webinars — where visionary thinking meets rigorous analysis.
+            Proprietary research, institutional frameworks, and market analysis for the modern investor.
           </motion.p>
 
-          {/* Category nav */}
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="grid grid-cols-2 gap-4 max-w-xl mx-auto"
-          >
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <Link key={cat.name} href={cat.link}
-                  className="group p-5 rounded-2xl flex flex-col items-center justify-center text-center bg-white/3 border border-white/8 hover:border-white/20 hover:-translate-y-1 transition-all"
-                  style={{ "--cat-color": cat.color }}
+          {/* Search & Global Pillar Filter */}
+          <div className="max-w-4xl mx-auto mb-16 space-y-6">
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-white/30 group-focus-within:text-[#F59F01] transition-colors">
+                <Search size={22} />
+              </div>
+              <input 
+                type="text"
+                placeholder="Search research, series, or courses..."
+                className="w-full h-18 bg-white/5 border border-white/10 rounded-3xl pl-16 pr-8 text-lg outline-none focus:border-[#F59F01]/50 focus:bg-white/10 transition-all placeholder:text-white/20 shadow-2xl"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-3">
+              {pillars.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setActivePillar(p)}
+                  className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${
+                    activePillar === p 
+                    ? 'border-[#F59F01] bg-[#F59F01] text-[#100226]' 
+                    : 'border-white/10 bg-white/5 text-white/40 hover:border-white/30 hover:text-white'
+                  }`}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-all group-hover:scale-110"
-                    style={{ background: `${cat.color}18`, color: cat.color }}
-                  >
-                    <Icon size={18} />
-                  </div>
-                  <h3 className="font-bold text-sm mb-1" style={{ color: cat.color }}>{cat.name}</h3>
-                  <p className="text-[11px] text-white/40">{cat.desc}</p>
-                </Link>
-              );
-            })}
-          </motion.div>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <FilterTabs activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
       </section>
 
-      {/* ── Featured article ──────────────────────────────────────────────── */}
-      <section className="py-8">
-        <div className="container mx-auto px-4 lg:px-8">
-          <FeaturedHero article={featured} loading={loading} />
-        </div>
-      </section>
-
-      {/* ── Latest articles ───────────────────────────────────────────────── */}
-      {(loading || articles.length > 0) && (
-        <section className="py-16">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-bold">Latest Insights</h2>
-                <p className="text-white/40 text-sm mt-1">Emerging trends and timeless principles</p>
-              </div>
-              <Link href="/insights/articles" className="flex items-center gap-1 text-sm font-bold text-[#F59F01] hover:text-white transition-colors">
-                View All <ArrowRight size={15} />
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24" />)}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {articles.map((a, i) => (
-                  <motion.div key={a.id || a.slug} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
-                    <SmallArticleCard article={a} />
-                  </motion.div>
-                ))}
-              </div>
-            )}
+      {/* ── Main Content Grid ─────────────────────────────────────────────── */}
+      <div className="container mx-auto px-4 lg:px-8">
+        
+        {/* 1. Featured Article (Hero) - Only in 'All' or 'Articles' */}
+        {(activeTab === 'all' || activeTab === 'articles') && !searchQuery && activePillar === 'all' && (
+          <div className="mb-20">
+             <FeaturedHero article={featured} loading={loading} />
           </div>
-        </section>
-      )}
+        )}
 
-      {/* ── Webinars ──────────────────────────────────────────────────────── */}
-      {(loading || webinars.length > 0) && (
-        <section className="py-16 border-y border-white/5 bg-white/[0.02]">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-bold">Live & On-Demand</h2>
-                <p className="text-white/40 text-sm mt-1">Sessions with industry experts</p>
+        <div className="space-y-24">
+          {/* Learning Series Section */}
+          {showSeries && (series.length > 0 || loading) && (
+            <section>
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-bold flex items-center gap-3">
+                    <BookOpen className="text-[#F59F01]" /> Learning Series
+                  </h2>
+                  <p className="text-white/40 mt-2">Structured sequences for mastery</p>
+                </div>
               </div>
-              <Link href="/insights/webinars" className="flex items-center gap-1 text-sm font-bold text-[#0B6EC3] hover:text-white transition-colors">
-                View All <ArrowRight size={15} />
-              </Link>
-            </div>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 rounded-3xl" />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {series.map((s) => <SeriesCard key={s.id} series={s} />)}
+                </div>
+              )}
+            </section>
+          )}
 
-            {loading ? (
-              <div className="space-y-3">{[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20" />)}</div>
-            ) : (
-              <div className="space-y-3">
-                {webinars.map((w, i) => (
-                  <motion.div key={w.id} initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.08 }}>
-                    <WebinarCard webinar={w} />
-                  </motion.div>
-                ))}
+          {/* Standalone Articles Section */}
+          {showArticles && (articles.length > 0 || loading) && (
+            <section>
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-bold flex items-center gap-3">
+                    <FileText className="text-[#a855f7]" /> Research Papers
+                  </h2>
+                  <p className="text-white/40 mt-2">Deep dives and institutional insights</p>
+                </div>
+                <Link href="/insights/articles" className="text-[#F59F01] font-bold text-sm hover:underline">Explore all papers</Link>
               </div>
-            )}
-          </div>
-        </section>
-      )}
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {articles.filter(a => a.id !== featured?.id).map((a) => <SmallArticleCard key={a.id} article={a} />)}
+                </div>
+              )}
+            </section>
+          )}
 
-      {/* ── Courses ─── HIDDEN until campus is ready ──────────────────────────
-      {(loading || courses.length > 0) && (
-        <section className="py-16">
-          ...
-        </section>
-      )}
-      ────────────────────────────────────────────────────────────────────── */}
+          {/* Courses Section */}
+          {showCourses && (courses.length > 0 || loading) && (
+            <section className="py-16 border-t border-white/5">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-bold flex items-center gap-3">
+                    <Sparkles className="text-[#16c784]" /> Structured Courses
+                  </h2>
+                  <p className="text-white/40 mt-2">Certified learning for professional excellence</p>
+                </div>
+              </div>
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-80 rounded-2xl" />)}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {courses.map((c) => <CourseCard key={c.id} course={c} />)}
+                </div>
+              )}
+            </section>
+          )}
 
-
-      {/* ── No content state ─────────────────────────────────────────────── */}
-      {!loading && !featured && articles.length === 0 && webinars.length === 0 && (
-        <div className="text-center py-32 text-white/30">
-          <Sparkles size={40} className="mx-auto mb-4 opacity-30" />
-          <h3 className="text-xl font-bold mb-2">Content coming soon</h3>
-          <p className="text-sm">Publish articles, courses and webinars from the admin panel.</p>
+          {/* Webinars Section */}
+          {showWebinars && (webinars.length > 0 || loading) && (
+            <section className="py-16 border-t border-white/5">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-bold flex items-center gap-3">
+                    <Video className="text-[#0B6EC3]" /> Live Sessions
+                  </h2>
+                  <p className="text-white/40 mt-2">Recorded and upcoming expert calls</p>
+                </div>
+              </div>
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {webinars.map((w) => <WebinarCard key={w.id} webinar={w} />)}
+                </div>
+              )}
+            </section>
+          )}
         </div>
-      )}
+
+        {/* Empty State */}
+        {!loading && articles.length === 0 && series.length === 0 && courses.length === 0 && webinars.length === 0 && (
+          <div className="text-center py-40 bg-white/[0.02] rounded-[3rem] border border-dashed border-white/10">
+            <Search size={48} className="mx-auto mb-6 text-white/10" />
+            <h3 className="text-2xl font-bold mb-2">No matching insights found</h3>
+            <p className="text-white/40">Try adjusting your filters or search keywords</p>
+            <button 
+              onClick={() => { setSearchQuery(''); setActivePillar('all'); setActiveTab('all'); }}
+              className="mt-8 text-[#F59F01] font-bold hover:underline"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
