@@ -46,6 +46,8 @@ from .models import (
     WaterfallRun,
     ValuationRecord,
     ExitScenario,
+    FilingTypeConfig,
+    ConflictOfInterest,
 )
 
 
@@ -761,16 +763,53 @@ class ValuationModelSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class RegulatoryChecklistSerializer(serializers.ModelSerializer):
+    last_reviewed_by_detail = UserMiniSerializer(source='last_reviewed_by', read_only=True)
+    
     class Meta:
         model = RegulatoryChecklist
         fields = '__all__'
 
+
+class FilingTypeConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FilingTypeConfig
+        fields = '__all__'
+
+
 class SEBONFilingDeadlineSerializer(serializers.ModelSerializer):
     submitted_by_detail = UserMiniSerializer(source='submitted_by', read_only=True)
+    rag_status = serializers.SerializerMethodField()
+    fund_name = serializers.CharField(source='fund.name', read_only=True)
     
     class Meta:
         model = SEBONFilingDeadline
         fields = '__all__'
+
+    def get_rag_status(self, obj):
+        from django.utils import timezone
+        import datetime
+        
+        if obj.status == 'SUBMITTED':
+            return 'grey'
+        
+        if obj.status == 'OVERDUE':
+            return 'red'
+            
+        # PENDING
+        today = timezone.now().date()
+        diff = (obj.due_date - today).days
+        if diff <= 14:
+            return 'amber'
+        return 'green'
+
+
+class ConflictOfInterestSerializer(serializers.ModelSerializer):
+    declarant_detail = UserMiniSerializer(source='declarant', read_only=True)
+    
+    class Meta:
+        model = ConflictOfInterest
+        fields = '__all__'
+        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at')
 
 class DealMemoSerializer(serializers.ModelSerializer):
     created_by_detail = UserMiniSerializer(source='created_by', read_only=True)

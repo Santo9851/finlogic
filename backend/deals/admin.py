@@ -24,6 +24,10 @@ from .models import (
     ProposalVote,
     IRDocument,
     EntrepreneurKYBDocument,
+    FilingTypeConfig,
+    SEBONFilingDeadline,
+    RegulatoryChecklist,
+    ConflictOfInterest,
 )
 
 
@@ -356,3 +360,30 @@ class EntrepreneurKYBDocumentAdmin(admin.ModelAdmin):
     list_filter = ('status', 'document_type')
     search_fields = ('user__email',)
     raw_id_fields = ('user',)
+
+@admin.register(FilingTypeConfig)
+class FilingTypeConfigAdmin(admin.ModelAdmin):
+    list_display = ('name', 'filing_type', 'default_days_offset')
+    search_fields = ('name', 'filing_type')
+
+
+@admin.register(SEBONFilingDeadline)
+class SEBONFilingDeadlineAdmin(admin.ModelAdmin):
+    list_display = ('title', 'fund', 'filing_type', 'due_date', 'status')
+    list_filter = ('status', 'filing_type', 'fund')
+    search_fields = ('title',)
+    raw_id_fields = ('fund', 'submitted_by', 'document')
+
+
+@admin.register(RegulatoryChecklist)
+class RegulatoryChecklistAdmin(admin.ModelAdmin):
+    list_display = ('project', 'sebon_reporting_compliant', 'last_reviewed_at')
+    raw_id_fields = ('project', 'last_reviewed_by')
+
+
+@admin.register(ConflictOfInterest)
+class ConflictOfInterestAdmin(admin.ModelAdmin):
+    list_display = ('declarant', 'declaration_period', 'is_submitted', 'submitted_at')
+    list_filter = ('is_submitted', 'declaration_period')
+    search_fields = ('declarant__email',)
+    raw_id_fields = ('declarant',)

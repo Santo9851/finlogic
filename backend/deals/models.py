@@ -654,6 +654,11 @@ class ImmutableAuditEvent(models.Model):
         INVESTMENT_CREATED = 'INVESTMENT_CREATED', 'Investment Created'
         CAPITAL_CALL_ISSUED = 'CAPITAL_CALL_ISSUED', 'Capital Call Issued'
         DISTRIBUTION_MADE = 'DISTRIBUTION_MADE', 'Distribution Made'
+        SEBON_FILING_SUBMITTED = 'SEBON_FILING_SUBMITTED', 'SEBON Filing Submitted'
+        USER_MANAGEMENT = 'USER_MANAGEMENT', 'User Management Action'
+        FUND_MANAGEMENT = 'FUND_MANAGEMENT', 'Fund Management Action'
+        PROMPT_MANAGEMENT = 'PROMPT_MANAGEMENT', 'Prompt Library Action'
+        COMPLIANCE_REVIEW = 'COMPLIANCE_REVIEW', 'Compliance Review Action'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event_type = models.CharField(max_length=50, choices=EventType.choices)
@@ -1259,7 +1264,10 @@ class RegulatoryChecklist(models.Model):
     industry_specific_license_required = models.BooleanField(default=False)
     industry_specific_license_obtained = models.BooleanField(default=False)
     license_details = models.TextField(blank=True)
-    
+    last_reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_checklists'
+    )
+    last_reviewed_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -1269,10 +1277,51 @@ class RegulatoryChecklist(models.Model):
         return f"Compliance for {self.project.legal_name}"
 
 
+
+class FilingTypeConfig(models.Model):
+    """Configuration for statutory filing requirements."""
+    name = models.CharField(max_length=100)
+    filing_type = models.CharField(max_length=50, unique=True)
+    regulatory_basis = models.CharField(max_length=255)
+    default_days_offset = models.IntegerField(help_text="Days after period_end_date that filing is due")
+    penalty_description = models.TextField(blank=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.filing_type})"
+
+    class Meta:
+        db_table = 'pe_filing_type_config'
+
+
 class SEBONFilingDeadline(models.Model):
     """Tracks mandatory filing deadlines with SEBON for PE funds."""
+    
+    class FilingType(models.TextChoices):
+        ANNUAL_REPORT = 'ANNUAL_REPORT', 'Annual Report'
+        QUARTERLY_REPORT = 'QUARTERLY_REPORT', 'Quarterly Report'
+        AGM_REPORT = 'AGM_REPORT', 'AGM Report'
+        MATERIAL_EVENT = 'MATERIAL_EVENT', 'Material Event'
+        AML_STR = 'AML_STR', 'AML STR'
+        TAX_FILING = 'TAX_FILING', 'Tax Filing'
+        FUND_AMENDMENT = 'FUND_AMENDMENT', 'Fund Amendment'
+        OTHER = 'OTHER', 'Other'
+
     title = models.CharField(max_length=200)
+    filing_type = models.CharField(
+        max_length=50, 
+        choices=FilingType.choices, 
+        default=FilingType.OTHER
+    )
+    fund = models.ForeignKey(
+        'Fund', on_delete=models.CASCADE, related_name='filing_deadlines', null=True, blank=True
+    )
     due_date = models.DateField()
+    regulatory_basis = models.CharField(max_length=255, blank=True)
+    reminder_days_before = models.JSONField(
+        default=list, help_text="List of days before deadline to send alerts (e.g. [30, 14, 7, 1])"
+    )
+    penalty_note = models.TextField(blank=True)
+    
     status = models.CharField(max_length=20, choices=[
         ('PENDING', 'Pending'),
         ('SUBMITTED', 'Submitted'),
@@ -1291,6 +1340,28 @@ class SEBONFilingDeadline(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.due_date}"
+
+
+class ConflictOfInterest(models.Model):
+    """Register of personal and professional conflicts of interest."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    declarant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='coi_declarations')
+    declaration_date = models.DateField(default=timezone.now)
+    declaration_period = models.CharField(max_length=100, help_text='e.g. FY 2081/82')
+    nature_of_conflict = models.TextField()
+    mitigation_measures = models.TextField()
+    is_submitted = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_conflicts_of_interest'
+        ordering = ['-declaration_date']
+
+    def __str__(self):
+        return f"COI: {self.declarant.email} - {self.declaration_period}"
 
 
 class DealMemo(models.Model):

@@ -1,6 +1,6 @@
 from rest_framework import serializers
-from core.models import User
-from deals.models import Fund
+from core.models import User, AuditLog
+from deals.models import Fund, PromptLibrary
 
 class SuperAdminUserSerializer(serializers.ModelSerializer):
     role_list = serializers.ListField(child=serializers.CharField(), read_only=True)
@@ -29,3 +29,21 @@ class SuperAdminFundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Fund
         fields = '__all__'
+
+
+class SuperAdminPromptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromptLibrary
+        fields = '__all__'
+
+
+class SuperAdminAuditLogSerializer(serializers.ModelSerializer):
+    actor_email = serializers.EmailField(source='user.email', read_only=True)
+    actor_name = serializers.CharField(source='user.get_full_name', read_only=True)
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            'id', 'table_name', 'record_id', 'user', 'actor_email', 
+            'actor_name', 'action', 'old_data', 'new_data', 'created_at'
+        ]

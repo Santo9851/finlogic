@@ -1,0 +1,9 @@
+{
+  "name": "Finlogic Capital",
+  "short_name": "Finlogic",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0124",
+  "theme_color": "#9333ea",
+  "icons": []
+}

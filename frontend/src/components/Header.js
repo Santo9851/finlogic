@@ -147,6 +147,18 @@ export default function Header() {
                     Profile Settings
                   </Link>
 
+                  {/* Superadmin specific link */}
+                  {(user.role === 'super_admin' || (user.roles && user.roles.includes('super_admin'))) && (
+                    <Link 
+                      href="/superadmin/dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
+                    >
+                      <ShieldCheck size={16} />
+                      Superadmin Portal
+                    </Link>
+                  )}
+
                   <div className="h-px bg-white/5 my-2 mx-2" />
 
                   <button 
