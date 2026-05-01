@@ -50,7 +50,7 @@ function LoginContent() {
         : roles.split(',').map(r => r.trim()).filter(Boolean);
 
       const REDIRECT_MAP = {
-        super_admin: '/gp/dashboard',
+        super_admin: '/superadmin/dashboard',
         admin: '/gp/dashboard',
         gp_investor: '/gp-investor/dashboard',
         investor: '/lp/dashboard',

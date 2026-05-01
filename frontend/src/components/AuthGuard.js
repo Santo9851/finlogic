@@ -18,12 +18,13 @@ export default function AuthGuard({ children, allowedRoles = [] }) {
         const hasAccess = allowedRoles.some(role => userRoles.includes(role));
         
         if (!hasAccess) {
-          // Redirect based on the primary role they have
-          const primaryRole = userRoles[0];
-          if (primaryRole === 'entrepreneur') router.push('/entrepreneur/dashboard');
-          else if (primaryRole === 'investor') router.push('/lp/dashboard');
-          else if (primaryRole === 'gp_investor') router.push('/gp-investor/dashboard');
-          else router.push('/gp/dashboard');
+          // Redirect based on priority
+          if (userRoles.includes('super_admin')) router.push('/superadmin/dashboard');
+          else if (userRoles.includes('admin')) router.push('/gp/dashboard');
+          else if (userRoles.includes('entrepreneur')) router.push('/entrepreneur/dashboard');
+          else if (userRoles.includes('investor')) router.push('/lp/dashboard');
+          else if (userRoles.includes('gp_investor')) router.push('/gp-investor/dashboard');
+          else router.push('/');
         }
       }
     }

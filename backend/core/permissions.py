@@ -57,3 +57,17 @@ class CanViewProject(permissions.BasePermission):
             return True
 
         return False
+
+
+class IsSuperAdmin(permissions.BasePermission):
+    """
+    Object-level permission to only allow users with the 'super_admin' role.
+    """
+    message = "You must be a super admin to access this resource."
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.has_role('super_admin')
+        )

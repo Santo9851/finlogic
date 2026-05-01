@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'anymail',
     'core',
     'deals',  # PE Deal management
+    'superadmin',
     'drf_spectacular',
 ]
 

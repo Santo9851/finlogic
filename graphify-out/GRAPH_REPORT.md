@@ -1,46 +1,47 @@
-# Graph Report - .  (2026-05-01)
+# Graph Report - finlogic  (2026-05-01)
 
 ## Corpus Check
-- Large corpus: 208 files · ~904,227 words. Semantic extraction will be expensive (many Claude tokens). Consider running on a subfolder, or use --no-semantic to run AST-only.
+- 188 files · ~913,087 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1270 nodes · 16562 edges · 65 communities detected
-- Extraction: 8% EXTRACTED · 92% INFERRED · 0% AMBIGUOUS · INFERRED: 15259 edges (avg confidence: 0.5)
+- 1485 nodes · 25302 edges · 107 communities detected
+- Extraction: 6% EXTRACTED · 94% INFERRED · 0% AMBIGUOUS · INFERRED: 23887 edges (avg confidence: 0.5)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Core Backend Infrastructure|Core Backend Infrastructure]]
-- [[_COMMUNITY_Deals & AI Integration|Deals & AI Integration]]
-- [[_COMMUNITY_Deal Lifecycle & API|Deal Lifecycle & API]]
-- [[_COMMUNITY_GP Administration|GP Administration]]
-- [[_COMMUNITY_Frontend & Auth|Frontend & Auth]]
-- [[_COMMUNITY_Permissions & Fund Access|Permissions & Fund Access]]
+- [[_COMMUNITY_Community 0|Community 0]]
+- [[_COMMUNITY_Community 1|Community 1]]
+- [[_COMMUNITY_Community 2|Community 2]]
+- [[_COMMUNITY_Community 3|Community 3]]
+- [[_COMMUNITY_Community 4|Community 4]]
+- [[_COMMUNITY_Community 5|Community 5]]
 - [[_COMMUNITY_Community 7|Community 7]]
 - [[_COMMUNITY_Community 8|Community 8]]
 - [[_COMMUNITY_Community 9|Community 9]]
 - [[_COMMUNITY_Community 10|Community 10]]
 - [[_COMMUNITY_Community 11|Community 11]]
 - [[_COMMUNITY_Community 12|Community 12]]
+- [[_COMMUNITY_Community 13|Community 13]]
+- [[_COMMUNITY_Community 14|Community 14]]
 - [[_COMMUNITY_Community 15|Community 15]]
 - [[_COMMUNITY_Community 16|Community 16]]
-- [[_COMMUNITY_Community 17|Community 17]]
-- [[_COMMUNITY_Community 18|Community 18]]
 - [[_COMMUNITY_Community 19|Community 19]]
 - [[_COMMUNITY_Community 20|Community 20]]
 - [[_COMMUNITY_Community 22|Community 22]]
-- [[_COMMUNITY_Community 23|Community 23]]
-- [[_COMMUNITY_Community 24|Community 24]]
-- [[_COMMUNITY_Community 25|Community 25]]
+- [[_COMMUNITY_Community 27|Community 27]]
 - [[_COMMUNITY_Community 30|Community 30]]
-- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
+- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
 - [[_COMMUNITY_Community 37|Community 37]]
-- [[_COMMUNITY_Community 38|Community 38]]
 - [[_COMMUNITY_Community 39|Community 39]]
-- [[_COMMUNITY_Community 40|Community 40]]
-- [[_COMMUNITY_Community 41|Community 41]]
-- [[_COMMUNITY_Community 43|Community 43]]
-- [[_COMMUNITY_Community 49|Community 49]]
-- [[_COMMUNITY_Community 50|Community 50]]
+- [[_COMMUNITY_Community 45|Community 45]]
+- [[_COMMUNITY_Community 46|Community 46]]
+- [[_COMMUNITY_Community 52|Community 52]]
+- [[_COMMUNITY_Community 53|Community 53]]
+- [[_COMMUNITY_Community 54|Community 54]]
+- [[_COMMUNITY_Community 55|Community 55]]
 - [[_COMMUNITY_Community 56|Community 56]]
 - [[_COMMUNITY_Community 57|Community 57]]
 - [[_COMMUNITY_Community 58|Community 58]]
@@ -68,166 +69,208 @@
 - [[_COMMUNITY_Community 80|Community 80]]
 - [[_COMMUNITY_Community 81|Community 81]]
 - [[_COMMUNITY_Community 82|Community 82]]
-- [[_COMMUNITY_Community 83|Community 83]]
-- [[_COMMUNITY_Community 135|Community 135]]
-- [[_COMMUNITY_Community 136|Community 136]]
-- [[_COMMUNITY_Community 140|Community 140]]
-- [[_COMMUNITY_Community 141|Community 141]]
-- [[_COMMUNITY_Community 155|Community 155]]
+- [[_COMMUNITY_Community 137|Community 137]]
+- [[_COMMUNITY_Community 138|Community 138]]
+- [[_COMMUNITY_Community 142|Community 142]]
+- [[_COMMUNITY_Community 143|Community 143]]
+- [[_COMMUNITY_Community 157|Community 157]]
+- [[_COMMUNITY_Community 158|Community 158]]
+- [[_COMMUNITY_Community 159|Community 159]]
+- [[_COMMUNITY_Community 160|Community 160]]
+- [[_COMMUNITY_Community 161|Community 161]]
+- [[_COMMUNITY_Community 162|Community 162]]
+- [[_COMMUNITY_Community 163|Community 163]]
+- [[_COMMUNITY_Community 164|Community 164]]
+- [[_COMMUNITY_Community 165|Community 165]]
+- [[_COMMUNITY_Community 166|Community 166]]
+- [[_COMMUNITY_Community 167|Community 167]]
+- [[_COMMUNITY_Community 168|Community 168]]
+- [[_COMMUNITY_Community 169|Community 169]]
+- [[_COMMUNITY_Community 170|Community 170]]
+- [[_COMMUNITY_Community 171|Community 171]]
+- [[_COMMUNITY_Community 172|Community 172]]
+- [[_COMMUNITY_Community 173|Community 173]]
+- [[_COMMUNITY_Community 174|Community 174]]
+- [[_COMMUNITY_Community 175|Community 175]]
+- [[_COMMUNITY_Community 176|Community 176]]
+- [[_COMMUNITY_Community 177|Community 177]]
+- [[_COMMUNITY_Community 178|Community 178]]
+- [[_COMMUNITY_Community 179|Community 179]]
+- [[_COMMUNITY_Community 180|Community 180]]
+- [[_COMMUNITY_Community 181|Community 181]]
+- [[_COMMUNITY_Community 182|Community 182]]
+- [[_COMMUNITY_Community 183|Community 183]]
+- [[_COMMUNITY_Community 184|Community 184]]
+- [[_COMMUNITY_Community 185|Community 185]]
+- [[_COMMUNITY_Community 186|Community 186]]
+- [[_COMMUNITY_Community 187|Community 187]]
+- [[_COMMUNITY_Community 188|Community 188]]
+- [[_COMMUNITY_Community 189|Community 189]]
+- [[_COMMUNITY_Community 190|Community 190]]
+- [[_COMMUNITY_Community 191|Community 191]]
+- [[_COMMUNITY_Community 192|Community 192]]
+- [[_COMMUNITY_Community 193|Community 193]]
+- [[_COMMUNITY_Community 194|Community 194]]
+- [[_COMMUNITY_Community 195|Community 195]]
+- [[_COMMUNITY_Community 196|Community 196]]
+- [[_COMMUNITY_Community 197|Community 197]]
+- [[_COMMUNITY_Community 198|Community 198]]
+- [[_COMMUNITY_Community 199|Community 199]]
+- [[_COMMUNITY_Community 200|Community 200]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `Fund` - 307 edges
-2. `PEProject` - 230 edges
-3. `PEProjectDocument` - 226 edges
-4. `ImmutableAuditEvent` - 222 edges
-5. `PEInvestment` - 220 edges
-6. `CapitalCall` - 220 edges
-7. `Distribution` - 220 edges
-8. `EntrepreneurKYBDocument` - 217 edges
-9. `GPShareholder` - 217 edges
-10. `GovernanceProposal` - 217 edges
+1. `Fund` - 414 edges
+2. `PEProject` - 340 edges
+3. `PEProjectDocument` - 333 edges
+4. `LPFundCommitment` - 325 edges
+5. `FundDocument` - 325 edges
+6. `LPProfile` - 323 edges
+7. `ImmutableAuditEvent` - 321 edges
+8. `PEInvestment` - 320 edges
+9. `CapitalCall` - 317 edges
+10. `Distribution` - 317 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Command` --uses--> `User`  [INFERRED]
-  backend\deals\management\commands\seed_phase3.py → backend\core\models.py
-- `Converts 1-10 score to 0-100 for compatibility with legacy ProjectScore.score fi` --uses--> `Project`  [INFERRED]
-  backend\core\utils\scoring.py → backend\core\models.py
-- `Converts 1-10 score to 0-100 for compatibility with legacy ProjectScore.score fi` --uses--> `ProjectScore`  [INFERRED]
-  backend\core\utils\scoring.py → backend\core\models.py
+- `Run Monte Carlo simulation to estimate exit MOIC and IRR.          Assumptions:` --uses--> `PEInvestment`  [INFERRED]
+  backend\deals\monte_carlo.py → backend\deals\models.py
+- `User` --uses--> `Command`  [INFERRED]
+  backend\core\models.py → backend\deals\management\commands\seed_phase3.py
+- `Project` --uses--> `Converts 1-10 score to 0-100 for compatibility with legacy ProjectScore.score fi`  [INFERRED]
+  backend\core\models.py → backend\core\utils\scoring.py
+- `ProjectScore` --uses--> `Converts 1-10 score to 0-100 for compatibility with legacy ProjectScore.score fi`  [INFERRED]
+  backend\core\models.py → backend\core\utils\scoring.py
 - `HealthCheckView` --uses--> `FundSerializer`  [INFERRED]
-  backend\core\views.py → backend\deals\serializers.py
-- `EntrepreneurDashboardView` --uses--> `FundSerializer`  [INFERRED]
   backend\core\views.py → backend\deals\serializers.py
 
 ## Communities
 
-### Community 0 - "Core Backend Infrastructure"
+### Community 0 - "Community 0"
 Cohesion: 0.06
-Nodes (198): AbstractUser, BaseUserAdmin, ArticleAdmin, AuditLogAdmin, ContactAdmin, ContactInteractionAdmin, CourseAdmin, CourseModuleAdmin (+190 more)
+Nodes (200): AbstractUser, BaseUserAdmin, ArticleAdmin, AuditLogAdmin, ContactAdmin, ContactInteractionAdmin, CourseAdmin, CourseModuleAdmin (+192 more)
 
-### Community 1 - "Deals & AI Integration"
-Cohesion: 0.03
-Nodes (102): BaseCommand, Command, Command, Command, AIBudgetGuard, AIModelClient, can_make_call(), get_current_spend() (+94 more)
+### Community 1 - "Community 1"
+Cohesion: 0.25
+Nodes (160): APIView, ComplianceGate, CriterionScore, DCFAssumptions, ExitScenario, LBOAssumptions, LPDocumentAccess, LPKYCDocument (+152 more)
 
-### Community 2 - "Deal Lifecycle & API"
-Cohesion: 0.28
-Nodes (130): APIView, ComplianceGate, CriterionScore, DCFAssumptions, DealMemo, LBOAssumptions, LPDocumentAccess, LPKYCDocument (+122 more)
+### Community 2 - "Community 2"
+Cohesion: 0.2
+Nodes (156): CapitalCallAdmin, DistributionAdmin, EntrepreneurKYBDocumentAdmin, FundAdmin, FundDocumentAdmin, GovernanceProposalAdmin, GPDividendAdmin, GPDividendInline (+148 more)
 
-### Community 3 - "GP Administration"
-Cohesion: 0.15
-Nodes (71): CapitalCallAdmin, DistributionAdmin, EntrepreneurKYBDocumentAdmin, FundAdmin, FundDocumentAdmin, GovernanceProposalAdmin, GPDividendAdmin, GPDividendInline (+63 more)
+### Community 3 - "Community 3"
+Cohesion: 0.06
+Nodes (111): AIBudgetGuard, AIModelClient, can_make_call(), get_current_spend(), get_monthly_key(), Main entry point for AI tasks.         Handles budget guarding, prompt retrieval, Redis-based cost tracking and circuit breaker.     Default budget: $25/month., Routes tasks to optimal models:     - Financial Extraction, Scoring, Legal Scan (+103 more)
 
-### Community 4 - "Frontend & Auth"
+### Community 4 - "Community 4"
+Cohesion: 0.02
+Nodes (45): BaseCommand, Command, Command, Command, generate_presigned_upload_url(), Generate a pre-signed PUT URL for direct browser binary uploads., check_ipo_eligibility(), deals/ipo_eligibility.py Engine to evaluate SEBON IPO requirements for NEPSE lis (+37 more)
+
+### Community 5 - "Community 5"
 Cohesion: 0.05
 Nodes (15): AuthGuard(), Header(), EntrepreneurLayout(), GPInvestorLayout(), GPSidebarFooter(), useAuth(), LoginContent(), LPLayout() (+7 more)
 
-### Community 5 - "Permissions & Fund Access"
-Cohesion: 0.18
-Nodes (21): IsEntrepreneurRole, IsGPInvestorRole, IsGPStaff, IsLPRole, Grant access only to users with 'admin' or 'super_admin' in their roles.     The, Grant access only to users with 'entrepreneur' role., Grant access only to Limited Partners ('investor' role)., Grant access only to GP Investors ('gp_investor' role). (+13 more)
-
 ### Community 7 - "Community 7"
-Cohesion: 0.22
-Nodes (16): LPFundCommitment, Tracks an LP's capital commitment to a fund., ImmutableAuditEventSerializer, PEProjectDetailSerializer, RegulatoryChecklistSerializer, ScoringRunSerializer, EntrepreneurInviteDetailView, GPGovernanceProposalViewSet (+8 more)
+Cohesion: 0.13
+Nodes (8): ExtractedFinancialsSerializer, PEProjectDetailSerializer, GPExtractedFinancialsVerifyView, GPFundDocumentDetailView, GPProjectDocumentsView, PATCH /api/deals/projects/<uuid>/extracted-financials/<id>/verify/     GP verif, Update/Delete specific fund document.     PATCH /api/deals/funds/documents/<doc, GET /api/deals/projects/{id}/documents/     Permission: IsGPStaff
 
 ### Community 8 - "Community 8"
-Cohesion: 0.13
-Nodes (14): AIScoreResult, AIScoringAssistant, build_ai_scored_payload(), CriterionAIScore, NepalPEPromptBuilder, core/utils/ai_scoring.py  AI-assisted scoring layer for Nepal PE/VC deal evaluat, Builds the system and user prompts for AI scoring.     Nepal-specific context is, Calls Claude to generate AI-assisted 1-10 scores for all 20 criteria.      One A (+6 more)
+Cohesion: 0.24
+Nodes (9): IsGPStaff, Grant access only to users with 'admin' or 'super_admin' in their roles.     The, OperationalAnalysisSerializer, FundDetailView, FundListCreateView, GET/PATCH /api/deals/funds/{id}/, GET/PATCH /api/deals/funds/{id}/, CRUD for investment valuations.     GP staff only. Investors see restricted inf (+1 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.24
 Nodes (10): dispatch_styled_email(), notify_entrepreneur_submission(), notify_gp_dividend(), notify_gp_document_upload(), notify_gp_ir_document(), notify_gp_proposal(), notify_investors_document(), notify_lps_new_deal() (+2 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.39
-Nodes (7): CapitalCall, A drawdown of LP committed capital for investment purposes., GovernanceProposalSerializer, GPInvestorDashboardView, GET /api/gp-investor/dashboard/     Shareholding, fund performance, IR data., GET /api/gp-investor/dashboard/, GP management of documents for a specific fund.     POST /api/deals/funds/<fund
+Cohesion: 0.24
+Nodes (6): IsEntrepreneurRole, Grant access only to users with 'entrepreneur' role., GPProjectListView, GPRegulatoryChecklistView, GET /api/deals/projects/<uuid:pk>/regulatory-checklist/     PATCH /api/deals/pr, GET /api/deals/projects/  - List deals     POST /api/deals/projects/ - Create a
 
 ### Community 11 - "Community 11"
-Cohesion: 0.25
-Nodes (4): LPDashboardFundSerializer, GPProjectExtractedFinancialsView, GET /api/deals/projects/<uuid>/extracted-financials/, GET /api/deals/projects/<uuid:project_id>/scoring/latest/
+Cohesion: 0.28
+Nodes (6): IsGPInvestorRole, Grant access only to GP Investors ('gp_investor' role)., EntrepreneurSubmissionDetailView, LPDocumentListView, List published documents for all funds the LP is committed to.     GET /api/lp/, GET /api/entrepreneur/submissions/{id}/     Detail with form responses and docu
 
 ### Community 12 - "Community 12"
+Cohesion: 0.28
+Nodes (6): IsLPRole, Grant access only to Limited Partners ('investor' role)., EntrepreneurSubmissionsListView, LPKYCUploadView, POST /api/lp/kyc/upload/     Handles local multipart/form-data upload of KYC do, GET /api/entrepreneur/submissions/     Lists PEProjects where entrepreneur_user
+
+### Community 13 - "Community 13"
+Cohesion: 0.28
+Nodes (5): FundDocumentSerializer, EntrepreneurKYBListView, GPProjectFormResponsesView, PATCH /api/portfolio/kpi-reports/<id>/ (GP review), GET /api/deals/projects/{id}/form-responses/     Permission: IsGPStaff
+
+### Community 14 - "Community 14"
+Cohesion: 0.32
+Nodes (5): GPInviteSerializer, GPProjectExtractedFinancialsView, LPProfileSelfView, GET /api/lp/profile/     Returns the authenticated user's LP profile.     Fixe, GET /api/deals/projects/<uuid>/qoe-analysis/     Returns latest report or trigg
+
+### Community 15 - "Community 15"
+Cohesion: 0.29
+Nodes (3): LPDashboardFundSerializer, GPProjectRedFlagsView, PATCH /api/deals/red-flags/<id>/review/
+
+### Community 16 - "Community 16"
 Cohesion: 0.25
 Nodes (5): IsGPStaffOrReadOnly, IsOwnerEntrepreneur, deals/permissions.py Custom DRF permissions for the PE Deals app.  Role strings, GP staff get full CRUD; all other authenticated users get read-only., Object-level: the entrepreneur_user on the PEProject must be request.user.
 
-### Community 15 - "Community 15"
-Cohesion: 0.25
-Nodes (8): AI Deal Memo Generation, GP Review Workspace, Investor Dashboard, User Model, Data Room Document, Private Equity Fund, PE Deal (Project), SEBON SIF Rules 2075
-
-### Community 16 - "Community 16"
-Cohesion: 0.33
-Nodes (4): OperationalAnalysisSerializer, EntrepreneurKYBListView, POST /api/deals/projects/<uuid:pk>/generate-memo/, GET /api/entrepreneur/kyc/
-
-### Community 17 - "Community 17"
-Cohesion: 0.33
-Nodes (4): FundDocumentSerializer, GPRegulatoryChecklistView, GET /api/deals/projects/<uuid:pk>/regulatory-checklist/     PATCH /api/deals/pr, POST /api/deals/projects/invite/{token}/step/{step_name}/     Saves form respon
-
-### Community 18 - "Community 18"
+### Community 19 - "Community 19"
 Cohesion: 0.29
 Nodes (3): AppConfig, CoreConfig, DealsConfig
 
-### Community 19 - "Community 19"
+### Community 20 - "Community 20"
 Cohesion: 0.38
 Nodes (4): generatePageMeta(), generateMetadata(), getArticle(), getCourse()
 
-### Community 20 - "Community 20"
-Cohesion: 0.4
-Nodes (4): QoEReportSerializer, GPInvestorGovernanceListView, GET /api/gp-investor/governance/proposals/, POST /api/deals/projects/{pk}/get-upload-url/     Permission: IsGPStaff
-
 ### Community 22 - "Community 22"
-Cohesion: 0.6
-Nodes (3): RedFlagFindingSerializer, GPRedFlagReviewView, PATCH /api/deals/red-flags/<id>/review/
-
-### Community 23 - "Community 23"
-Cohesion: 0.6
-Nodes (3): CommercialAnalysisSerializer, GPProjectCommercialAnalysisView, POST /api/deals/projects/<uuid>/run-commercial-analysis/     GET /api/deals/pro
-
-### Community 24 - "Community 24"
-Cohesion: 0.6
-Nodes (3): ExtractedFinancialsSerializer, GPExtractedFinancialsVerifyView, PATCH /api/deals/projects/<uuid>/extracted-financials/<id>/verify/     GP verif
-
-### Community 25 - "Community 25"
 Cohesion: 0.4
 Nodes (2): Migration, deals/migrations/0002_default_pe_form_template.py Data migration: creates the de
 
-### Community 30 - "Community 30"
+### Community 27 - "Community 27"
 Cohesion: 0.83
 Nodes (3): getRoles(), middleware(), parseJwtPayload()
 
-### Community 33 - "Community 33"
+### Community 30 - "Community 30"
 Cohesion: 0.5
 Nodes (1): LPPortfolioPage()
 
-### Community 37 - "Community 37"
+### Community 34 - "Community 34"
 Cohesion: 0.67
 Nodes (2): main(), Run administrative tasks.
 
-### Community 38 - "Community 38"
+### Community 35 - "Community 35"
+Cohesion: 0.67
+Nodes (1): Migration
+
+### Community 36 - "Community 36"
+Cohesion: 0.67
+Nodes (1): Migration
+
+### Community 37 - "Community 37"
 Cohesion: 0.67
 Nodes (1): Migration
 
 ### Community 39 - "Community 39"
-Cohesion: 0.67
-Nodes (2): GPProjectRedFlagsView, GET /api/deals/projects/<uuid>/red-flags/
-
-### Community 40 - "Community 40"
-Cohesion: 0.67
-Nodes (1): Migration
-
-### Community 41 - "Community 41"
-Cohesion: 0.67
-Nodes (1): Migration
-
-### Community 43 - "Community 43"
 Cohesion: 1.0
 Nodes (2): fetchSlugs(), sitemap()
 
-### Community 49 - "Community 49"
+### Community 45 - "Community 45"
 Cohesion: 0.67
 Nodes (1): GPInvestorMeetingsPage()
 
-### Community 50 - "Community 50"
+### Community 46 - "Community 46"
 Cohesion: 0.67
 Nodes (1): LPDocumentsPage()
+
+### Community 52 - "Community 52"
+Cohesion: 1.0
+Nodes (1): Migration
+
+### Community 53 - "Community 53"
+Cohesion: 1.0
+Nodes (1): Migration
+
+### Community 54 - "Community 54"
+Cohesion: 1.0
+Nodes (1): Migration
+
+### Community 55 - "Community 55"
+Cohesion: 1.0
+Nodes (1): Migration
 
 ### Community 56 - "Community 56"
 Cohesion: 1.0
@@ -243,11 +286,11 @@ Nodes (1): Migration
 
 ### Community 59 - "Community 59"
 Cohesion: 1.0
-Nodes (1): Migration
+Nodes (1): Enforce immutability: new records only, no updates.
 
 ### Community 60 - "Community 60"
 Cohesion: 1.0
-Nodes (1): Migration
+Nodes (1): _notify_gp_submission()
 
 ### Community 61 - "Community 61"
 Cohesion: 1.0
@@ -255,11 +298,11 @@ Nodes (1): Migration
 
 ### Community 62 - "Community 62"
 Cohesion: 1.0
-Nodes (1): Enforce immutability: new records only, no updates.
+Nodes (1): Migration
 
 ### Community 63 - "Community 63"
 Cohesion: 1.0
-Nodes (1): _notify_gp_submission()
+Nodes (1): Migration
 
 ### Community 64 - "Community 64"
 Cohesion: 1.0
@@ -327,144 +370,402 @@ Nodes (1): Migration
 
 ### Community 80 - "Community 80"
 Cohesion: 1.0
-Nodes (1): Migration
+Nodes (1): ASGI config for finlogic_api project.  It exposes the ASGI callable as a modul
 
 ### Community 81 - "Community 81"
 Cohesion: 1.0
-Nodes (1): ASGI config for finlogic_api project.  It exposes the ASGI callable as a modul
+Nodes (1): Django settings for finlogic_api project.  Generated by 'django-admin startpro
 
 ### Community 82 - "Community 82"
 Cohesion: 1.0
-Nodes (1): Django settings for finlogic_api project.  Generated by 'django-admin startpro
-
-### Community 83 - "Community 83"
-Cohesion: 1.0
 Nodes (1): WSGI config for finlogic_api project.  It exposes the WSGI callable as a modul
 
-### Community 135 - "Community 135"
+### Community 137 - "Community 137"
 Cohesion: 1.0
 Nodes (1): Persist an evaluation from ScoringEngine.evaluate_and_memo() output.          Ar
 
-### Community 136 - "Community 136"
+### Community 138 - "Community 138"
 Cohesion: 1.0
 Nodes (1): Returns the best available image URL: uploaded file > URL field.
 
-### Community 140 - "Community 140"
+### Community 142 - "Community 142"
 Cohesion: 1.0
 Nodes (1): Percentage of required document categories present in the data room.         Re
 
-### Community 141 - "Community 141"
+### Community 143 - "Community 143"
 Cohesion: 1.0
 Nodes (1): Money-On-Invested-Capital (only meaningful post-exit).
 
-### Community 155 - "Community 155"
+### Community 157 - "Community 157"
 Cohesion: 1.0
-Nodes (1): Project Model
+Nodes (1): OCR (Office of Company Registrar) Nepal format.     Accepted patterns:       -
+
+### Community 158 - "Community 158"
+Cohesion: 1.0
+Nodes (1): PE Fund – tracks capital raise, commitments & fund economics.
+
+### Community 159 - "Community 159"
+Cohesion: 1.0
+Nodes (1): A Private-Equity deal record.     Named PEProject to avoid collision with core.
+
+### Community 160 - "Community 160"
+Cohesion: 1.0
+Nodes (1): Percentage of required document categories present in the data room.         Re
+
+### Community 161 - "Community 161"
+Cohesion: 1.0
+Nodes (1): Files stored on Backblaze B2; only metadata lives here.
+
+### Community 162 - "Community 162"
+Cohesion: 1.0
+Nodes (1): Limited Partner profile – extends the core User.
+
+### Community 163 - "Community 163"
+Cohesion: 1.0
+Nodes (1): KYC documents uploaded by LPs for verification.     Stored locally on the Djang
+
+### Community 164 - "Community 164"
+Cohesion: 1.0
+Nodes (1): KYB (Know Your Business) documents uploaded by entrepreneurs for startup verific
+
+### Community 165 - "Community 165"
+Cohesion: 1.0
+Nodes (1): Tracks an LP's capital commitment to a fund.
+
+### Community 166 - "Community 166"
+Cohesion: 1.0
+Nodes (1): Closed investment made from a fund into a PE project/portfolio company.
+
+### Community 167 - "Community 167"
+Cohesion: 1.0
+Nodes (1): Money-On-Invested-Capital (only meaningful post-exit).
+
+### Community 168 - "Community 168"
+Cohesion: 1.0
+Nodes (1): A drawdown of LP committed capital for investment purposes.
+
+### Community 169 - "Community 169"
+Cohesion: 1.0
+Nodes (1): Cash / proceeds returned to LPs from a fund.
+
+### Community 170 - "Community 170"
+Cohesion: 1.0
+Nodes (1): Configurable multi-step form definition (stored as JSON schema).     Each step
+
+### Community 171 - "Community 171"
+Cohesion: 1.0
+Nodes (1): Stores an entrepreneur's step-by-step form responses.
+
+### Community 172 - "Community 172"
+Cohesion: 1.0
+Nodes (1): Append-only audit log for key PE workflow events.     Records are NEVER updated
+
+### Community 173 - "Community 173"
+Cohesion: 1.0
+Nodes (1): Enforce immutability: new records only, no updates.
+
+### Community 174 - "Community 174"
+Cohesion: 1.0
+Nodes (1): Documents associated with a Fund, accessible by LPs.     Complies with SEBON SI
+
+### Community 175 - "Community 175"
+Cohesion: 1.0
+Nodes (1): Tracks which LPs have viewed/acknowledged specific documents.
+
+### Community 176 - "Community 176"
+Cohesion: 1.0
+Nodes (1): Tracks shares held by users in the GP Management Company.
+
+### Community 177 - "Community 177"
+Cohesion: 1.0
+Nodes (1): Tracks dividend distributions to GP Shareholders.
+
+### Community 178 - "Community 178"
+Cohesion: 1.0
+Nodes (1): Proposals that GP Shareholders can vote on.
+
+### Community 179 - "Community 179"
+Cohesion: 1.0
+Nodes (1): Individual votes cast by GP Shareholders.
+
+### Community 180 - "Community 180"
+Cohesion: 1.0
+Nodes (1): Global documents for GP Shareholders (Annual Reports, Notices).
+
+### Community 181 - "Community 181"
+Cohesion: 1.0
+Nodes (1): Logs all AI requests for auditing and budget tracking.
+
+### Community 182 - "Community 182"
+Cohesion: 1.0
+Nodes (1): Central repository for AI prompts with version control.
+
+### Community 183 - "Community 183"
+Cohesion: 1.0
+Nodes (1): Structured financial data extracted from documents (Balance Sheets, P&L).
+
+### Community 184 - "Community 184"
+Cohesion: 1.0
+Nodes (1): Quality of Earnings report generated by AI.
+
+### Community 185 - "Community 185"
+Cohesion: 1.0
+Nodes (1): Commercial due diligence findings.
+
+### Community 186 - "Community 186"
+Cohesion: 1.0
+Nodes (1): Operational due diligence findings.
+
+### Community 187 - "Community 187"
+Cohesion: 1.0
+Nodes (1): Pre-defined patterns to look for in legal documents.
+
+### Community 188 - "Community 188"
+Cohesion: 1.0
+Nodes (1): Occurrences of red flags in specific documents.
+
+### Community 189 - "Community 189"
+Cohesion: 1.0
+Nodes (1): Execution instance of the FINLO scoring framework.
+
+### Community 190 - "Community 190"
+Cohesion: 1.0
+Nodes (1): Score for a specific criterion within the FINLO framework.
+
+### Community 191 - "Community 191"
+Cohesion: 1.0
+Nodes (1): Compliance checklists required before deal approval.
+
+### Community 192 - "Community 192"
+Cohesion: 1.0
+Nodes (1): Container for DCF and LBO financial models.
+
+### Community 193 - "Community 193"
+Cohesion: 1.0
+Nodes (1): Specific parameters for DCF analysis.
+
+### Community 194 - "Community 194"
+Cohesion: 1.0
+Nodes (1): Specific parameters for LBO analysis.
+
+### Community 195 - "Community 195"
+Cohesion: 1.0
+Nodes (1): Nepal-specific compliance checklist for PE deals.
+
+### Community 196 - "Community 196"
+Cohesion: 1.0
+Nodes (1): Tracks mandatory filing deadlines with SEBON for PE funds.
+
+### Community 197 - "Community 197"
+Cohesion: 1.0
+Nodes (1): Investment memo draft generated by AI and edited by GP.
+
+### Community 198 - "Community 198"
+Cohesion: 1.0
+Nodes (1): Monthly performance metrics submitted by portfolio companies.
+
+### Community 199 - "Community 199"
+Cohesion: 1.0
+Nodes (1): SEBON SIF Rules 2075
+
+### Community 200 - "Community 200"
+Cohesion: 1.0
+Nodes (1): AI Deal Memo Generation
 
 ## Knowledge Gaps
-- **160 isolated node(s):** `Run administrative tasks.`, `Meta`, `Role`, `Status`, `ProfileType` (+155 more)
+- **209 isolated node(s):** `Run administrative tasks.`, `Meta`, `Role`, `Status`, `ProfileType` (+204 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 25`** (5 nodes): `0002_default_pe_form_template.py`, `create_default_form_template()`, `Migration`, `deals/migrations/0002_default_pe_form_template.py Data migration: creates the de`, `reverse_default_form_template()`
+- **Thin community `Community 22`** (5 nodes): `0002_default_pe_form_template.py`, `create_default_form_template()`, `Migration`, `deals/migrations/0002_default_pe_form_template.py Data migration: creates the de`, `reverse_default_form_template()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 33`** (4 nodes): `page.jsx`, `page.jsx`, `LPPortfolioPage()`, `MetricCard()`
+- **Thin community `Community 30`** (4 nodes): `page.jsx`, `page.jsx`, `LPPortfolioPage()`, `MetricCard()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (3 nodes): `main()`, `manage.py`, `Run administrative tasks.`
+- **Thin community `Community 34`** (3 nodes): `main()`, `manage.py`, `Run administrative tasks.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (3 nodes): `0001_initial.py`, `0001_initial.py`, `Migration`
+- **Thin community `Community 35`** (3 nodes): `0001_initial.py`, `0001_initial.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (3 nodes): `GPProjectRedFlagsView`, `.get_queryset()`, `GET /api/deals/projects/<uuid>/red-flags/`
+- **Thin community `Community 36`** (3 nodes): `0008_auto_20260420_0851.py`, `Migration`, `seed_prompts()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (3 nodes): `0008_auto_20260420_0851.py`, `Migration`, `seed_prompts()`
+- **Thin community `Community 37`** (3 nodes): `0011_add_commercial_ops_prompts.py`, `Migration`, `seed_prompts()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 41`** (3 nodes): `0011_add_commercial_ops_prompts.py`, `Migration`, `seed_prompts()`
+- **Thin community `Community 39`** (3 nodes): `fetchSlugs()`, `sitemap()`, `sitemap.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (3 nodes): `fetchSlugs()`, `sitemap()`, `sitemap.js`
+- **Thin community `Community 45`** (3 nodes): `page.jsx`, `page.jsx`, `GPInvestorMeetingsPage()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 49`** (3 nodes): `page.jsx`, `page.jsx`, `GPInvestorMeetingsPage()`
+- **Thin community `Community 46`** (3 nodes): `LPDocumentsPage()`, `page.jsx`, `page.jsx`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 50`** (3 nodes): `LPDocumentsPage()`, `page.jsx`, `page.jsx`
+- **Thin community `Community 52`** (2 nodes): `0002_auditlog_contact_contactinteraction_coursemodule_and_more.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 56`** (2 nodes): `0002_auditlog_contact_contactinteraction_coursemodule_and_more.py`, `Migration`
+- **Thin community `Community 53`** (2 nodes): `0003_rolerequest_remove_user_idx_users_role_and_more.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 57`** (2 nodes): `0003_rolerequest_remove_user_idx_users_role_and_more.py`, `Migration`
+- **Thin community `Community 54`** (2 nodes): `0004_investorcommitment_notes_investorcommitment_project_and_more.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 58`** (2 nodes): `0004_investorcommitment_notes_investorcommitment_project_and_more.py`, `Migration`
+- **Thin community `Community 55`** (2 nodes): `0005_projectevaluation.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 59`** (2 nodes): `0005_projectevaluation.py`, `Migration`
+- **Thin community `Community 56`** (2 nodes): `0006_user_is_approved.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 60`** (2 nodes): `0006_user_is_approved.py`, `Migration`
+- **Thin community `Community 57`** (2 nodes): `0007_add_article_image_upload.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 61`** (2 nodes): `0007_add_article_image_upload.py`, `Migration`
+- **Thin community `Community 58`** (2 nodes): `0008_alter_user_roles.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 62`** (2 nodes): `.save()`, `Enforce immutability: new records only, no updates.`
+- **Thin community `Community 59`** (2 nodes): `.save()`, `Enforce immutability: new records only, no updates.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 63`** (2 nodes): `.post()`, `_notify_gp_submission()`
+- **Thin community `Community 60`** (2 nodes): `.post()`, `_notify_gp_submission()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 64`** (2 nodes): `0003_peprojectdocument_is_confirmed.py`, `Migration`
+- **Thin community `Community 61`** (2 nodes): `0003_peprojectdocument_is_confirmed.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 65`** (2 nodes): `0004_peprojectdocument_is_lp_visible.py`, `Migration`
+- **Thin community `Community 62`** (2 nodes): `0004_peprojectdocument_is_lp_visible.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 66`** (2 nodes): `0005_remove_peprojectdocument_is_lp_visible_funddocument_and_more.py`, `Migration`
+- **Thin community `Community 63`** (2 nodes): `0005_remove_peprojectdocument_is_lp_visible_funddocument_and_more.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 67`** (2 nodes): `0006_alter_funddocument_document_type_gpshareholder_and_more.py`, `Migration`
+- **Thin community `Community 64`** (2 nodes): `0006_alter_funddocument_document_type_gpshareholder_and_more.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 68`** (2 nodes): `0007_aicalllog_promptlibrary.py`, `Migration`
+- **Thin community `Community 65`** (2 nodes): `0007_aicalllog_promptlibrary.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 69`** (2 nodes): `0009_qoereport_extractedfinancials.py`, `Migration`
+- **Thin community `Community 66`** (2 nodes): `0009_qoereport_extractedfinancials.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 70`** (2 nodes): `0010_commercialanalysis_operationalanalysis.py`, `Migration`
+- **Thin community `Community 67`** (2 nodes): `0010_commercialanalysis_operationalanalysis.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 71`** (2 nodes): `0012_redflagpattern_redflagfinding.py`, `Migration`
+- **Thin community `Community 68`** (2 nodes): `0012_redflagpattern_redflagfinding.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 72`** (2 nodes): `0013_scoringrun_criterionscore_compliancegate.py`, `Migration`
+- **Thin community `Community 69`** (2 nodes): `0013_scoringrun_criterionscore_compliancegate.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 73`** (2 nodes): `0014_valuationmodel_lboassumptions_dcfassumptions.py`, `Migration`
+- **Thin community `Community 70`** (2 nodes): `0014_valuationmodel_lboassumptions_dcfassumptions.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 74`** (2 nodes): `0015_regulatorychecklist_sebonfilingdeadline.py`, `Migration`
+- **Thin community `Community 71`** (2 nodes): `0015_regulatorychecklist_sebonfilingdeadline.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 75`** (2 nodes): `0016_dealmemo.py`, `Migration`
+- **Thin community `Community 72`** (2 nodes): `0016_dealmemo.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 76`** (2 nodes): `0017_portfoliokpireport.py`, `Migration`
+- **Thin community `Community 73`** (2 nodes): `0017_portfoliokpireport.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 77`** (2 nodes): `0018_lpkycdocument.py`, `Migration`
+- **Thin community `Community 74`** (2 nodes): `0018_lpkycdocument.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 78`** (2 nodes): `0019_entrepreneurkybdocument_governanceproposal_and_more.py`, `Migration`
+- **Thin community `Community 75`** (2 nodes): `0019_entrepreneurkybdocument_governanceproposal_and_more.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 79`** (2 nodes): `0020_lpprofile_wants_notifications.py`, `Migration`
+- **Thin community `Community 76`** (2 nodes): `0020_lpprofile_wants_notifications.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 80`** (2 nodes): `0021_alter_funddocument_document_type.py`, `Migration`
+- **Thin community `Community 77`** (2 nodes): `0021_alter_funddocument_document_type.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 81`** (2 nodes): `asgi.py`, `ASGI config for finlogic_api project.  It exposes the ASGI callable as a modul`
+- **Thin community `Community 78`** (2 nodes): `0022_waterfallmodel_waterfallrun_and_more.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 82`** (2 nodes): `settings.py`, `Django settings for finlogic_api project.  Generated by 'django-admin startpro`
+- **Thin community `Community 79`** (2 nodes): `0023_alter_funddocument_document_type.py`, `Migration`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 83`** (2 nodes): `wsgi.py`, `WSGI config for finlogic_api project.  It exposes the WSGI callable as a modul`
+- **Thin community `Community 80`** (2 nodes): `asgi.py`, `ASGI config for finlogic_api project.  It exposes the ASGI callable as a modul`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 135`** (1 nodes): `Persist an evaluation from ScoringEngine.evaluate_and_memo() output.          Ar`
+- **Thin community `Community 81`** (2 nodes): `settings.py`, `Django settings for finlogic_api project.  Generated by 'django-admin startpro`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 136`** (1 nodes): `Returns the best available image URL: uploaded file > URL field.`
+- **Thin community `Community 82`** (2 nodes): `wsgi.py`, `WSGI config for finlogic_api project.  It exposes the WSGI callable as a modul`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 140`** (1 nodes): `Percentage of required document categories present in the data room.         Re`
+- **Thin community `Community 137`** (1 nodes): `Persist an evaluation from ScoringEngine.evaluate_and_memo() output.          Ar`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 141`** (1 nodes): `Money-On-Invested-Capital (only meaningful post-exit).`
+- **Thin community `Community 138`** (1 nodes): `Returns the best available image URL: uploaded file > URL field.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 155`** (1 nodes): `Project Model`
+- **Thin community `Community 142`** (1 nodes): `Percentage of required document categories present in the data room.         Re`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 143`** (1 nodes): `Money-On-Invested-Capital (only meaningful post-exit).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 157`** (1 nodes): `OCR (Office of Company Registrar) Nepal format.     Accepted patterns:       -`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 158`** (1 nodes): `PE Fund – tracks capital raise, commitments & fund economics.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 159`** (1 nodes): `A Private-Equity deal record.     Named PEProject to avoid collision with core.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 160`** (1 nodes): `Percentage of required document categories present in the data room.         Re`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 161`** (1 nodes): `Files stored on Backblaze B2; only metadata lives here.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 162`** (1 nodes): `Limited Partner profile – extends the core User.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 163`** (1 nodes): `KYC documents uploaded by LPs for verification.     Stored locally on the Djang`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 164`** (1 nodes): `KYB (Know Your Business) documents uploaded by entrepreneurs for startup verific`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 165`** (1 nodes): `Tracks an LP's capital commitment to a fund.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 166`** (1 nodes): `Closed investment made from a fund into a PE project/portfolio company.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 167`** (1 nodes): `Money-On-Invested-Capital (only meaningful post-exit).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 168`** (1 nodes): `A drawdown of LP committed capital for investment purposes.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 169`** (1 nodes): `Cash / proceeds returned to LPs from a fund.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 170`** (1 nodes): `Configurable multi-step form definition (stored as JSON schema).     Each step`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 171`** (1 nodes): `Stores an entrepreneur's step-by-step form responses.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 172`** (1 nodes): `Append-only audit log for key PE workflow events.     Records are NEVER updated`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 173`** (1 nodes): `Enforce immutability: new records only, no updates.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 174`** (1 nodes): `Documents associated with a Fund, accessible by LPs.     Complies with SEBON SI`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 175`** (1 nodes): `Tracks which LPs have viewed/acknowledged specific documents.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 176`** (1 nodes): `Tracks shares held by users in the GP Management Company.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 177`** (1 nodes): `Tracks dividend distributions to GP Shareholders.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 178`** (1 nodes): `Proposals that GP Shareholders can vote on.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 179`** (1 nodes): `Individual votes cast by GP Shareholders.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 180`** (1 nodes): `Global documents for GP Shareholders (Annual Reports, Notices).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 181`** (1 nodes): `Logs all AI requests for auditing and budget tracking.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 182`** (1 nodes): `Central repository for AI prompts with version control.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 183`** (1 nodes): `Structured financial data extracted from documents (Balance Sheets, P&L).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 184`** (1 nodes): `Quality of Earnings report generated by AI.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 185`** (1 nodes): `Commercial due diligence findings.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 186`** (1 nodes): `Operational due diligence findings.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 187`** (1 nodes): `Pre-defined patterns to look for in legal documents.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 188`** (1 nodes): `Occurrences of red flags in specific documents.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 189`** (1 nodes): `Execution instance of the FINLO scoring framework.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 190`** (1 nodes): `Score for a specific criterion within the FINLO framework.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 191`** (1 nodes): `Compliance checklists required before deal approval.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 192`** (1 nodes): `Container for DCF and LBO financial models.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 193`** (1 nodes): `Specific parameters for DCF analysis.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 194`** (1 nodes): `Specific parameters for LBO analysis.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 195`** (1 nodes): `Nepal-specific compliance checklist for PE deals.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 196`** (1 nodes): `Tracks mandatory filing deadlines with SEBON for PE funds.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 197`** (1 nodes): `Investment memo draft generated by AI and edited by GP.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 198`** (1 nodes): `Monthly performance metrics submitted by portfolio companies.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 199`** (1 nodes): `SEBON SIF Rules 2075`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 200`** (1 nodes): `AI Deal Memo Generation`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Fund` connect `Core Backend Infrastructure` to `Deals & AI Integration`, `Deal Lifecycle & API`, `GP Administration`, `Permissions & Fund Access`, `Community 7`, `Community 39`, `Community 10`, `Community 11`, `Community 16`, `Community 17`, `Community 20`, `Community 22`, `Community 23`, `Community 24`?**
-  _High betweenness centrality (0.138) - this node is a cross-community bridge._
-- **Why does `FundSerializer` connect `Deal Lifecycle & API` to `Core Backend Infrastructure`, `Deals & AI Integration`, `GP Administration`, `Permissions & Fund Access`, `Community 7`, `Community 39`, `Community 10`, `Community 11`, `Community 16`, `Community 17`, `Community 20`, `Community 22`, `Community 23`, `Community 24`?**
-  _High betweenness centrality (0.057) - this node is a cross-community bridge._
-- **Are the 304 inferred relationships involving `Fund` (e.g. with `UserProfileInline` and `UserAdmin`) actually correct?**
-  _`Fund` has 304 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 227 inferred relationships involving `PEProject` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
-  _`PEProject` has 227 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 223 inferred relationships involving `PEProjectDocument` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
-  _`PEProjectDocument` has 223 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 217 inferred relationships involving `ImmutableAuditEvent` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
-  _`ImmutableAuditEvent` has 217 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 217 inferred relationships involving `PEInvestment` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
-  _`PEInvestment` has 217 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `Fund` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 7`, `Community 8`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 14`, `Community 15`?**
+  _High betweenness centrality (0.146) - this node is a cross-community bridge._
+- **Why does `FundSerializer` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 7`, `Community 8`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 14`, `Community 15`?**
+  _High betweenness centrality (0.045) - this node is a cross-community bridge._
+- **Are the 411 inferred relationships involving `Fund` (e.g. with `UserProfileInline` and `UserAdmin`) actually correct?**
+  _`Fund` has 411 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 337 inferred relationships involving `PEProject` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
+  _`PEProject` has 337 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 330 inferred relationships involving `PEProjectDocument` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
+  _`PEProjectDocument` has 330 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 322 inferred relationships involving `LPFundCommitment` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
+  _`LPFundCommitment` has 322 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 322 inferred relationships involving `FundDocument` (e.g. with `FundAdmin` and `PEProjectDocumentInline`) actually correct?**
+  _`FundDocument` has 322 INFERRED edges - model-reasoned connections that need verification._

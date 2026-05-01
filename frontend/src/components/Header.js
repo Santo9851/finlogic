@@ -48,10 +48,11 @@ export default function Header() {
     // Check roles (handle both single role string and array)
     const roles = Array.isArray(user.roles) ? user.roles : (user.role ? [user.role] : []);
     
-    if (roles.includes('super_admin') || roles.includes('admin')) return '/gp/dashboard';
-    if (roles.includes('gp_investor')) return '/gp-investor/dashboard';
-    if (roles.includes('investor')) return '/lp/dashboard';
+    if (roles.includes('super_admin')) return '/superadmin/dashboard';
+    if (roles.includes('admin')) return '/gp/dashboard';
     if (roles.includes('entrepreneur')) return '/entrepreneur/dashboard';
+    if (roles.includes('investor')) return '/lp/dashboard';
+    if (roles.includes('gp_investor')) return '/gp-investor/dashboard';
     
     return '/';
   };
@@ -61,8 +62,8 @@ export default function Header() {
       case 'entrepreneur': return <Briefcase size={14} className="text-[#F59F01]" />;
       case 'investor': return <TrendingUp size={14} className="text-blue-400" />;
       case 'gp_investor': return <ShieldCheck size={14} className="text-[#8b5cf6]" />;
-      case 'admin':
-      case 'super_admin': return <ShieldCheck size={14} className="text-green-400" />;
+      case 'super_admin': return <ShieldCheck size={14} className="text-purple-400" />;
+      case 'admin': return <ShieldCheck size={14} className="text-green-400" />;
       default: return null;
     }
   };

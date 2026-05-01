@@ -31,6 +31,7 @@ function getRoles(payload) {
 
 // Route → required roles (any match grants access)
 const PROTECTED_ROUTES = [
+  { pattern: /^\/superadmin($|\/)/, roles: ['super_admin'] },
   { pattern: /^\/gp($|\/)/, roles: ['admin', 'super_admin'] },
   { pattern: /^\/lp($|\/)/, roles: ['investor'] },
   { pattern: /^\/gp-investor($|\/)/, roles: ['gp_investor'] },
@@ -40,7 +41,7 @@ const PROTECTED_ROUTES = [
 // Role → default redirect after login
 const ROLE_HOME = {
   admin: '/gp/dashboard',
-  super_admin: '/gp/dashboard',
+  super_admin: '/superadmin/dashboard',
   investor: '/lp/dashboard',
   gp_investor: '/gp-investor/dashboard',
   entrepreneur: '/entrepreneur/dashboard',
@@ -87,6 +88,7 @@ export function middleware(request) {
 
 export const config = {
   matcher: [
+    '/superadmin/:path*',
     '/gp/:path*',
     '/lp/:path*',
     '/gp-investor/:path*',
