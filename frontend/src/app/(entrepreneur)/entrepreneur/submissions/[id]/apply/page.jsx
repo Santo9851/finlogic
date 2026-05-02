@@ -213,21 +213,54 @@ function StepForm({ projectId, step, savedData, onSuccess, isLast, onFinalSubmit
     }
   }, [savedData, methods]);
 
-  const onSubmit = async (data) => {
+const onSubmit = async (data) => {
     setSubmitting(true);
     try {
-      await api.post(`/entrepreneur/submissions/${projectId}/step/${step.step_name}/`, data);
-      
+      const url = '/entrepreneur/submissions/' + projectId + '/step/' + step.step_name + '/';
+      const stepRes = await api.post(url, data);
+
+      if (!stepRes.data.can_advance && stepRes.data.missing_required && stepRes.data.missing_required.length > 0) {
+        const missingList = stepRes.data.missing_required.join(', ');
+        toast.error('Please complete required fields: ' + missingList);
+        setSubmitting(false);
+        return;
+      }
+
       if (isLast) {
-        await api.post(`/entrepreneur/submissions/${projectId}/finalize/`);
-        toast.success('Submission complete!');
-        onFinalSubmit();
+        try {
+          await api.post('/entrepreneur/submissions/' + projectId + '/finalize/');
+          toast.success('Submission complete!');
+          onFinalSubmit();
+        } catch (finalErr) {
+          const missing = finalErr.response && finalErr.response.data && finalErr.response.data.missing_required;
+          if (missing && missing.length > 0) {
+            const missingByStep = {};
+            missing.forEach(function(m) {
+              if (!missingByStep[m.step]) missingByStep[m.step] = [];
+              missingByStep[m.step].push(m.label);
+            });
+            const msg = Object.keys(missingByStep).map(function(step) {
+              return step + ': ' + missingByStep[step].join(', ');
+            }).join('\n');
+            toast.error('Please complete all required fields:\n' + msg);
+          } else {
+            const errMsg = finalErr.response && finalErr.response.data && finalErr.response.data.detail;
+            toast.error(errMsg || 'Failed to finalize submission.');
+          }
+        }
       } else {
-        toast.success(`${step.title} saved`);
+        toast.success(step.title + ' saved');
         onSuccess();
       }
     } catch (err) {
-      toast.error('Failed to save step.');
+      const missing = err.response && err.response.data && err.response.data.missing_required;
+      if (missing && missing.length > 0) {
+        const missingList = missing.map(function(m) { return m.label || m; }).join(', ');
+        toast.error('Please complete required fields: ' + missingList);
+      } else {
+        const errMsg = err.response && err.response.data && err.response.data.detail;
+        toast.error(errMsg || 'Failed to save step.');
+      }
     } finally {
       setSubmitting(false);
     }

@@ -10,9 +10,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  ChevronRight, ChevronLeft, Check, 
-  Upload, FileText, Loader2, AlertCircle 
+import {
+  ChevronRight, ChevronLeft, Check,
+  Upload, FileText, Loader2, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/services/api';
@@ -127,7 +127,9 @@ export default function MultiStepInviteForm() {
             >
               <StepForm 
                 token={token} 
-                step={currentStep} 
+                step={currentStep}
+                stepIndex={currentStepIndex}
+                project={project}
                 onSuccess={nextStep}
                 isLast={currentStepIndex === template.steps.length - 1}
                 onFinalSubmit={() => router.push('/auth/login?msg=submitted')}
@@ -159,10 +161,11 @@ export default function MultiStepInviteForm() {
   );
 }
 
-function StepForm({ token, step, onSuccess, isLast, onFinalSubmit }) {
+function StepForm({ token, step, stepIndex, project, onSuccess, isLast, onFinalSubmit }) {
   const [submitting, setSubmitting] = useState(false);
-  
-  // Dynamic Zod schema based on template fields
+
+  const savedData = project?.form_responses?.find(r => r.step_index === stepIndex)?.response_data || {};
+
   const schemaShape = {};
   step.fields.forEach(field => {
     if (field.type === 'file_upload') {
@@ -179,29 +182,66 @@ function StepForm({ token, step, onSuccess, isLast, onFinalSubmit }) {
       schemaShape[field.name] = field.required ? z.string().min(1, 'Required') : z.string().optional();
     }
   });
-  
+
   const methods = useForm({
     resolver: zodResolver(z.object(schemaShape)),
-    defaultValues: {} // Would ideally fetch previously saved values for this step
+    defaultValues: savedData
   });
+
+  useEffect(() => {
+    if (savedData) {
+      methods.reset(savedData);
+    }
+  }, [savedData, methods]);
 
   const onSubmit = async (data) => {
     setSubmitting(true);
     try {
-      // 1. Submit step data
-      await api.post(`/deals/projects/invite/${token}/step/${step.step_name}/`, data);
-      
+      const stepUrl = '/deals/projects/invite/' + token + '/step/' + step.step_name + '/';
+      const stepRes = await api.post(stepUrl, data);
+
+      if (!stepRes.data.can_advance && stepRes.data.missing_required && stepRes.data.missing_required.length > 0) {
+        const missingList = stepRes.data.missing_required.join(', ');
+        toast.error('Please complete required fields: ' + missingList);
+        setSubmitting(false);
+        return;
+      }
+
       if (isLast) {
-        // 2. Final submission if it's the last step
-        await api.post(`/deals/projects/invite/${token}/submit/`);
-        toast.success('Submission complete! Redirecting...');
-        onFinalSubmit();
+        try {
+          await api.post('/deals/projects/invite/' + token + '/submit/');
+          toast.success('Submission complete! Redirecting...');
+          onFinalSubmit();
+        } catch (finalErr) {
+          const missing = finalErr.response && finalErr.response.data && finalErr.response.data.missing_required;
+          if (missing && missing.length > 0) {
+            const missingByStep = {};
+            missing.forEach(function(m) {
+              if (!missingByStep[m.step]) missingByStep[m.step] = [];
+              missingByStep[m.step].push(m.label);
+            });
+            const msg = Object.keys(missingByStep).map(function(step) {
+              return step + ': ' + missingByStep[step].join(', ');
+            }).join('\n');
+            toast.error('Please complete all required fields:\n' + msg);
+          } else {
+            const errMsg = finalErr.response && finalErr.response.data && finalErr.response.data.detail;
+            toast.error(errMsg || 'Failed to finalize submission.');
+          }
+        }
       } else {
-        toast.success(`${step.title} saved`);
+        toast.success(step.title + ' saved');
         onSuccess();
       }
     } catch (err) {
-      toast.error('Failed to save step. Please try again.');
+      const missing = err.response && err.response.data && err.response.data.missing_required;
+      if (missing && missing.length > 0) {
+        const missingList = missing.map(function(m) { return m.label || m; }).join(', ');
+        toast.error('Please complete required fields: ' + missingList);
+      } else {
+        const errMsg = err.response && err.response.data && err.response.data.detail;
+        toast.error(errMsg || 'Failed to save step.');
+      }
     } finally {
       setSubmitting(false);
     }

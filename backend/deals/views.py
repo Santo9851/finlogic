@@ -554,7 +554,27 @@ class EntrepreneurSubmitStepView(APIView):
 
         step_index = step_def['step_index']
 
-        # Upsert response
+        required_fields = [f for f in step_def.get('fields', []) if f.get('required', False)]
+        missing_required = []
+
+        for field in required_fields:
+            field_name = field.get('name')
+            field_type = field.get('type')
+            value = request.data.get(field_name)
+
+            if field_type == 'file_upload':
+                if not value or (isinstance(value, str) and not value.strip()):
+                    missing_required.append(field.get('label', field_name))
+            elif field_type in ('checkbox', 'bool'):
+                if not value:
+                    missing_required.append(field.get('label', field_name))
+            elif value is None or (isinstance(value, str) and not value.strip()):
+                missing_required.append(field.get('label', field_name))
+
+        step_advancement_blocked = False
+        if missing_required and project.form_step_completed <= step_index:
+            step_advancement_blocked = True
+
         response_obj, _ = PEProjectFormResponse.objects.update_or_create(
             project=project,
             step_index=step_index,
@@ -565,12 +585,10 @@ class EntrepreneurSubmitStepView(APIView):
             },
         )
 
-        # Advance step counter
-        if project.form_step_completed < step_index:
-            PEProject.objects.filter(pk=project.pk).update(
-                form_step_completed=step_index
-            )
-            project.refresh_from_db()
+        can_advance = not step_advancement_blocked
+        if can_advance and project.form_step_completed < step_index + 1:
+            project.form_step_completed = step_index + 1
+            project.save(update_fields=['form_step_completed'])
 
         _log_audit_event(
             ImmutableAuditEvent.EventType.FORM_STEP_SAVED,
@@ -580,10 +598,12 @@ class EntrepreneurSubmitStepView(APIView):
             request=request,
         )
 
-        return Response(
-            PEProjectFormResponseSerializer(response_obj).data,
-            status=status.HTTP_200_OK,
-        )
+        return Response({
+            'status': 'saved',
+            'step_completed': project.form_step_completed,
+            'can_advance': can_advance,
+            'missing_required': missing_required if step_advancement_blocked else []
+        })
 
 
 # ---------------------------------------------------------------------------
@@ -692,6 +712,7 @@ class EntrepreneurFinalizeView(APIView):
     """
     POST /api/deals/projects/invite/{token}/submit/
     Sets submitted_at, status=SUBMITTED, notifies GP.
+    Validates all required fields before allowing final submission.
     """
     permission_classes = [permissions.AllowAny]
 
@@ -708,11 +729,63 @@ class EntrepreneurFinalizeView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        template = PEFormTemplate.objects.filter(
+            form_type=PEFormTemplate.FormType.DEAL_SUBMISSION,
+            is_active=True,
+        ).order_by('-version').first()
+
+        if not template:
+            return Response({'detail': 'No active form template found.'}, status=404)
+
+        saved_responses = {
+            r.step_index: r.response_data
+            for r in PEProjectFormResponse.objects.filter(project=project)
+        }
+
+        all_missing = []
+
+        for step in template.steps:
+            step_index = step.get('step_index')
+            step_data = saved_responses.get(step_index, {})
+
+            for field in step.get('fields', []):
+                if not field.get('required', False):
+                    continue
+
+                field_name = field.get('name')
+                field_type = field.get('type')
+                field_label = field.get('label', field_name)
+                value = step_data.get(field_name)
+
+                is_missing = False
+                if field_type == 'file_upload':
+                    if not value or (isinstance(value, str) and not value.strip()):
+                        is_missing = True
+                elif field_type in ('checkbox', 'bool'):
+                    if not value:
+                        is_missing = True
+                elif value is None or (isinstance(value, str) and not value.strip()):
+                    is_missing = True
+
+                if is_missing:
+                    all_missing.append({
+                        'step': step.get('title'),
+                        'step_index': step_index,
+                        'field': field_name,
+                        'label': field_label,
+                        'type': field_type
+                    })
+
+        if all_missing:
+            return Response({
+                'detail': 'Please complete all required fields before finalizing.',
+                'missing_required': all_missing,
+            }, status=400)
+
         project.submitted_at = timezone.now()
         project.status = PEProject.Status.SUBMITTED
         project.save(update_fields=['submitted_at', 'status', 'updated_at'])
 
-        # Notify GPs
         try:
             _notify_gp_submission(project)
         except Exception as exc:
@@ -1293,6 +1366,27 @@ class EntrepreneurAuthSubmitStepView(APIView):
         if not step_def:
             return Response({'detail': f"Step '{step_name}' not found."}, status=400)
 
+        required_fields = [f for f in step_def.get('fields', []) if f.get('required', False)]
+        missing_required = []
+
+        for field in required_fields:
+            field_name = field.get('name')
+            field_type = field.get('type')
+            value = request.data.get(field_name)
+
+            if field_type == 'file_upload':
+                if not value or (isinstance(value, str) and not value.strip()):
+                    missing_required.append(field.get('label', field_name))
+            elif field_type in ('checkbox', 'bool'):
+                if not value:
+                    missing_required.append(field.get('label', field_name))
+            elif value is None or (isinstance(value, str) and not value.strip()):
+                missing_required.append(field.get('label', field_name))
+
+        step_advancement_blocked = False
+        if missing_required and project.form_step_completed <= step_def['step_index']:
+            step_advancement_blocked = True
+
         response_obj, _ = PEProjectFormResponse.objects.update_or_create(
             project=project,
             step_index=step_def['step_index'],
@@ -1303,23 +1397,84 @@ class EntrepreneurAuthSubmitStepView(APIView):
             }
         )
 
-        if project.form_step_completed < step_def['step_index'] + 1:
+        can_advance = not step_advancement_blocked
+        if can_advance and project.form_step_completed < step_def['step_index'] + 1:
             project.form_step_completed = step_def['step_index'] + 1
             project.save(update_fields=['form_step_completed'])
 
-        return Response({'status': 'saved', 'step_completed': project.form_step_completed})
+        return Response({
+            'status': 'saved',
+            'step_completed': project.form_step_completed,
+            'can_advance': can_advance,
+            'missing_required': missing_required if step_advancement_blocked else []
+        })
 
 
 class EntrepreneurAuthFinalizeView(APIView):
     """
     POST /api/entrepreneur/submissions/{project_id}/finalize/
     Finalizes the submission for an authenticated entrepreneur.
+    Validates all required fields across all steps before allowing final submission.
     """
     permission_classes = [permissions.IsAuthenticated, IsEntrepreneurRole]
 
     def post(self, request, project_id):
         from django.utils import timezone
         project = get_object_or_404(PEProject, pk=project_id, entrepreneur_user=request.user)
+
+        template = PEFormTemplate.objects.filter(
+            form_type=PEFormTemplate.FormType.DEAL_SUBMISSION,
+            is_active=True,
+        ).order_by('-version').first()
+
+        if not template:
+            return Response({'detail': 'No active form template found.'}, status=404)
+
+        saved_responses = {
+            r.step_index: r.response_data
+            for r in PEProjectFormResponse.objects.filter(project=project)
+        }
+
+        all_missing = []
+
+        for step in template.steps:
+            step_index = step.get('step_index')
+            step_data = saved_responses.get(step_index, {})
+
+            for field in step.get('fields', []):
+                if not field.get('required', False):
+                    continue
+
+                field_name = field.get('name')
+                field_type = field.get('type')
+                field_label = field.get('label', field_name)
+                value = step_data.get(field_name)
+
+                is_missing = False
+                if field_type == 'file_upload':
+                    if not value or (isinstance(value, str) and not value.strip()):
+                        is_missing = True
+                elif field_type in ('checkbox', 'bool'):
+                    if not value:
+                        is_missing = True
+                elif value is None or (isinstance(value, str) and not value.strip()):
+                    is_missing = True
+
+                if is_missing:
+                    all_missing.append({
+                        'step': step.get('title'),
+                        'step_index': step_index,
+                        'field': field_name,
+                        'label': field_label,
+                        'type': field_type
+                    })
+
+        if all_missing:
+            return Response({
+                'detail': 'Please complete all required fields before finalizing.',
+                'missing_required': all_missing,
+            }, status=400)
+
         project.status = PEProject.Status.SUBMITTED
         project.submitted_at = timezone.now()
         project.save(update_fields=['status', 'submitted_at'])
