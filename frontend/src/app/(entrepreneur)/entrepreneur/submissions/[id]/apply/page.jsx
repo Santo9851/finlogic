@@ -33,8 +33,16 @@ export default function AuthMultiStepForm() {
         const res = await api.get(`/entrepreneur/submissions/${projectId}/`);
         setProject(res.data);
         setTemplate(res.data.active_template);
-        // Start at the step the user left off
-        const savedStep = res.data.form_step_completed;
+        // Redirect if already submitted
+        if (res.data.submitted_at || res.data.status !== 'SUBMITTED' || res.data.form_step_completed >= 5) {
+           // Wait, if it's SUBMITTED but step is 5, it means it's done.
+           // Actually, the most reliable check is submitted_at.
+           if (res.data.submitted_at) {
+              router.replace('/entrepreneur/dashboard');
+              return;
+           }
+        }
+        const savedStep = res.data.form_step_completed || 0;
         if (res.data.active_template) {
            setCurrentStepIndex(Math.min(savedStep, res.data.active_template.steps.length - 1));
         }
@@ -92,20 +100,47 @@ export default function AuthMultiStepForm() {
       </div>
 
       {/* Progress */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-end">
-          <p className="text-xs text-white/40 uppercase tracking-widest font-medium">
-            Step {currentStepIndex + 1} of {template.steps.length}: {currentStep.title}
-          </p>
-          <p className="text-xs text-[#F59F01] font-bold">{Math.round(progress)}%</p>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center px-2 relative">
+          {template.steps.map((s, idx) => (
+            <div key={idx} className="flex flex-col items-center gap-2 relative z-10">
+              <button
+                onClick={() => idx <= project.form_step_completed && setCurrentStepIndex(idx)}
+                disabled={idx > project.form_step_completed}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border ${
+                  idx === currentStepIndex 
+                    ? 'bg-[#F59F01] text-black border-[#F59F01] shadow-[0_0_15px_rgba(245,159,1,0.3)]' 
+                    : idx < project.form_step_completed 
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
+                    : 'bg-white/5 text-white/20 border-white/10'
+                }`}
+              >
+                {idx < project.form_step_completed ? <Check size={14} /> : idx + 1}
+              </button>
+              <span className={`text-[9px] uppercase tracking-tighter font-bold ${idx === currentStepIndex ? 'text-white' : 'text-white/30'}`}>
+                {s.title.split(' ')[0]}
+              </span>
+            </div>
+          ))}
+          {/* Connecting Line */}
+          <div className="absolute left-0 right-0 h-[1px] bg-white/5 -z-0 top-4 mx-10" />
         </div>
-        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-          <motion.div 
-            className="h-full bg-[#F59F01]"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
-          />
+
+        <div className="space-y-2">
+          <div className="flex justify-between items-end">
+            <p className="text-xs text-white/40 uppercase tracking-widest font-medium">
+              {currentStep.title}
+            </p>
+            <p className="text-xs text-[#F59F01] font-bold">{Math.round(progress)}%</p>
+          </div>
+          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-[#F59F01]"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
         </div>
       </div>
 
@@ -121,6 +156,7 @@ export default function AuthMultiStepForm() {
           <StepForm 
             projectId={projectId} 
             step={currentStep} 
+            savedData={project.form_responses?.find(r => r.step_index === currentStep.step_index)?.response_data || {}}
             onSuccess={nextStep}
             isLast={currentStepIndex === template.steps.length - 1}
             onFinalSubmit={() => router.push('/entrepreneur/dashboard?msg=submitted')}
@@ -145,7 +181,7 @@ export default function AuthMultiStepForm() {
   );
 }
 
-function StepForm({ projectId, step, onSuccess, isLast, onFinalSubmit }) {
+function StepForm({ projectId, step, savedData, onSuccess, isLast, onFinalSubmit }) {
   const [submitting, setSubmitting] = useState(false);
   
   const schemaShape = {};
@@ -167,8 +203,15 @@ function StepForm({ projectId, step, onSuccess, isLast, onFinalSubmit }) {
   
   const methods = useForm({
     resolver: zodResolver(z.object(schemaShape)),
-    defaultValues: {} 
+    defaultValues: savedData || {} 
   });
+
+  // Update form if savedData changes (e.g. user navigates steps)
+  useEffect(() => {
+    if (savedData) {
+      methods.reset(savedData);
+    }
+  }, [savedData, methods]);
 
   const onSubmit = async (data) => {
     setSubmitting(true);
@@ -222,7 +265,7 @@ function StepForm({ projectId, step, onSuccess, isLast, onFinalSubmit }) {
 }
 
 function FormField({ field, projectId }) {
-  const { register, formState: { errors }, setValue, watch } = useFormContext();
+  const { register, formState: { errors }, setValue, watch, clearErrors } = useFormContext();
   const fieldValue = watch(field.name);
 
   const commonCls = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-[#F59F01] transition-all";
@@ -246,12 +289,29 @@ function FormField({ field, projectId }) {
           <span className="text-sm text-white/50">{field.label}</span>
         </label>
       ) : field.type === 'file_upload' ? (
-        <div className="space-y-2">
+        <div className="space-y-3">
           <FileUploader 
-            projectId={projectId} 
+            projectId={projectId}
             category={field.category || 'OTHER'} 
-            onSuccess={(docId) => setValue(field.name, docId, { shouldValidate: true })}
-            label={`Upload ${field.label}`}
+            isLocal={true}
+            uploadUrl={`/entrepreneur/submissions/${projectId}/upload-local/`}
+            label={field.label}
+            hideCategory={true}
+            value={fieldValue}
+            description={
+              field.help_text || {
+                'audited_financials': 'Upload audited P&L, Balance Sheet, and Cash Flow statements for the last 3 fiscal years.',
+                'moa_aoa': 'The legal charter of your company (Memorandum and Articles of Association).',
+                'company_registration': 'Certificate of incorporation or OCR registration certificate.',
+                'pitch_deck': 'A presentation deck covering problem, solution, market size, and traction.',
+                'business_plan': 'Detailed document outlining strategy, operations, and financial projections.'
+              }[field.name] || ""
+            }
+            onSuccess={(docId) => {
+              setValue(field.name, docId);
+              // Clear error if any
+              clearErrors(field.name);
+            }}
           />
           {fieldValue && <div className="text-[10px] text-emerald-400 flex items-center gap-1"><CheckCircle2 size={12}/> Document Uploaded</div>}
         </div>

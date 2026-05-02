@@ -31,10 +31,10 @@ def get_b2_client():
             "Install it: pip install boto3"
         ) from exc
 
-    endpoint = getattr(settings, 'B2_ENDPOINT_URL', '').strip()
-    key_id = getattr(settings, 'B2_KEY_ID', '').strip()
-    app_key = getattr(settings, 'B2_APPLICATION_KEY', '').strip()
-    region = getattr(settings, 'B2_REGION', 'us-west-002').strip()
+    endpoint = (getattr(settings, 'B2_ENDPOINT_URL', '') or '').strip()
+    key_id = (getattr(settings, 'B2_KEY_ID', '') or '').strip()
+    app_key = (getattr(settings, 'B2_APPLICATION_KEY', '') or '').strip()
+    region = (getattr(settings, 'B2_REGION', 'us-west-002') or 'us-west-002').strip()
 
     return boto3.client(
         's3',
@@ -114,4 +114,29 @@ def delete_b2_object(file_key: str) -> None:
         logger.info("Deleted B2 object: %s", file_key)
     except Exception as exc:
         logger.error("B2 delete error for key %s: %s", file_key, exc)
+        raise
+
+def upload_local_file_to_b2(local_path: str, b2_key: str, content_type: str = None) -> None:
+    """
+    Upload a file from local media storage to Backblaze B2.
+    """
+    bucket = getattr(settings, 'B2_BUCKET_NAME', '')
+    client = get_b2_client()
+    
+    if not content_type:
+        import mimetypes
+        content_type, _ = mimetypes.guess_type(local_path)
+    content_type = content_type or 'application/octet-stream'
+
+    try:
+        with open(local_path, 'rb') as data:
+            client.put_object(
+                Bucket=bucket,
+                Key=b2_key,
+                Body=data,
+                ContentType=content_type
+            )
+        logger.info("Uploaded local file to B2: %s -> %s", local_path, b2_key)
+    except Exception as exc:
+        logger.error("B2 local upload error: %s", exc)
         raise

@@ -18,6 +18,7 @@ from .models import (
     IRDocument,
     GPShareholder,
     LPFundCommitment,
+    validate_ocr_number,
     PEInvestment,
     CapitalCall,
     Distribution,
@@ -85,10 +86,10 @@ class PEProjectDocumentSerializer(serializers.ModelSerializer):
         model = PEProjectDocument
         fields = (
             'id', 'project', 'file_key', 'filename', 'file_size',
-            'mime_type', 'category', 'category_display',
+            'mime_type', 'category', 'category_display', 'url',
             'uploaded_by', 'uploaded_by_detail', 'uploaded_at',
         )
-        read_only_fields = ('id', 'uploaded_at')
+        read_only_fields = ('id', 'uploaded_at', 'url')
         extra_kwargs = {
             'project': {'write_only': True},
             'uploaded_by': {'write_only': True, 'required': False},
@@ -295,10 +296,10 @@ class PEProjectStatusUpdateSerializer(serializers.ModelSerializer):
 class GPInviteSerializer(serializers.Serializer):
     fund_id = serializers.UUIDField()
     legal_name = serializers.CharField(max_length=200)
-    ocr_registration_number = serializers.CharField(max_length=50)
+    ocr_registration_number = serializers.CharField(max_length=50, validators=[validate_ocr_number])
     entrepreneur_email = serializers.EmailField()
     deal_type = serializers.ChoiceField(choices=PEProject.DealType.choices)
-    sector = serializers.ChoiceField(choices=PEProject.Sector.choices, required=False)
+    sector = serializers.ChoiceField(choices=PEProject.Sector.choices, required=False, allow_blank=True)
     investment_range_min_npr = serializers.DecimalField(
         max_digits=15, decimal_places=2, required=False, allow_null=True
     )
@@ -312,6 +313,16 @@ class GPInviteSerializer(serializers.Serializer):
         except Fund.DoesNotExist:
             raise serializers.ValidationError("Fund not found.")
 
+    def validate_investment_range_min_npr(self, value):
+        if value == "" or value is None:
+            return None
+        return value
+
+    def validate_investment_range_max_npr(self, value):
+        if value == "" or value is None:
+            return None
+        return value
+
 
 # ---------------------------------------------------------------------------
 # Document Upload Request (input only)
@@ -321,7 +332,7 @@ class DocumentUploadRequestSerializer(serializers.Serializer):
     """Input for requesting a pre-signed B2 upload URL."""
     filename = serializers.CharField(max_length=255)
     content_type = serializers.CharField(max_length=100, required=False)
-    category = serializers.ChoiceField(choices=PEProjectDocument.Category.choices)
+    category = serializers.CharField(max_length=50, default='OTHER')
     file_size = serializers.IntegerField(min_value=1)
 
 

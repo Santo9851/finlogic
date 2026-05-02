@@ -200,8 +200,8 @@ export default function Header() {
             </>
           )}
           
-          {/* Always show Submit button for entrepreneurs or non-logged in */}
-          {(!user || user.role === 'entrepreneur') && (
+          {/* Always show Submit button for entrepreneurs or non-logged in (HIDDEN FOR NOW) */}
+          {false && (!user || user.role === 'entrepreneur') && (
             <Link 
               href="/entrepreneurs/submit"
               className="hidden lg:flex items-center gap-2 rounded-full border border-[#F59F01]/30 px-6 py-2 text-sm font-bold text-[#F59F01] transition-all hover:bg-[#F59F01] hover:text-[#100226] hover:border-[#F59F01]"
@@ -295,7 +295,8 @@ export default function Header() {
                   </Link>
                 </>
               )}
-              {(!user || (user.roles && (user.roles.includes('entrepreneur') || user.roles.includes('admin')))) && (
+              {/* (HIDDEN FOR NOW) */}
+              {false && (!user || (user.roles && (user.roles.includes('entrepreneur') || user.roles.includes('admin')))) && (
                 <Link 
                   href="/entrepreneurs/submit"
                   onClick={() => setIsMobileMenuOpen(false)}

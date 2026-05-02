@@ -180,6 +180,12 @@ function SubmitProjectForm() {
 }
 
 export default function SubmitProjectPage() {
+  const router = useRouter();
+
+  React.useEffect(() => {
+    router.replace('/contact');
+  }, [router]);
+
   return (
     <AuthGuard allowedRoles={['entrepreneur', 'admin', 'super_admin']}>
       <SubmitProjectForm />

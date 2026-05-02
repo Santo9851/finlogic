@@ -16,7 +16,7 @@ from django.db import models
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import generics, permissions, status, viewsets
+from rest_framework import generics, permissions, status, viewsets, parsers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -197,8 +197,11 @@ class GPCreateInviteView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request):
+        logger.info(f"Invite request received: {request.data}")
         serializer = GPInviteSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            logger.error(f"Invite validation failed: {serializer.errors}")
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         data = serializer.validated_data
 
         fund: Fund = data['fund_id']  # already the Fund instance (validated)
@@ -225,10 +228,15 @@ class GPCreateInviteView(APIView):
         )
 
         if not created:
-            # Optionally update fields if it already exists
+            # Update fields if it already exists to ensure it's now an invited project
             project.entrepreneur_user = entrepreneur
+            project.submission_type = PEProject.SubmissionType.ENTREPRENEUR_INVITED
+            # We might also want to update the fund or other details if they changed
+            project.fund = fund
+            project.legal_name = data['legal_name']
+            project.deal_type = data['deal_type']
             project.save()
-
+        
         # Signal handles token generation + email sending
 
         return Response(
@@ -797,6 +805,42 @@ class EntrepreneurSubmissionDetailView(generics.RetrieveAPIView):
         
         project_data['active_template'] = PEFormTemplateSerializer(template).data if template else None
 
+        # Auto-populate document fields from existing PEProjectDocument objects
+        if template:
+            doc_step = next((s for s in template.steps if s.get('step_name') == 'documents'), None)
+            if doc_step:
+                idx = doc_step['step_index']
+                resp_list = project_data['form_responses']
+                existing_resp = next((r for r in resp_list if r['step_index'] == idx), None)
+                
+                all_docs = instance.documents.all()
+                suggested_data = (existing_resp['response_data'] if existing_resp else {}).copy()
+                
+                changed = False
+                for field in doc_step.get('fields', []):
+                    f_name = field['name']
+                    if not suggested_data.get(f_name):
+                        cat = field.get('category')
+                        # Map categories including potential mismatches (FINANCIAL vs FINANCIALS)
+                        search_cats = [cat]
+                        if cat == 'FINANCIAL': search_cats.append('FINANCIALS')
+                        elif cat == 'FINANCIALS': search_cats.append('FINANCIAL')
+                        
+                        match = all_docs.filter(category__in=search_cats).order_by('-uploaded_at').first()
+                        if match:
+                            suggested_data[f_name] = str(match.id)
+                            changed = True
+                
+                if changed:
+                    if existing_resp:
+                        existing_resp['response_data'] = suggested_data
+                    else:
+                        resp_list.append({
+                            'step_index': idx,
+                            'step_name': 'documents',
+                            'response_data': suggested_data
+                        })
+
         return Response(project_data)
 
 
@@ -1289,23 +1333,33 @@ class EntrepreneurAuthGetUploadURLView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated, IsEntrepreneurRole]
 
-    def get(self, request, project_id):
-        import uuid
-        from deals import b2_utils as b2
+    def post(self, request, project_id):
+        from deals.b2_utils import generate_presigned_upload_url
         project = get_object_or_404(PEProject, pk=project_id, entrepreneur_user=request.user)
-        category = request.query_params.get('category', 'OTHER')
-        filename = request.query_params.get('filename', 'document.pdf')
         
-        file_key = f"projects/{project.id}/{uuid.uuid4()}_{filename}"
-        presign = b2.get_presigned_upload_url(file_key)
+        serializer = DocumentUploadRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        d = serializer.validated_data
+
+        try:
+            presign = generate_presigned_upload_url(
+                project_id=str(project.pk),
+                filename=d['filename'],
+                content_type=d.get('content_type'),
+            )
+        except Exception as exc:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Upload URL Generation Error: {exc}", exc_info=True)
+            return Response({'detail': str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
         
         doc = PEProjectDocument.objects.create(
             project=project,
-            category=category,
-            filename=filename,
-            file_key=file_key,
+            category=d['category'],
+            filename=d['filename'],
+            file_key=presign['file_key'],
             mime_type=presign['content_type'],
-            file_size=0,
+            file_size=d.get('file_size', 0),
             uploaded_by=request.user,
             is_confirmed=False,
         )
@@ -1316,6 +1370,46 @@ class EntrepreneurAuthGetUploadURLView(APIView):
             'document_id': doc.id,
             'content_type': presign['content_type'],
         })
+
+
+class EntrepreneurAuthUploadLocalView(APIView):
+    """
+    POST /api/entrepreneur/submissions/{project_id}/upload-local/
+    Direct multipart upload to local storage.
+    Used for initial entrepreneur submissions to avoid B2/CORS issues.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsEntrepreneurRole]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def post(self, request, project_id):
+        project = get_object_or_404(PEProject, pk=project_id, entrepreneur_user=request.user)
+        file_obj = request.FILES.get('file')
+        category = request.data.get('document_type', 'OTHER')
+
+        if not file_obj:
+            return Response({'detail': 'No file uploaded.'}, status=400)
+        
+        # 3MB Size Limit
+        if file_obj.size > 3 * 1024 * 1024:
+            return Response({'detail': 'File size exceeds the 3MB limit.'}, status=400)
+
+        doc = PEProjectDocument.objects.create(
+            project=project,
+            category=category,
+            filename=file_obj.name,
+            file_key=f"local/{project.id}/{file_obj.name}",
+            mime_type=file_obj.content_type,
+            file_size=file_obj.size,
+            local_file=file_obj,
+            uploaded_by=request.user,
+            is_confirmed=True, # Locally uploaded is immediately confirmed
+        )
+
+        return Response({
+            'document_id': doc.id,
+            'filename': doc.filename,
+            'url': doc.local_file.url
+        }, status=201)
 
 
 # ---------------------------------------------------------------------------

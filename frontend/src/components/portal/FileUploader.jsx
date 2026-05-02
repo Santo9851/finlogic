@@ -8,7 +8,7 @@
  * 2. Uploading to B2
  * 3. Confirming with backend
  */
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, X } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
@@ -42,14 +42,22 @@ export default function FileUploader({
   label = "Upload Document",
   hideCategory = false,
   isLocal = false,
-  uploadUrl = ''
+  uploadUrl = '',
+  value = null,
+  description = ""
 }) {
   const [file, setFile] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(category || 'OTHER');
-  const [status, setStatus] = useState('idle'); // idle, presigning, uploading, confirming, success, error
+  const [status, setStatus] = useState(value ? 'success' : 'idle'); 
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (value && status === 'idle') {
+      setStatus('success');
+    }
+  }, [value]);
 
   const CATEGORIES = [
     { value: 'INCORPORATION', label: 'Incorporation Documents' },
@@ -71,6 +79,13 @@ export default function FileUploader({
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
+      if (selected.size > 3 * 1024 * 1024) {
+        setError('File size exceeds the 3MB limit.');
+        toast.error('File too large (Max 3MB)');
+        setFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        return;
+      }
       setFile(selected);
       setError(null);
     }
@@ -99,7 +114,7 @@ export default function FileUploader({
 
         setStatus('success');
         toast.success(`${file.name} uploaded successfully.`);
-        onSuccess(res.data);
+        onSuccess(res.data.document_id);
         return;
       } catch (err) {
         console.error('Local Upload Error:', err);
@@ -196,6 +211,11 @@ export default function FileUploader({
 
   return (
     <div className="space-y-4 w-full">
+      {description && (
+        <p className="text-[10px] text-white/40 leading-relaxed italic ml-1">
+          {description}
+        </p>
+      )}
       <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all ${
         status === 'idle' ? 'border-white/10 bg-white/2' : 
         status === 'success' ? 'border-green-500/30 bg-green-500/5' :
@@ -210,7 +230,7 @@ export default function FileUploader({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">{label}</p>
-                  <p className="text-xs text-white/30 mt-1">PDF, DOCX, or Image (Max 100MB)</p>
+                  <p className="text-xs text-white/30 mt-1">PDF, DOCX, or Image (Max 3MB)</p>
                 </div>
                 <input 
                   type="file" 

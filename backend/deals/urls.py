@@ -35,6 +35,7 @@ from .views import (
     EntrepreneurAuthSubmitStepView,
     EntrepreneurAuthFinalizeView,
     EntrepreneurAuthGetUploadURLView,
+    EntrepreneurAuthUploadLocalView,
     # LP portal
     LPDashboardView,
     LPFundDetailView,
@@ -396,6 +397,11 @@ urlpatterns = [
         'entrepreneur/submissions/<uuid:project_id>/get-upload-url/',
         EntrepreneurAuthGetUploadURLView.as_view(),
         name='entrepreneur-auth-get-upload-url',
+    ),
+    path(
+        'entrepreneur/submissions/<uuid:project_id>/upload-local/',
+        EntrepreneurAuthUploadLocalView.as_view(),
+        name='entrepreneur-auth-upload-local',
     ),
 
     # ── LP Portal ──────────────────────────────────────────────────────────

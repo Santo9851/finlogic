@@ -241,9 +241,14 @@ class PEProjectDocument(models.Model):
     """Files stored on Backblaze B2; only metadata lives here."""
 
     class Category(models.TextChoices):
-        FINANCIAL = 'FINANCIAL', 'Financial'
-        LEGAL = 'LEGAL', 'Legal'
+        FINANCIALS = 'FINANCIALS', 'Financial Statements'
+        LEGAL = 'LEGAL', 'Legal Documents'
         COMMERCIAL = 'COMMERCIAL', 'Commercial'
+        INCORPORATION = 'INCORPORATION', 'Incorporation'
+        TAX_CLEARANCE = 'TAX_CLEARANCE', 'Tax Clearance'
+        KYC = 'KYC', 'KYC Documents'
+        PITCH_DECK = 'PITCH_DECK', 'Pitch Deck'
+        BUSINESS_PLAN = 'BUSINESS_PLAN', 'Business Plan'
         OTHER = 'OTHER', 'Other'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -263,11 +268,25 @@ class PEProjectDocument(models.Model):
     uploaded_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name='uploaded_pe_docs'
     )
+    local_file = models.FileField(
+        upload_to='pe_projects/documents/%Y/%m/%d/',
+        null=True,
+        blank=True,
+        help_text="Stored locally before being moved to B2"
+    )
     is_confirmed = models.BooleanField(
         default=False,
-        help_text="True if client confirmed successful upload to B2",
+        help_text="True if confirmed on B2 or local storage",
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def url(self):
+        """Returns the local URL or B2 presigned URL."""
+        if self.local_file:
+            return self.local_file.url
+        from deals.b2_utils import generate_presigned_download_url
+        return generate_presigned_download_url(self.file_key, self.filename)
 
     class Meta:
         db_table = 'pe_project_documents'

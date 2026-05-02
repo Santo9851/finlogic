@@ -683,3 +683,31 @@ def generate_lp_statements(fund_id, quarter, year, lpprofile_id=None, gp_user_id
 
 
 
+
+@shared_task
+def move_project_documents_to_b2(project_id):
+    """
+    Moves all locally stored documents for a project to Backblaze B2.
+    """
+    from .b2_utils import upload_local_file_to_b2
+    project = PEProject.objects.get(id=project_id)
+    docs = project.documents.filter(local_file__isnull=False)
+    
+    count = 0
+    for doc in docs:
+        try:
+            local_path = doc.local_file.path
+            upload_local_file_to_b2(
+                local_path=local_path,
+                b2_key=doc.file_key,
+                content_type=doc.mime_type
+            )
+            # Update doc to reflect it's now on B2 (clear local_file)
+            doc.local_file = None
+            doc.is_confirmed = True
+            doc.save()
+            count += 1
+        except Exception as e:
+            logger.error(f"Failed to move document {doc.id} to B2: {e}")
+            
+    return f"Moved {count} documents to B2 for project {project.legal_name}"

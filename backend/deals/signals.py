@@ -147,21 +147,79 @@ def _send_invitation_email(project: PEProject) -> None:
         logger.error("Failed to send invitation email for project %s: %s", project.pk, exc)
 
 
+def _send_submission_confirmation_email(project: PEProject) -> None:
+    """
+    Send a confirmation email to the entrepreneur after final submission.
+    """
+    try:
+        from django.core.mail import EmailMultiAlternatives
+        
+        subject = f'Submission Confirmed – {project.legal_name}'
+        text_body = (
+            f"Dear Entrepreneur,\n\n"
+            f"This is to confirm that your deal submission for '{project.legal_name}' "
+            f"has been successfully received by the Finlogic Capital team.\n\n"
+            f"What happens next?\n"
+            f"1. Our investment team will review your submission.\n"
+            f"2. You can track the status of your application in your dashboard.\n"
+            f"3. We will reach out via email if additional documents are required.\n\n"
+            f"Contact us: investment@finlogiccapital.com\n\n"
+            f"Best regards,\n"
+            f"Finlogic Capital Team"
+        )
+        html_body = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #16c784;">Submission Received</h2>
+            <p>Dear Entrepreneur,</p>
+            <p>Your deal submission for <strong>{project.legal_name}</strong> has been successfully received.</p>
+            <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="margin-top: 0;">Next Steps</h3>
+              <ul>
+                <li>Review by our investment team</li>
+                <li>Status tracking via your dashboard</li>
+                <li>Manual outreach for detailed DD if required</li>
+              </ul>
+            </div>
+            <p>If you have any questions, please reach out to us at <a href="mailto:investment@finlogiccapital.com">investment@finlogiccapital.com</a>.</p>
+            <hr/>
+            <p style="font-size:12px;color:#aaa;">
+              Finlogic Capital | Nepal Private Equity Platform
+            </p>
+          </body>
+        </html>
+        """
+
+        email = project.entrepreneur_user.email if project.entrepreneur_user else None
+        if not email: return
+
+        from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@finlogiccapital.com')
+        msg = EmailMultiAlternatives(subject, text_body, from_email, [email])
+        msg.attach_alternative(html_body, 'text/html')
+        msg.send(fail_silently=False)
+        logger.info("Submission confirmation email sent to %s for project %s", email, project.pk)
+    except Exception as exc:
+        logger.error("Failed to send submission confirmation for project %s: %s", project.pk, exc)
+
+
 # ---------------------------------------------------------------------------
 # PEProject signals
 # ---------------------------------------------------------------------------
 
-# Track old status for change detection
-_PEPROJECT_OLD_STATUS: dict[str, str] = {}
+# Track old data for change detection
+_PEPROJECT_OLD_DATA: dict[str, dict] = {}
 
 
 @receiver(pre_save, sender=PEProject)
 def pe_project_pre_save(sender, instance, **kwargs):
-    """Cache current status before save so we can detect changes post-save."""
+    """Cache current status and submission state before save so we can detect changes post-save."""
     if instance.pk:
         try:
             old = PEProject.objects.get(pk=instance.pk)
-            _PEPROJECT_OLD_STATUS[str(instance.pk)] = old.status
+            _PEPROJECT_OLD_DATA[str(instance.pk)] = {
+                'status': old.status,
+                'submitted_at': old.submitted_at
+            }
         except PEProject.DoesNotExist:
             pass
 
@@ -172,7 +230,8 @@ def pe_project_post_save(sender, instance, created, **kwargs):
     
     # We send the invite if it's new OR if we just updated the entrepreneur_user on an existing one
     if created or is_invite:
-        if is_invite and (created or not instance.invitation_token):
+        if is_invite:
+            # Generate or refresh token
             token = uuid.uuid4()
             expires = timezone.now() + timedelta(days=7)
             PEProject.objects.filter(pk=instance.pk).update(
@@ -207,22 +266,34 @@ def pe_project_post_save(sender, instance, created, **kwargs):
         )
     else:
         # ── Status change audit ───────────────────────────────────────────
-        old_status = _PEPROJECT_OLD_STATUS.pop(str(instance.pk), None)
+        old_data = _PEPROJECT_OLD_DATA.pop(str(instance.pk), {})
+        old_status = old_data.get('status')
+        old_submitted_at = old_data.get('submitted_at')
+
         if old_status and old_status != instance.status:
             _log_audit_event(
                 ImmutableAuditEvent.EventType.PROJECT_STATUS_CHANGED,
                 instance,
                 payload={'old_status': old_status, 'new_status': instance.status},
             )
+            # If moved to SCREENING or GP_APPROVED, trigger B2 move for any local documents
+            if instance.status in [PEProject.Status.SCREENING, PEProject.Status.GP_APPROVED]:
+                try:
+                    from .tasks import move_project_documents_to_b2
+                    move_project_documents_to_b2.delay(str(instance.id))
+                except Exception as e:
+                    logger.error(f"Failed to trigger B2 migration task: {e}")
 
-        # ── Project submitted audit ───────────────────────────────────────
-        if instance.submitted_at and instance.status == PEProject.Status.SUBMITTED:
-            if old_status and old_status != PEProject.Status.SUBMITTED:
-                _log_audit_event(
-                    ImmutableAuditEvent.EventType.PROJECT_SUBMITTED,
-                    instance,
-                    payload={'submitted_at': str(instance.submitted_at)},
-                )
+        # ── Project submitted audit & email ───────────────────────────────
+        # We trigger this when submitted_at transitions from None to a value
+        if instance.submitted_at and not old_submitted_at:
+            _log_audit_event(
+                ImmutableAuditEvent.EventType.PROJECT_SUBMITTED,
+                instance,
+                payload={'submitted_at': str(instance.submitted_at)},
+            )
+            # Send confirmation email to entrepreneur
+            _send_submission_confirmation_email(instance)
 
 
 # ---------------------------------------------------------------------------

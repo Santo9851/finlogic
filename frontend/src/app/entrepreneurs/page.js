@@ -184,7 +184,7 @@ export default function EntrepreneursPage() {
             className="text-5xl md:text-7xl font-bold mb-8"
           >
             We back visionary founders. <br className="hidden md:block" />
-            <span className="text-ls-compliment">Apply today.</span>
+            <span className="text-ls-compliment">By Invitation Only.</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -199,9 +199,13 @@ export default function EntrepreneursPage() {
              animate={{ opacity: 1, scale: 1 }}
              transition={{ delay: 0.3 }}
           >
-            <button className="rounded-full bg-ls-up px-10 py-5 text-lg font-bold text-ls-primary transition-all hover:scale-105 hover:bg-ls-up/90 active:scale-95 shadow-lg shadow-ls-up/20">
-              Submit Your Project
-            </button>
+            <Link 
+              href="/contact"
+              className="inline-block rounded-full bg-ls-up px-10 py-5 text-lg font-bold text-ls-primary transition-all hover:scale-105 hover:bg-ls-up/90 active:scale-95 shadow-lg shadow-ls-up/20"
+            >
+              Contact Us to Learn More
+            </Link>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-ls-white/30 mt-4">Public applications are currently closed</p>
           </motion.div>
         </div>
       </section>
@@ -322,10 +326,13 @@ export default function EntrepreneursPage() {
       <section className="py-24 bg-ls-supporting/5 text-center">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="text-3xl font-bold mb-8">Ready to Scale Honestly?</h2>
-          <p className="text-ls-white/60 mb-12 max-w-xl mx-auto">We review submissions on a rolling basis. Take the first step today.</p>
-          <button className="rounded-full bg-ls-up px-12 py-5 text-xl font-bold text-ls-primary hover:scale-105 transition-all shadow-xl shadow-ls-up/20">
-            Submit Your Project Now
-          </button>
+          <p className="text-ls-white/60 mb-12 max-w-xl mx-auto">We currently accept submissions on an invitation-only basis. If you'd like to join our network, please reach out.</p>
+          <Link 
+            href="/contact"
+            className="inline-block rounded-full bg-ls-up px-12 py-5 text-xl font-bold text-ls-primary hover:scale-105 transition-all shadow-xl shadow-ls-up/20"
+          >
+            Get in Touch
+          </Link>
         </div>
       </section>
     </div>

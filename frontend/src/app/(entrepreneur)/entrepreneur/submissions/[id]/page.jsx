@@ -63,9 +63,19 @@ export default function EntrepreneurSubmissionDetailPage() {
               {deal.submitted_at ? new Date(deal.submitted_at).toLocaleDateString() : 'Draft'}
             </p>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <p className="text-xs text-white/30 uppercase tracking-widest">Progress</p>
-            <p className="text-white font-medium">Step {deal.form_step_completed} of 5</p>
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#F59F01]" 
+                  style={{ width: `${Math.min((deal.form_step_completed / (deal.active_template?.steps?.length || 5)) * 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-white font-bold whitespace-nowrap">
+                {Math.min(Math.round((deal.form_step_completed / (deal.active_template?.steps?.length || 5)) * 100), 100)}%
+              </p>
+            </div>
           </div>
         </div>
 
@@ -77,19 +87,51 @@ export default function EntrepreneurSubmissionDetailPage() {
                 <FileText size={18} className="text-[#F59F01]" /> Form Responses
               </h2>
               <div className="space-y-4">
-                {deal.form_responses?.map((resp) => (
-                  <details key={resp.id} className="group rounded-lg border border-white/10 bg-white/2">
-                    <summary className="p-4 cursor-pointer flex items-center justify-between text-sm text-white/70 hover:text-white transition-colors">
-                      <span className="font-medium">Step {resp.step_index}: {resp.step_name.replace('_', ' ').toUpperCase()}</span>
-                      <ChevronLeft size={16} className="group-open:-rotate-90 transition-transform" />
-                    </summary>
-                    <div className="p-4 pt-0 border-t border-white/5">
-                      <pre className="text-xs text-white/50 bg-black/40 p-4 rounded-md overflow-x-auto">
-                        {JSON.stringify(resp.response_data, null, 2)}
-                      </pre>
-                    </div>
-                  </details>
-                ))}
+                {deal.form_responses?.map((resp) => {
+                  const stepTemplate = deal.active_template?.steps?.find(s => s.step_index === resp.step_index);
+                  
+                  return (
+                    <details key={resp.id} className="group rounded-xl border border-white/10 bg-white/5 hover:bg-white/8 transition-all overflow-hidden shadow-sm">
+                      <summary className="p-5 cursor-pointer flex items-center justify-between text-sm text-white/80 hover:text-white transition-colors list-none">
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 rounded-full bg-[#F59F01]/10 flex items-center justify-center text-[10px] text-[#F59F01] font-bold border border-[#F59F01]/20">
+                            {resp.step_index + 1}
+                          </div>
+                          <span className="font-semibold tracking-wide uppercase text-xs">{resp.step_name.replace('_', ' ')}</span>
+                        </div>
+                        <ChevronLeft size={16} className="group-open:-rotate-90 transition-transform text-white/30" />
+                      </summary>
+                      
+                      <div className="p-5 pt-0 border-t border-white/5 bg-black/20">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 py-4">
+                          {Object.entries(resp.response_data).map(([key, value]) => {
+                            const fieldDef = stepTemplate?.fields?.find(f => f.name === key);
+                            const label = fieldDef?.label || key.replace('_', ' ').toUpperCase();
+                            const isFile = fieldDef?.type === 'file_upload';
+                            
+                            return (
+                              <div key={key} className="space-y-1.5 group/item">
+                                <p className="text-[10px] text-white/30 uppercase tracking-widest font-bold group-hover/item:text-[#F59F01]/50 transition-colors">
+                                  {label}
+                                </p>
+                                {isFile ? (
+                                   <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium bg-emerald-500/5 border border-emerald-500/10 px-3 py-2 rounded-lg w-fit">
+                                     <CheckCircle2 size={14} />
+                                     <span>Document Attached</span>
+                                   </div>
+                                ) : (
+                                  <p className="text-sm text-white/80 break-words leading-relaxed font-medium">
+                                    {value === true ? 'Yes' : value === false ? 'No' : (value?.toString() || '—')}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </details>
+                  );
+                })}
                 {(!deal.form_responses || deal.form_responses.length === 0) && (
                   <p className="text-white/20 text-sm italic">No form steps completed yet.</p>
                 )}
