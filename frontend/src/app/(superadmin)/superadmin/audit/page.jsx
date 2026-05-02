@@ -24,6 +24,7 @@ import api from '@/services/api';
 import { toast } from 'sonner';
 
 export default function SuperAdminAuditPage() {
+  const [source, setSource] = useState('compliance'); // 'compliance' or 'data'
   const [actor, setActor] = useState('');
   const [eventType, setEventType] = useState('');
   const [table, setTable] = useState('');
@@ -31,9 +32,10 @@ export default function SuperAdminAuditPage() {
 
   // 1. Fetch Audit Logs
   const { data: logs = [], isLoading } = useQuery({
-    queryKey: ['superadmin', 'audit-logs', actor, eventType, table],
+    queryKey: ['superadmin', 'audit-logs', source, actor, eventType, table],
     queryFn: async () => {
       const params = new URLSearchParams();
+      params.append('source', source);
       if (actor) params.append('actor', actor);
       if (eventType) params.append('event_type', eventType);
       if (table) params.append('table', table);
@@ -44,7 +46,6 @@ export default function SuperAdminAuditPage() {
   });
 
   const exportToExcel = () => {
-    // Mock export logic - in a real app you'd use a library like xlsx
     toast.success('Exporting audit logs to Excel format...');
   };
 
@@ -59,14 +60,30 @@ export default function SuperAdminAuditPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">System Audit Logs</h1>
-          <p className="text-white/40 text-sm">Track every data mutation across the platform.</p>
+          <p className="text-white/40 text-sm">Track every data mutation and institutional action across the platform.</p>
         </div>
-        <button 
-          onClick={exportToExcel}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
-        >
-          <FileSpreadsheet size={18} /> Export to Excel
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="bg-white/5 border border-white/10 p-1 rounded-xl flex">
+             <button 
+                onClick={() => setSource('compliance')}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${source === 'compliance' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-white/30 hover:text-white/60'}`}
+             >
+                Compliance
+             </button>
+             <button 
+                onClick={() => setSource('data')}
+                className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${source === 'data' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-white/30 hover:text-white/60'}`}
+             >
+                Data CRUD
+             </button>
+          </div>
+          <button 
+            onClick={exportToExcel}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/10"
+          >
+            <FileSpreadsheet size={18} /> Export
+          </button>
+        </div>
       </div>
 
       {/* Advanced Filter Panel */}
@@ -85,26 +102,40 @@ export default function SuperAdminAuditPage() {
         </div>
         
         <div className="space-y-1">
-          <label className="text-[10px] text-white/40 uppercase font-bold tracking-widest px-1">Event Type</label>
+          <label className="text-[10px] text-white/40 uppercase font-bold tracking-widest px-1">
+             {source === 'compliance' ? 'Event Type' : 'Action'}
+          </label>
           <select 
             value={eventType} 
             onChange={(e) => setEventType(e.target.value)}
             className="w-full bg-[#060010] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-purple-500/40"
           >
-            <option value="">All Actions</option>
-            <option value="INSERT">INSERT</option>
-            <option value="UPDATE">UPDATE</option>
-            <option value="DELETE">DELETE</option>
-            <option value="SOFT_DELETE">SOFT_DELETE</option>
+            <option value="">All Types</option>
+            {source === 'compliance' ? (
+               <>
+                  <option value="WATERFALL_CALCULATED">Waterfall Calculation</option>
+                  <option value="VALUATION_CREATED">Valuation Update</option>
+                  <option value="MEMO_FINALIZED">Memo Finalization</option>
+                  <option value="IPO_ELIGIBILITY_CHECKED">IPO Review</option>
+               </>
+            ) : (
+               <>
+                  <option value="INSERT">INSERT</option>
+                  <option value="UPDATE">UPDATE</option>
+                  <option value="DELETE">DELETE</option>
+               </>
+            )}
           </select>
         </div>
 
         <div className="space-y-1">
-          <label className="text-[10px] text-white/40 uppercase font-bold tracking-widest px-1">Table Name</label>
+          <label className="text-[10px] text-white/40 uppercase font-bold tracking-widest px-1">
+             {source === 'compliance' ? 'Project' : 'Table Name'}
+          </label>
           <input 
             value={table} 
             onChange={(e) => setTable(e.target.value)}
-            placeholder="e.g. projects, users"
+            placeholder={source === 'compliance' ? "Project name..." : "Table name..."}
             className="w-full bg-[#060010] border border-white/10 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-purple-500/40"
           />
         </div>
@@ -127,8 +158,8 @@ export default function SuperAdminAuditPage() {
               <tr className="border-b border-white/10 bg-white/[0.02]">
                 <th className="px-6 py-4 font-bold text-white/40 uppercase tracking-widest text-[10px]">Timestamp</th>
                 <th className="px-6 py-4 font-bold text-white/40 uppercase tracking-widest text-[10px]">Actor</th>
-                <th className="px-6 py-4 font-bold text-white/40 uppercase tracking-widest text-[10px]">Action</th>
-                <th className="px-6 py-4 font-bold text-white/40 uppercase tracking-widest text-[10px]">Resource</th>
+                <th className="px-6 py-4 font-bold text-white/40 uppercase tracking-widest text-[10px]">Event / Action</th>
+                <th className="px-6 py-4 font-bold text-white/40 uppercase tracking-widest text-[10px]">Resource / Project</th>
                 <th className="px-6 py-4 font-bold text-white/40 uppercase tracking-widest text-[10px] text-right">Details</th>
               </tr>
             </thead>
@@ -152,17 +183,18 @@ export default function SuperAdminAuditPage() {
                   <td className="px-6 py-4">
                     <span className={`
                       px-2 py-0.5 rounded font-bold text-[10px]
-                      ${log.action === 'INSERT' ? 'bg-emerald-500/10 text-emerald-400' : 
+                      ${source === 'compliance' ? 'bg-purple-500/10 text-purple-400' : 
+                        log.action === 'INSERT' ? 'bg-emerald-500/10 text-emerald-400' : 
                         log.action === 'UPDATE' ? 'bg-blue-500/10 text-blue-400' :
                         'bg-red-500/10 text-red-400'}
                     `}>
-                      {log.action}
+                      {source === 'compliance' ? log.event_type_display : log.action}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-1.5 text-white/60 uppercase tracking-tighter text-[10px] font-bold">
                       <Database size={12} className="text-white/20" />
-                      {log.table_name}
+                      {source === 'compliance' ? log.project_name : log.table_name}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -178,7 +210,7 @@ export default function SuperAdminAuditPage() {
               {logs.length === 0 && (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-white/20 italic">
-                    No audit records found matching the filters.
+                    No {source} records found matching the filters.
                   </td>
                 </tr>
               )}

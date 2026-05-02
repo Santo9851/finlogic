@@ -849,11 +849,15 @@ class ValuationRecordSerializer(serializers.ModelSerializer):
     valuation_change_pct = serializers.ReadOnlyField()
     moic_implied = serializers.ReadOnlyField()
     methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
+    investment_name = serializers.CharField(source='investment.project.legal_name', read_only=True)
+    project_id = serializers.CharField(source='investment.project.id', read_only=True)
+    fair_value = serializers.DecimalField(source='fair_value_npr', max_digits=20, decimal_places=2, read_only=True)
 
     class Meta:
         model = ValuationRecord
         fields = (
-            'id', 'investment', 'valuation_date', 'fair_value_npr',
+            'id', 'investment', 'investment_name', 'project_id', 'valuation_date', 
+            'fair_value', 'fair_value_npr',
             'methodology', 'methodology_display', 'discount_rate_pct',
             'exit_multiple_used', 'assumptions', 'previous_valuation_npr',
             'valuer', 'valuer_name', 'is_audited', 'auditor_name', 'notes',
@@ -865,11 +869,20 @@ class ValuationRecordSerializer(serializers.ModelSerializer):
 class ExitScenarioSerializer(serializers.ModelSerializer):
     created_by_name = serializers.ReadOnlyField(source='created_by.get_full_name')
     exit_type_display = serializers.CharField(source='get_exit_type_display', read_only=True)
+    investment_name = serializers.CharField(source='investment.project.legal_name', read_only=True)
+    project_id = serializers.CharField(source='investment.project.id', read_only=True)
 
     class Meta:
         model = ExitScenario
-        fields = '__all__'
-        read_only_fields = ('id', 'created_by', 'created_at', 'updated_at', 'ipo_is_eligible', 'ipo_eligibility_notes')
+        fields = (
+            'id', 'investment', 'investment_name', 'project_id', 'scenario_name', 
+            'exit_type', 'exit_type_display', 'target_exit_date', 
+            'estimated_exit_value_npr', 'estimated_exit_multiple',
+            'is_approved_by_ic', 'ic_approval_date', 'notes',
+            'ipo_is_eligible', 'ipo_eligibility_notes',
+            'created_by', 'created_by_name', 'created_at', 'updated_at'
+        )
+        read_only_fields = ('id', 'created_by', 'ic_approval_date', 'created_at', 'updated_at', 'ipo_is_eligible', 'ipo_eligibility_notes')
 
     def validate_probability_pct(self, value):
         if not (0 <= value <= 100):

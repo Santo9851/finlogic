@@ -1833,7 +1833,7 @@ class PortfolioKPIReportListView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.user_type == 'GP_STAFF':
+        if any(role in ('admin', 'super_admin') for role in user.role_list):
             return PortfolioKPIReport.objects.all()
         # Portfolio Co logic: only reports for projects where they are invited/associated
         return PortfolioKPIReport.objects.filter(project__entrepreneur_user=user)
@@ -2043,6 +2043,20 @@ class WaterfallCalculateView(APIView):
             
         try:
             outputs, run = calculate_distribution(investment_id, exit_proceeds, fund_id)
+            
+            # Log Audit Event
+            _log_audit_event(
+                event_type='WATERFALL_CALCULATED',
+                actor=request.user,
+                obj=run,
+                payload={
+                    "investment_id": str(investment_id),
+                    "exit_proceeds": float(exit_proceeds),
+                    "irr": outputs.get('irr')
+                },
+                request=request
+            )
+            
             return Response(WaterfallRunSerializer(run).data, status=200)
         except Exception as e:
             return Response({'detail': str(e)}, status=400)
@@ -2231,6 +2245,18 @@ class MonteCarloSimulationView(APIView):
         
         if "error" in results:
             return Response(results, status=404)
+            
+        # Log Audit Event
+        _log_audit_event(
+            event_type='MONTE_CARLO_RUN',
+            actor=request.user,
+            payload={
+                "investment_id": str(investment_id),
+                "simulations": num_simulations,
+                "median_irr": results.get('median_irr')
+            },
+            request=request
+        )
             
         return Response(results)
 

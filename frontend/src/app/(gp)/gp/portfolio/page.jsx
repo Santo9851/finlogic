@@ -1,166 +1,101 @@
 'use client';
 
 import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/services/api';
 import { 
-  TrendingUp, 
-  Users, 
   BarChart3, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle,
-  FileSpreadsheet,
-  ChevronRight,
-  Filter
+  TrendingUp, 
+  DollarSign, 
+  Compass, 
+  ArrowRight,
+  PieChart as PieChartIcon
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
+import Link from 'next/link';
 
-export default function GPPortfolioDashboard() {
-  const queryClient = useQueryClient();
-  const { data: reports, isLoading } = useQuery({
-    queryKey: ['portfolio', 'kpi-reports'],
-    queryFn: async () => {
-      const res = await api.get('/portfolio/kpi-reports/');
-      return res.data;
-    }
-  });
-
-  const reviewMutation = useMutation({
-    mutationFn: async ({ id, status }) => {
-      const res = await api.patch(`/portfolio/kpi-reports/${id}/`, { status });
-      return res.data;
+export default function PortfolioOverview() {
+  const sections = [
+    {
+      title: 'Analytics',
+      description: 'Monthly KPIs, variance analysis, and operational performance monitoring across the portfolio.',
+      icon: BarChart3,
+      href: '/gp/portfolio/analytics',
+      color: 'bg-blue-500/10 text-blue-400',
+      stats: '12 Active Reports'
     },
-    onSuccess: () => {
-      toast.success('Report reviewed');
-      queryClient.invalidateQueries(['portfolio', 'kpi-reports']);
+    {
+      title: 'Waterfall',
+      description: 'Carry calculations, distribution modeling, and GP/LP split analysis for exit events.',
+      icon: TrendingUp,
+      href: '/gp/portfolio/waterfall',
+      color: 'bg-emerald-500/10 text-emerald-400',
+      stats: '8-8-2 Structure'
+    },
+    {
+      title: 'Valuations',
+      description: 'Fair value tracking, DCF/LBO models, and unrealized gain/loss assessments.',
+      icon: DollarSign,
+      href: '/gp/portfolio/valuations',
+      color: 'bg-amber-500/10 text-amber-400',
+      stats: 'NPR 1.42B Total'
+    },
+    {
+      title: 'Exit Planning',
+      description: 'IPO eligibility, harvest strategy mapping, and secondary sale opportunity tracking.',
+      icon: Compass,
+      href: '/gp/portfolio/exit-planning',
+      color: 'bg-purple-500/10 text-purple-400',
+      stats: '3 IPO Pipeline'
     }
-  });
-
-  if (isLoading) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-      <div className="w-10 h-10 border-2 border-[#F59F01] border-t-transparent rounded-full animate-spin" />
-      <p className="text-white/40 text-xs font-black uppercase tracking-widest">Loading Portfolio Data...</p>
-    </div>
-  );
+  ];
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
-         <div>
-            <div className="flex items-center gap-2 text-[#F59F01] mb-2">
-               <TrendingUp size={16} />
-               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Monitoring & Control</span>
-            </div>
-            <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Portfolio Performance</h1>
-            <p className="text-white/40 text-sm mt-2 max-w-md">Consolidated monthly KPIs and variance analysis for all invested companies.</p>
-         </div>
-         <div className="flex gap-4">
-            <button className="bg-white/5 border border-white/10 px-6 py-4 rounded-3xl text-center shadow-2xl hover:bg-white/10 transition-all group">
-               <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Export Aggregated</p>
-               <div className="flex items-center justify-center gap-2 text-white font-bold">
-                  <FileSpreadsheet size={16} className="text-[#10b981]" /> Excel
-               </div>
-            </button>
-         </div>
+    <div className="space-y-10 max-w-7xl mx-auto pb-20 animate-in fade-in duration-1000">
+      <div>
+        <div className="flex items-center gap-2 text-[#F59F01] mb-2">
+          <PieChartIcon size={16} />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em]">Phase 3 Integrated</span>
+        </div>
+        <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Portfolio Control</h1>
+        <p className="text-white/40 text-sm mt-2 max-w-lg">
+          Welcome to the central command for fund performance. Manage your investments from acquisition through harvest with institutional-grade tools.
+        </p>
       </div>
 
-      {/* KPI Table */}
-      <div className="bg-white/5 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-         <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-            <h3 className="text-xs font-black text-white uppercase tracking-widest">Recent Monthly Submissions</h3>
-            <div className="flex items-center gap-4">
-               <button className="flex items-center gap-2 px-4 py-2 bg-black/40 border border-white/10 rounded-full text-[10px] font-black text-white uppercase tracking-widest">
-                  <Filter size={14} /> Filter Companies
-               </button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {sections.map((section) => (
+          <Link 
+            key={section.title} 
+            href={section.href}
+            className="group relative bg-white/5 border border-white/10 rounded-[2.5rem] p-8 hover:bg-white/[0.08] transition-all overflow-hidden"
+          >
+            <div className={`w-14 h-14 rounded-2xl ${section.color} flex items-center justify-center mb-6 transition-transform group-hover:scale-110`}>
+              <section.icon size={28} />
             </div>
-         </div>
-         
-         <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-               <thead>
-                  <tr className="border-b border-white/5 text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
-                     <th className="px-8 py-6">Company</th>
-                     <th className="px-8 py-6">Period</th>
-                     <th className="px-8 py-6">Revenue (NPR)</th>
-                     <th className="px-8 py-6">EBITDA</th>
-                     <th className="px-8 py-6">Headcount</th>
-                     <th className="px-8 py-6">Status</th>
-                     <th className="px-8 py-6 text-right">Action</th>
-                  </tr>
-               </thead>
-               <tbody className="divide-y divide-white/5">
-                  {reports?.map((report) => (
-                    <tr key={report.id} className="group hover:bg-white/[0.02] transition-colors">
-                       <td className="px-8 py-6">
-                          <span className="text-white font-bold">{report.project_legal_name}</span>
-                       </td>
-                       <td className="px-8 py-6">
-                          <span className="text-white/40 text-xs">{format(new Date(report.reporting_period), 'MMM yyyy')}</span>
-                       </td>
-                       <td className="px-8 py-6">
-                          <div className="flex flex-col">
-                             <span className="text-white font-mono text-sm">{(report.revenue / 1000000).toFixed(1)}M</span>
-                             <span className="text-[9px] text-[#10b981] font-black uppercase">+12% vs. Proj</span>
-                          </div>
-                       </td>
-                       <td className="px-8 py-6">
-                          <span className={`text-sm font-mono ${report.ebitda < 0 ? 'text-red-400' : 'text-[#10b981]'}`}>
-                             {(report.ebitda / 1000000).toFixed(1)}M
-                          </span>
-                       </td>
-                       <td className="px-8 py-6">
-                          <div className="flex items-center gap-2 text-white/60">
-                             <Users size={14} /> {report.headcount}
-                          </div>
-                       </td>
-                       <td className="px-8 py-6">
-                          <StatusBadge status={report.status} />
-                       </td>
-                       <td className="px-8 py-6 text-right">
-                          {report.status === 'SUBMITTED' ? (
-                            <button 
-                              onClick={() => reviewMutation.mutate({ id: report.id, status: 'REVIEWED' })}
-                              className="px-4 py-2 bg-[#10b981] text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#10b981]/20"
-                            >
-                               Mark Reviewed
-                            </button>
-                          ) : (
-                            <button className="p-2 text-white/20 hover:text-white transition-colors">
-                               <ChevronRight size={18} />
-                            </button>
-                          )}
-                       </td>
-                    </tr>
-                  ))}
-               </tbody>
-            </table>
-            {(!reports || reports.length === 0) && (
-              <div className="p-20 text-center space-y-4">
-                 <BarChart3 size={40} className="mx-auto text-white/10" />
-                 <p className="text-white/20 text-xs font-bold">No KPI reports submitted yet.</p>
+            
+            <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{section.title}</h3>
+            <p className="text-white/40 text-sm mb-8 leading-relaxed max-w-xs">{section.description}</p>
+            
+            <div className="flex items-center justify-between mt-auto">
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{section.stats}</span>
+              <div className="flex items-center gap-2 text-[#F59F01] font-bold text-xs">
+                Enter Hub <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
               </div>
-            )}
-         </div>
+            </div>
+
+            {/* Decorative element */}
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/[0.02] rounded-full blur-3xl group-hover:bg-white/[0.05] transition-all" />
+          </Link>
+        ))}
       </div>
-    </div>
-  );
-}
 
-function StatusBadge({ status }) {
-  const configs = {
-    DRAFT: { color: 'text-white/40', bg: 'bg-white/5', icon: Clock },
-    SUBMITTED: { color: 'text-[#F59F01]', bg: 'bg-[#F59F01]/10', icon: AlertCircle },
-    REVIEWED: { color: 'text-[#10b981]', bg: 'bg-[#10b981]/10', icon: CheckCircle2 }
-  };
-  const config = configs[status] || configs.DRAFT;
-  const Icon = config.icon;
-
-  return (
-    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full ${config.bg} ${config.color} text-[9px] font-black uppercase tracking-widest border border-current/10`}>
-       <Icon size={10} /> {status}
+      <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-8 justify-between shadow-2xl">
+        <div className="flex-1">
+          <h3 className="text-white font-bold mb-1">Need a Consolidated LP Report?</h3>
+          <p className="text-white/40 text-sm">Generate quarterly statements for all LPs across the active portfolio in one click.</p>
+        </div>
+        <button className="px-8 py-4 bg-white text-black rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-white/10">
+          Global Report Generator
+        </button>
+      </div>
     </div>
   );
 }

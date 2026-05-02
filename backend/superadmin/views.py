@@ -164,24 +164,38 @@ class SuperAdminPromptViewSet(viewsets.ModelViewSet):
 
 
 class SuperAdminAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = AuditLog.objects.all().order_by('-created_at')
-    serializer_class = SuperAdminAuditLogSerializer
     permission_classes = [IsSuperAdmin]
 
+    def get_serializer_class(self):
+        source = self.request.query_params.get('source', 'compliance')
+        if source == 'data':
+            return SuperAdminAuditLogSerializer
+        return SuperAdminImmutableAuditEventSerializer
+
     def get_queryset(self):
-        qs = super().get_queryset()
-        event_type = self.request.query_params.get('event_type')
-        actor = self.request.query_params.get('actor')
-        table = self.request.query_params.get('table')
+        source = self.request.query_params.get('source', 'compliance')
         
-        if event_type:
-            qs = qs.filter(action=event_type)
-        if actor:
-            qs = qs.filter(user__email__icontains=actor)
-        if table:
-            qs = qs.filter(table_name=table)
+        if source == 'data':
+            qs = AuditLog.objects.all().order_by('-created_at')
+            actor = self.request.query_params.get('actor')
+            action = self.request.query_params.get('event_type') # Map frontend param
+            table = self.request.query_params.get('table')
             
-        return qs
+            if actor: qs = qs.filter(user__email__icontains=actor)
+            if action: qs = qs.filter(action=action)
+            if table: qs = qs.filter(table_name=table)
+            return qs
+        else:
+            # Institutional Compliance Logs (ImmutableAuditEvent)
+            qs = ImmutableAuditEvent.objects.all().order_by('-created_at')
+            actor = self.request.query_params.get('actor')
+            event_type = self.request.query_params.get('event_type')
+            project_id = self.request.query_params.get('project_id')
+            
+            if actor: qs = qs.filter(actor__email__icontains=actor)
+            if event_type: qs = qs.filter(event_type=event_type)
+            if project_id: qs = qs.filter(project_id=project_id)
+            return qs
 
 
 # --- SEBON COMPLIANCE HUB ---

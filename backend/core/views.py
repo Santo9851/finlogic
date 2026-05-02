@@ -695,6 +695,7 @@ class WisdomHubDashboardView(generics.RetrieveAPIView):
             completed_in_series = completions.filter(article__series=s).count()
             
             if 0 < completed_in_series < total:
+                progress = round((completed_in_series / total) * 100) if total > 0 else 0
                 in_progress_series.append({
                     "id": str(s.id),
                     "title": s.title,
@@ -702,7 +703,7 @@ class WisdomHubDashboardView(generics.RetrieveAPIView):
                     "pillar": s.pillar,
                     "completed_count": completed_in_series,
                     "total_count": total,
-                    "progress_percent": round((completed_in_series / total) * 100)
+                    "progress_percent": progress
                 })
 
         # 3. Continue Learning (Most recent incomplete article in the last started series)

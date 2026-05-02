@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from core.models import User, AuditLog
-from deals.models import Fund, PromptLibrary
+from deals.models import Fund, PromptLibrary, ImmutableAuditEvent
 
 class SuperAdminUserSerializer(serializers.ModelSerializer):
     role_list = serializers.ListField(child=serializers.CharField(), read_only=True)
@@ -46,4 +46,17 @@ class SuperAdminAuditLogSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'table_name', 'record_id', 'user', 'actor_email', 
             'actor_name', 'action', 'old_data', 'new_data', 'created_at'
+        ]
+
+class SuperAdminImmutableAuditEventSerializer(serializers.ModelSerializer):
+    actor_email = serializers.EmailField(source='actor.email', read_only=True)
+    actor_name = serializers.CharField(source='actor.get_full_name', read_only=True)
+    project_name = serializers.CharField(source='project.legal_name', read_only=True)
+    event_type_display = serializers.CharField(source='get_event_type_display', read_only=True)
+
+    class Meta:
+        model = ImmutableAuditEvent
+        fields = [
+            'id', 'event_type', 'event_type_display', 'actor', 'actor_email', 
+            'actor_name', 'project', 'project_name', 'metadata', 'created_at'
         ]

@@ -18,7 +18,16 @@ import { FinlogicLogo } from '@/components/FinlogicLogo';
 const NAV = [
   { href: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/gp/deals', label: 'Deals', icon: Briefcase },
-  { href: '/gp/portfolio', label: 'Portfolio', icon: PieChart },
+  { 
+    label: 'Portfolio', 
+    icon: PieChart,
+    children: [
+      { href: '/gp/portfolio/analytics', label: 'Analytics' },
+      { href: '/gp/portfolio/waterfall', label: 'Waterfall' },
+      { href: '/gp/portfolio/valuations', label: 'Valuations' },
+      { href: '/gp/portfolio/exit-planning', label: 'Exit Planning' },
+    ]
+  },
   { href: '/gp/fund-admin/documents', label: 'Fund Admin', icon: Files },
   { href: '/gp/ir-documents', label: 'Shareholder IR', icon: FileText },
   { href: '/gp/governance', label: 'Governance', icon: ShieldCheck },
@@ -29,6 +38,7 @@ const NAV = [
 
 function Sidebar({ collapsed, onClose }) {
   const pathname = usePathname();
+  const [openSection, setOpenSection] = useState('Portfolio');
 
   return (
     <>
@@ -65,12 +75,60 @@ function Sidebar({ collapsed, onClose }) {
 
         {/* Nav */}
         <nav className="flex-1 py-4 overflow-y-auto">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + '/');
+          {NAV.map((item) => {
+            if (item.children) {
+              const isOpen = openSection === item.label;
+              const hasActiveChild = item.children.some(c => pathname === c.href || pathname.startsWith(c.href + '/'));
+              
+              return (
+                <div key={item.label} className="mb-1">
+                  <button
+                    onClick={() => setOpenSection(isOpen ? null : item.label)}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 mx-2 rounded-lg
+                      text-sm font-medium transition-all group
+                      ${hasActiveChild ? 'text-[#F59F01]' : 'text-white/50 hover:text-white'}
+                    `}
+                  >
+                    <item.icon size={18} className="flex-shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                    {!collapsed && (
+                      <ChevronRight 
+                        size={14} 
+                        className={`ml-auto transition-transform ${isOpen ? 'rotate-90' : ''}`} 
+                      />
+                    )}
+                  </button>
+                  
+                  {isOpen && !collapsed && (
+                    <div className="mt-1 ml-9 space-y-1">
+                      {item.children.map((child) => {
+                        const active = pathname === child.href || pathname.startsWith(child.href + '/');
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={onClose}
+                            className={`
+                              block px-4 py-2 rounded-lg text-xs font-medium transition-all
+                              ${active ? 'text-[#F59F01] bg-[#F59F01]/10' : 'text-white/30 hover:text-white/60'}
+                            `}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const active = pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
-                key={href}
-                href={href}
+                key={item.href}
+                href={item.href}
                 onClick={onClose}
                 className={`
                   flex items-center gap-3 px-4 py-3 mx-2 rounded-lg mb-1
@@ -80,8 +138,8 @@ function Sidebar({ collapsed, onClose }) {
                     : 'text-white/50 hover:text-white hover:bg-white/5'}
                 `}
               >
-                <Icon size={18} className="flex-shrink-0" />
-                {!collapsed && <span>{label}</span>}
+                <item.icon size={18} className="flex-shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
                 {!collapsed && active && <ChevronRight size={14} className="ml-auto" />}
               </Link>
             );
@@ -101,7 +159,7 @@ function GPSidebarFooter({ collapsed }) {
     <div className="border-t border-white/8 p-4">
       {!collapsed && user && (
         <div className="mb-3">
-          <p className="text-white/80 text-sm font-medium truncate">{user.first_name} {user.last_name}</p>
+          <p className="text-white/80 text-sm font-medium truncate">{user.first_name || user.username} {user.last_name}</p>
           <p className="text-white/30 text-xs truncate">{user.email}</p>
         </div>
       )}

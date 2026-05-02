@@ -530,9 +530,9 @@ def generate_memo_draft(project_id):
     project = PEProject.objects.get(id=project_id)
     
     # 1. Gather Context
-    financials = list(project.extracted_financials.values())
+    financials = list(project.financials.values())
     scoring = project.scoring_runs.first()
-    red_flags = list(project.red_flag_findings.values('pattern__name', 'severity', 'ai_analysis'))
+    red_flags = list(project.red_flags.values('pattern__name', 'severity', 'ai_analysis'))
     commercial = project.commercial_analyses.first()
     operational = project.operational_analyses.first()
     regulatory = getattr(project, 'regulatory_checklist', None)
@@ -602,8 +602,8 @@ def run_full_analysis(project_id, user_id=None):
     project = PEProject.objects.get(id=project_id)
     
     # 1. Find the most recent financial document
-    doc = project.documents.filter(category='FINANCIAL').order_by('-created_at').first()
-    legal_doc = project.documents.filter(category='LEGAL').order_by('-created_at').first()
+    doc = project.documents.filter(category='FINANCIAL').order_by('-uploaded_at').first()
+    legal_doc = project.documents.filter(category='LEGAL').order_by('-uploaded_at').first()
     
     if not doc:
         return f"Full analysis aborted: No financial document found for {project.legal_name}"
