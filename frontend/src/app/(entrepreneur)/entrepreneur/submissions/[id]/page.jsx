@@ -151,12 +151,12 @@ export default function EntrepreneurSubmissionDetailPage() {
                   "Follow the dashboard for updates on your application status."
                 )}
               </p>
-              {deal.form_step_completed < 5 && (
+              {!deal.submitted_at && (
                 <Link
-                  href={`/invite/${deal.invitation_token}`}
+                  href={`/entrepreneur/submissions/${deal.id}/apply`}
                   className="block w-full text-center bg-[#F59F01] text-black text-sm font-bold py-3 rounded-lg hover:bg-[#F59F01]/90 transition-colors"
                 >
-                  Continue Form
+                  {deal.form_step_completed > 0 ? 'Continue Form' : 'Start Form'}
                 </Link>
               )}
             </div>

@@ -154,16 +154,28 @@ class PEProjectListSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     deal_type_display = serializers.CharField(source='get_deal_type_display', read_only=True)
     data_room_completeness = serializers.IntegerField(read_only=True)
+    total_steps = serializers.SerializerMethodField()
 
     class Meta:
         model = PEProject
         fields = (
             'id', 'legal_name', 'fund', 'fund_name', 'deal_type',
             'deal_type_display', 'sector', 'status', 'status_display',
-            'submission_type', 'form_step_completed', 'submitted_at',
-            'data_room_completeness', 'created_at',
+            'submission_type', 'form_step_completed', 'total_steps',
+            'submitted_at', 'data_room_completeness', 'created_at',
         )
         read_only_fields = ('id', 'created_at', 'data_room_completeness')
+
+    def get_total_steps(self, obj):
+        """Return the number of steps in the active form template."""
+        template = PEFormTemplate.objects.filter(
+            form_type=PEFormTemplate.FormType.DEAL_SUBMISSION,
+            is_active=True,
+        ).order_by('-version').values('steps').first()
+        if template and template['steps']:
+            return len(template['steps'])
+        return 6  # safe fallback
+
 
 
 class PEProjectDetailSerializer(serializers.ModelSerializer):

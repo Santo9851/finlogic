@@ -220,7 +220,9 @@ class GPCreateInviteView(APIView):
                 'sector': data.get('sector', PEProject.Sector.OTHER),
                 'investment_range_min_npr': data.get('investment_range_min_npr'),
                 'investment_range_max_npr': data.get('investment_range_max_npr'),
-                'status': PEProject.Status.SUBMITTED,
+                # Start in PENDING_SUBMISSION — flips to SUBMITTED only when
+                # the entrepreneur completes and finalizes the form.
+                'status': PEProject.Status.PENDING_SUBMISSION,
                 'submission_type': PEProject.SubmissionType.ENTREPRENEUR_INVITED,
                 'entrepreneur_user': entrepreneur,
                 'created_by': request.user,
@@ -506,7 +508,7 @@ class EntrepreneurInviteDetailView(APIView):
 
         return Response({
             'project': PEProjectDetailSerializer(project).data,
-            'form_template': PEFormTemplateSerializer(template).data if template else None,
+            'template': PEFormTemplateSerializer(template).data if template else None,
             'next_step': next_step,
         })
 
@@ -586,8 +588,8 @@ class EntrepreneurSubmitStepView(APIView):
         )
 
         can_advance = not step_advancement_blocked
-        if can_advance and project.form_step_completed < step_index + 1:
-            project.form_step_completed = step_index + 1
+        if can_advance and project.form_step_completed < step_index:
+            project.form_step_completed = step_index
             project.save(update_fields=['form_step_completed'])
 
         _log_audit_event(
@@ -864,46 +866,131 @@ class EntrepreneurSubmissionDetailView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         project_data = self.get_serializer(instance).data
-        # Attach form responses
-        responses = PEProjectFormResponse.objects.filter(project=instance).order_by('step_index')
-        project_data['form_responses'] = PEProjectFormResponseSerializer(
-            responses, many=True
-        ).data
 
-        # Attach active template
+        # Attach active template first (needed for field type lookup below)
         template = PEFormTemplate.objects.filter(
             form_type=PEFormTemplate.FormType.DEAL_SUBMISSION,
             is_active=True,
         ).order_by('-version').first()
-        
         project_data['active_template'] = PEFormTemplateSerializer(template).data if template else None
 
-        # Auto-populate document fields from existing PEProjectDocument objects
+        # Load raw DB form responses
+        responses = PEProjectFormResponse.objects.filter(project=instance).order_by('step_index')
+        form_responses_data = list(PEProjectFormResponseSerializer(responses, many=True).data)
+
+        # ── Step 1: Scrub stale doc IDs ─────────────────────────────────────
+        # Build the set of doc IDs that actually exist and are confirmed on this
+        # project. Any file_upload field value that isn't in this set is stale
+        # (e.g. from a deleted/overwritten upload) and must be cleared so the
+        # FileUploader shows "idle" instead of a false "Upload Complete".
+        confirmed_doc_ids_str = set(
+            str(doc_id) for doc_id in
+            PEProjectDocument.objects
+            .filter(project=instance, is_confirmed=True)
+            .values_list('id', flat=True)
+        )
+
+        if template:
+            # Build field_name → type lookup across ALL steps
+            field_type_map = {}
+            for step in template.steps:
+                for field in step.get('fields', []):
+                    field_type_map[field['name']] = field.get('type')
+
+            for resp in form_responses_data:
+                cleaned = {}
+                for key, val in resp.get('response_data', {}).items():
+                    if field_type_map.get(key) == 'file_upload':
+                        # Only keep the value if the document truly exists & confirmed
+                        if val and str(val).strip() in confirmed_doc_ids_str:
+                            cleaned[key] = val
+                        # Stale ID → omit the key (field treated as empty)
+                    else:
+                        cleaned[key] = val
+                resp['response_data'] = cleaned
+
+        project_data['form_responses'] = form_responses_data
+
+        # ── Step 2: Recalculate form_step_completed ──────────────────────────
+        # The DB value may be inflated from before stricter validation was added.
+        # We recompute based on cleaned response_data and update the DB if wrong.
+        if template:
+            cleaned_by_index = {r['step_index']: r['response_data'] for r in form_responses_data}
+            effective_completed = 0
+
+            for step in sorted(template.steps, key=lambda s: s.get('step_index', 0)):
+                step_index = step.get('step_index', 0)
+                
+                # If there's no response record for this step, it means the user hasn't
+                # explicitly completed it yet (even if all its fields are optional).
+                if step_index not in cleaned_by_index:
+                    break
+                    
+                step_data = cleaned_by_index.get(step_index, {})
+                step_ok = True
+
+                for field in step.get('fields', []):
+                    if not field.get('required', False):
+                        continue
+                    field_name = field.get('name')
+                    field_type = field.get('type')
+                    value = step_data.get(field_name)
+
+                    if field_type == 'file_upload':
+                        if not value or str(value).strip() not in confirmed_doc_ids_str:
+                            step_ok = False
+                            break
+                    elif field_type in ('checkbox', 'bool'):
+                        if not value:
+                            step_ok = False
+                            break
+                    elif value is None or (isinstance(value, str) and not value.strip()):
+                        step_ok = False
+                        break
+
+                if step_ok:
+                    effective_completed = step_index
+                else:
+                    # Stop at the first incomplete step
+                    break
+
+            # Persist the correction if the DB is out of sync
+            if instance.form_step_completed != effective_completed:
+                PEProject.objects.filter(pk=instance.pk).update(
+                    form_step_completed=effective_completed
+                )
+                project_data['form_step_completed'] = effective_completed
+
+        # ── Step 3: Auto-populate empty document fields ──────────────────────
+        # Only fills fields that have NO DB-saved value, using only confirmed docs.
+        # This gives a helpful pre-fill for brand-new sessions without faking state.
         if template:
             doc_step = next((s for s in template.steps if s.get('step_name') == 'documents'), None)
             if doc_step:
                 idx = doc_step['step_index']
                 resp_list = project_data['form_responses']
                 existing_resp = next((r for r in resp_list if r['step_index'] == idx), None)
-                
-                all_docs = instance.documents.all()
-                suggested_data = (existing_resp['response_data'] if existing_resp else {}).copy()
-                
+
+                db_saved_data = (existing_resp['response_data'] if existing_resp else {})
+                suggested_data = db_saved_data.copy()
+                all_confirmed_docs = instance.documents.filter(is_confirmed=True)
+
                 changed = False
                 for field in doc_step.get('fields', []):
                     f_name = field['name']
-                    if not suggested_data.get(f_name):
+                    if not db_saved_data.get(f_name):
                         cat = field.get('category')
-                        # Map categories including potential mismatches (FINANCIAL vs FINANCIALS)
                         search_cats = [cat]
                         if cat == 'FINANCIAL': search_cats.append('FINANCIALS')
                         elif cat == 'FINANCIALS': search_cats.append('FINANCIAL')
-                        
-                        match = all_docs.filter(category__in=search_cats).order_by('-uploaded_at').first()
+
+                        match = all_confirmed_docs.filter(
+                            category__in=search_cats
+                        ).order_by('-uploaded_at').first()
                         if match:
                             suggested_data[f_name] = str(match.id)
                             changed = True
-                
+
                 if changed:
                     if existing_resp:
                         existing_resp['response_data'] = suggested_data
@@ -915,6 +1002,7 @@ class EntrepreneurSubmissionDetailView(generics.RetrieveAPIView):
                         })
 
         return Response(project_data)
+
 
 
 # ---------------------------------------------------------------------------
@@ -1375,7 +1463,17 @@ class EntrepreneurAuthSubmitStepView(APIView):
             value = request.data.get(field_name)
 
             if field_type == 'file_upload':
-                if not value or (isinstance(value, str) and not value.strip()):
+                # Verify the document actually exists in the DB and is confirmed.
+                # A non-empty string that doesn't match a real document is treated
+                # as missing — this prevents stale IDs from bypassing validation.
+                doc_valid = False
+                if value and isinstance(value, str) and value.strip():
+                    doc_valid = PEProjectDocument.objects.filter(
+                        pk=value.strip(),
+                        project=project,
+                        is_confirmed=True,
+                    ).exists()
+                if not doc_valid:
                     missing_required.append(field.get('label', field_name))
             elif field_type in ('checkbox', 'bool'):
                 if not value:
@@ -1383,9 +1481,8 @@ class EntrepreneurAuthSubmitStepView(APIView):
             elif value is None or (isinstance(value, str) and not value.strip()):
                 missing_required.append(field.get('label', field_name))
 
-        step_advancement_blocked = False
-        if missing_required and project.form_step_completed <= step_def['step_index']:
-            step_advancement_blocked = True
+        # Always block advancement when required fields are missing.
+        step_advancement_blocked = bool(missing_required)
 
         response_obj, _ = PEProjectFormResponse.objects.update_or_create(
             project=project,
@@ -1398,15 +1495,20 @@ class EntrepreneurAuthSubmitStepView(APIView):
         )
 
         can_advance = not step_advancement_blocked
-        if can_advance and project.form_step_completed < step_def['step_index'] + 1:
-            project.form_step_completed = step_def['step_index'] + 1
+        if can_advance and project.form_step_completed < step_def['step_index']:
+            project.form_step_completed = step_def['step_index']
+            project.save(update_fields=['form_step_completed'])
+        elif step_advancement_blocked and project.form_step_completed >= step_def['step_index']:
+            # Step was previously marked complete but now fails validation (e.g. stale doc IDs).
+            # Roll back form_step_completed so the user cannot skip to later steps.
+            project.form_step_completed = step_def['step_index'] - 1
             project.save(update_fields=['form_step_completed'])
 
         return Response({
             'status': 'saved',
             'step_completed': project.form_step_completed,
             'can_advance': can_advance,
-            'missing_required': missing_required if step_advancement_blocked else []
+            'missing_required': missing_required,
         })
 
 
@@ -1435,6 +1537,15 @@ class EntrepreneurAuthFinalizeView(APIView):
             for r in PEProjectFormResponse.objects.filter(project=project)
         }
 
+        # Pre-fetch all confirmed document IDs for this project to avoid N+1 queries.
+        confirmed_doc_ids = set(
+            PEProjectDocument.objects
+            .filter(project=project, is_confirmed=True)
+            .values_list('id', flat=True)
+        )
+        # Convert UUIDs to strings for easy comparison with response_data values.
+        confirmed_doc_ids_str = {str(doc_id) for doc_id in confirmed_doc_ids}
+
         all_missing = []
 
         for step in template.steps:
@@ -1452,7 +1563,10 @@ class EntrepreneurAuthFinalizeView(APIView):
 
                 is_missing = False
                 if field_type == 'file_upload':
-                    if not value or (isinstance(value, str) and not value.strip()):
+                    # A field is only valid if the doc ID resolves to a real,
+                    # confirmed document on this project. Stale / orphaned IDs
+                    # from prior sessions are treated as missing.
+                    if not value or str(value).strip() not in confirmed_doc_ids_str:
                         is_missing = True
                 elif field_type in ('checkbox', 'bool'):
                     if not value:

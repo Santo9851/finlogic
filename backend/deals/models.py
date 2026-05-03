@@ -110,6 +110,7 @@ class PEProject(models.Model):
         OTHER = 'Other', 'Other'
 
     class Status(models.TextChoices):
+        PENDING_SUBMISSION = 'PENDING_SUBMISSION', 'Pending Submission'
         SUBMITTED = 'SUBMITTED', 'Submitted'
         SCREENING = 'SCREENING', 'Screening'
         AI_REVIEW_NEEDED = 'AI_REVIEW_NEEDED', 'AI Review Needed'
@@ -158,7 +159,7 @@ class PEProject(models.Model):
 
     # Workflow
     status = models.CharField(
-        max_length=30, choices=Status.choices, default=Status.SUBMITTED
+        max_length=30, choices=Status.choices, default=Status.PENDING_SUBMISSION
     )
     submission_type = models.CharField(
         max_length=30,

@@ -44,18 +44,25 @@ export default function FileUploader({
   isLocal = false,
   uploadUrl = '',
   value = null,
-  description = ""
+  description = "",
+  allowedExtensions = ".pdf,.docx,.xlsx,.png,.jpg,.jpeg",
+  formatText = "PDF, DOCX, or Image",
+  onRemove = () => {}
 }) {
   const [file, setFile] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(category || 'OTHER');
+  // If a value (document_id) is already saved from a previous session, start in success state.
   const [status, setStatus] = useState(value ? 'success' : 'idle'); 
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
 
+  // Keep status in sync with external value prop changes.
   useEffect(() => {
     if (value && status === 'idle') {
       setStatus('success');
+    } else if (!value && status === 'success') {
+      setStatus('idle');
     }
   }, [value]);
 
@@ -74,6 +81,7 @@ export default function FileUploader({
     setProgress(0);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    onRemove();
   };
 
   const handleFileChange = (e) => {
@@ -230,10 +238,11 @@ export default function FileUploader({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-white">{label}</p>
-                  <p className="text-xs text-white/30 mt-1">PDF, DOCX, or Image (Max 3MB)</p>
+                  <p className="text-xs text-white/30 mt-1">{formatText} (Max 3MB)</p>
                 </div>
                 <input 
                   type="file" 
+                  accept={allowedExtensions}
                   ref={fileInputRef}
                   onChange={handleFileChange}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
@@ -301,7 +310,7 @@ export default function FileUploader({
           <div className="flex flex-col items-center justify-center text-center space-y-2 py-4">
             <CheckCircle2 size={32} className="text-green-500" />
             <p className="text-sm font-medium text-white">Upload Complete</p>
-            <button onClick={reset} className="text-xs text-[#F59F01] hover:underline">Upload another</button>
+            <button type="button" onClick={(e) => { e.preventDefault(); reset(); }} className="mt-2 px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-white transition-colors">Change File</button>
           </div>
         )}
 

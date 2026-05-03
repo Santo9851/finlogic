@@ -227,34 +227,36 @@ def pe_project_pre_save(sender, instance, **kwargs):
 @receiver(post_save, sender=PEProject)
 def pe_project_post_save(sender, instance, created, **kwargs):
     is_invite = instance.submission_type == PEProject.SubmissionType.ENTREPRENEUR_INVITED
-    
-    # We send the invite if it's new OR if we just updated the entrepreneur_user on an existing one
-    if created or is_invite:
-        if is_invite:
-            # Generate or refresh token
-            token = uuid.uuid4()
-            expires = timezone.now() + timedelta(days=7)
-            PEProject.objects.filter(pk=instance.pk).update(
-                invitation_token=token,
-                invitation_sent_at=timezone.now(),
-                invitation_expires_at=expires,
-            )
-            # Refresh in-memory instance so the email has the right values
-            instance.refresh_from_db()
-            _send_invitation_email(instance)
 
-            _log_audit_event(
-                ImmutableAuditEvent.EventType.INVITATION_SENT,
-                instance,
-                actor=instance.created_by,
-                payload={
-                    'token': str(instance.invitation_token),
-                    'entrepreneur_email': (
-                        instance.entrepreneur_user.email
-                        if instance.entrepreneur_user else None
-                    ),
-                },
-            )
+    # Only generate a token and send the invitation email when:
+    #   1. The project is of type ENTREPRENEUR_INVITED, AND
+    #   2. No invitation_token exists yet (first-time invitation only).
+    # This prevents token regeneration + email re-send on every subsequent save
+    # (e.g. when the entrepreneur saves form steps).
+    if is_invite and not instance.invitation_token:
+        token = uuid.uuid4()
+        expires = timezone.now() + timedelta(days=7)
+        PEProject.objects.filter(pk=instance.pk).update(
+            invitation_token=token,
+            invitation_sent_at=timezone.now(),
+            invitation_expires_at=expires,
+        )
+        # Refresh in-memory instance so the email has the right values
+        instance.refresh_from_db()
+        _send_invitation_email(instance)
+
+        _log_audit_event(
+            ImmutableAuditEvent.EventType.INVITATION_SENT,
+            instance,
+            actor=instance.created_by,
+            payload={
+                'token': str(instance.invitation_token),
+                'entrepreneur_email': (
+                    instance.entrepreneur_user.email
+                    if instance.entrepreneur_user else None
+                ),
+            },
+        )
 
     if created:
         # ── Project created audit ─────────────────────────────────────────

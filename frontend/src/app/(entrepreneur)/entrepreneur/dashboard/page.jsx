@@ -53,7 +53,7 @@ export default function EntrepreneurDashboardPage() {
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-white/40">
                     <span className="flex items-center gap-1.5"><Rocket size={14} /> {sub.deal_type_display}</span>
                     <span className="flex items-center gap-1.5"><Clock size={14} /> Submitted {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : 'N/A'}</span>
-                    <span className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Step {sub.form_step_completed}/{sub.active_template?.steps?.length || 6}</span>
+                    <span className="flex items-center gap-1.5"><CheckCircle2 size={14} /> Step {sub.form_step_completed}/{sub.total_steps || 6}</span>
                   </div>
                 </div>
                 
@@ -64,12 +64,12 @@ export default function EntrepreneurDashboardPage() {
                   >
                     <Eye size={16} /> View Details
                   </Link>
-                  {(!sub.submitted_at && sub.form_step_completed < 5) && (
+                  {!sub.submitted_at && (
                     <Link
-                      href={sub.invitation_token ? `/invite/${sub.invitation_token}` : `/entrepreneur/submissions/${sub.id}/apply`}
+                      href={`/entrepreneur/submissions/${sub.id}/apply`}
                       className="flex items-center gap-2 bg-[#F59F01] hover:bg-[#F59F01]/90 text-black text-sm px-4 py-2 rounded-lg font-semibold transition-colors"
                     >
-                      <FileUp size={16} /> Complete Form
+                      <FileUp size={16} /> {sub.form_step_completed > 0 ? 'Continue Form' : 'Start Form'}
                     </Link>
                   )}
                 </div>
@@ -79,7 +79,7 @@ export default function EntrepreneurDashboardPage() {
               <div className="mt-6 h-1.5 rounded-full bg-white/5 overflow-hidden">
                 <div 
                   className="h-full bg-[#F59F01] transition-all duration-1000"
-                  style={{ width: `${Math.min((sub.form_step_completed / (sub.active_template?.steps?.length || 6)) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((sub.form_step_completed / (sub.total_steps || 6)) * 100, 100)}%` }}
                 />
               </div>
             </div>

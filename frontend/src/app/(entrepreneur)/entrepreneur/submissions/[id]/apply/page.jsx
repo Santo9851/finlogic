@@ -26,6 +26,9 @@ export default function AuthMultiStepForm() {
   const [template, setTemplate] = useState(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  // Local cache of step responses – updated immediately on successful save
+  // so going back to a previous step shows the saved data without a page refresh.
+  const [localResponses, setLocalResponses] = useState({});
 
   useEffect(() => {
     const init = async () => {
@@ -34,14 +37,16 @@ export default function AuthMultiStepForm() {
         setProject(res.data);
         setTemplate(res.data.active_template);
         // Redirect if already submitted
-        if (res.data.submitted_at || res.data.status !== 'SUBMITTED' || res.data.form_step_completed >= 5) {
-           // Wait, if it's SUBMITTED but step is 5, it means it's done.
-           // Actually, the most reliable check is submitted_at.
-           if (res.data.submitted_at) {
-              router.replace('/entrepreneur/dashboard');
-              return;
-           }
+        if (res.data.submitted_at) {
+           router.replace('/entrepreneur/dashboard');
+           return;
         }
+        // Seed local response cache from server-persisted responses
+        const seed = {};
+        (res.data.form_responses || []).forEach(r => {
+          seed[r.step_index] = r.response_data;
+        });
+        setLocalResponses(seed);
         const savedStep = res.data.form_step_completed || 0;
         if (res.data.active_template) {
            setCurrentStepIndex(Math.min(savedStep, res.data.active_template.steps.length - 1));
@@ -55,6 +60,15 @@ export default function AuthMultiStepForm() {
     };
     init();
   }, [projectId]);
+
+  // Called by StepForm after a successful save so we can update the local
+  // cache and the form_step_completed counter without a full page reload.
+  const onStepSaved = (stepIndex, data, newStepCompleted) => {
+    setLocalResponses(prev => ({ ...prev, [stepIndex]: data }));
+    if (newStepCompleted !== undefined) {
+      setProject(prev => prev ? { ...prev, form_step_completed: newStepCompleted } : prev);
+    }
+  };
 
   const nextStep = () => {
     if (currentStepIndex < template.steps.length - 1) {
@@ -87,6 +101,8 @@ export default function AuthMultiStepForm() {
   );
 
   const currentStep = template.steps[currentStepIndex];
+  // Use localResponses so step-stepper highlights update immediately
+  const completedStepCount = project?.form_step_completed ?? 0;
   const progress = ((currentStepIndex + 1) / template.steps.length) * 100;
 
   return (
@@ -105,17 +121,23 @@ export default function AuthMultiStepForm() {
           {template.steps.map((s, idx) => (
             <div key={idx} className="flex flex-col items-center gap-2 relative z-10">
               <button
-                onClick={() => idx <= project.form_step_completed && setCurrentStepIndex(idx)}
-                disabled={idx > project.form_step_completed}
+                onClick={() => {
+                  // Allow clicking already-completed steps (to review/edit)
+                  // and the current active step, but NOT future incomplete steps.
+                  if (idx < completedStepCount || idx === currentStepIndex) {
+                    setCurrentStepIndex(idx);
+                  }
+                }}
+                disabled={idx >= completedStepCount && idx !== currentStepIndex}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border ${
                   idx === currentStepIndex 
                     ? 'bg-[#F59F01] text-black border-[#F59F01] shadow-[0_0_15px_rgba(245,159,1,0.3)]' 
-                    : idx < project.form_step_completed 
+                    : idx < completedStepCount 
                     ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
                     : 'bg-white/5 text-white/20 border-white/10'
                 }`}
               >
-                {idx < project.form_step_completed ? <Check size={14} /> : idx + 1}
+                {idx < completedStepCount ? <Check size={14} /> : idx + 1}
               </button>
               <span className={`text-[9px] uppercase tracking-tighter font-bold ${idx === currentStepIndex ? 'text-white' : 'text-white/30'}`}>
                 {s.title.split(' ')[0]}
@@ -156,8 +178,9 @@ export default function AuthMultiStepForm() {
           <StepForm 
             projectId={projectId} 
             step={currentStep} 
-            savedData={project.form_responses?.find(r => r.step_index === currentStep.step_index)?.response_data || {}}
+            savedData={localResponses[currentStep.step_index] || {}}
             onSuccess={nextStep}
+            onStepSaved={onStepSaved}
             isLast={currentStepIndex === template.steps.length - 1}
             onFinalSubmit={() => router.push('/entrepreneur/dashboard?msg=submitted')}
           />
@@ -181,13 +204,13 @@ export default function AuthMultiStepForm() {
   );
 }
 
-function StepForm({ projectId, step, savedData, onSuccess, isLast, onFinalSubmit }) {
+function StepForm({ projectId, step, savedData, onSuccess, onStepSaved, isLast, onFinalSubmit }) {
   const [submitting, setSubmitting] = useState(false);
   
   const schemaShape = {};
   step.fields.forEach(field => {
     if (field.type === 'file_upload') {
-      schemaShape[field.name] = field.required ? z.string().min(1, 'Required') : z.string().optional();
+      schemaShape[field.name] = field.required ? z.any().refine(val => !!val, 'Please upload a document') : z.any().optional();
     } else if (field.type === 'checkbox') {
       schemaShape[field.name] = field.required ? z.boolean().refine(v => v === true, 'Required') : z.boolean().optional();
     } else if (field.type === 'integer') {
@@ -249,6 +272,8 @@ const onSubmit = async (data) => {
           }
         }
       } else {
+        // Notify parent so it can update localResponses without a page refresh
+        onStepSaved(step.step_index, data, stepRes.data.step_completed);
         toast.success(step.title + ' saved');
         onSuccess();
       }
@@ -276,7 +301,7 @@ const onSubmit = async (data) => {
 
         <div className="grid grid-cols-1 gap-6">
           {step.fields.map(field => (
-            <FormField key={field.name} field={field} projectId={projectId} />
+            <FormField key={field.name} field={field} projectId={projectId} stepName={step.step_name} />
           ))}
         </div>
 
@@ -297,8 +322,8 @@ const onSubmit = async (data) => {
   );
 }
 
-function FormField({ field, projectId }) {
-  const { register, formState: { errors }, setValue, watch, clearErrors } = useFormContext();
+function FormField({ field, projectId, stepName }) {
+  const { register, formState: { errors }, setValue, watch, clearErrors, getValues } = useFormContext();
   const fieldValue = watch(field.name);
 
   const commonCls = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-[#F59F01] transition-all";
@@ -331,6 +356,24 @@ function FormField({ field, projectId }) {
             label={field.label}
             hideCategory={true}
             value={fieldValue}
+            allowedExtensions={
+              {
+                'audited_financials': '.pdf,.xlsx,.xls',
+                'moa_aoa': '.pdf',
+                'company_registration': '.pdf',
+                'pitch_deck': '.pdf,.pptx',
+                'business_plan': '.pdf,.docx'
+              }[field.name] || ".pdf,.docx,.xlsx"
+            }
+            formatText={
+              {
+                'audited_financials': 'PDF or XLSX',
+                'moa_aoa': 'PDF',
+                'company_registration': 'PDF',
+                'pitch_deck': 'PDF or PPTX',
+                'business_plan': 'PDF or DOCX'
+              }[field.name] || "PDF, DOCX, or XLSX"
+            }
             description={
               field.help_text || {
                 'audited_financials': 'Upload audited P&L, Balance Sheet, and Cash Flow statements for the last 3 fiscal years.',
@@ -340,9 +383,20 @@ function FormField({ field, projectId }) {
                 'business_plan': 'Detailed document outlining strategy, operations, and financial projections.'
               }[field.name] || ""
             }
-            onSuccess={(docId) => {
-              setValue(field.name, docId);
-              // Clear error if any
+            onSuccess={async (docId) => {
+              setValue(field.name, docId, { shouldValidate: true });
+              clearErrors(field.name);
+              // Auto-save in the background to prevent data loss if they log out
+              try {
+                const currentData = getValues();
+                currentData[field.name] = docId;
+                await api.post(`/entrepreneur/submissions/${projectId}/step/${stepName}/`, currentData);
+              } catch(e) {
+                console.error("Auto-save failed", e);
+              }
+            }}
+            onRemove={() => {
+              setValue(field.name, "", { shouldValidate: true });
               clearErrors(field.name);
             }}
           />

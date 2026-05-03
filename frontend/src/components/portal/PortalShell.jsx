@@ -62,6 +62,7 @@ export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', t
 /** Status badge */
 export function StatusBadge({ status }) {
   const map = {
+    PENDING_SUBMISSION: { label: 'Pending Submission', cls: 'bg-white/20 text-white/80' },
     SUBMITTED: { label: 'Submitted', cls: 'bg-blue-500/20 text-blue-300' },
     SCREENING: { label: 'Screening', cls: 'bg-yellow-500/20 text-yellow-300' },
     AI_REVIEW_NEEDED: { label: 'AI Review', cls: 'bg-purple-500/20 text-purple-300' },

@@ -169,7 +169,7 @@ function StepForm({ token, step, stepIndex, project, onSuccess, isLast, onFinalS
   const schemaShape = {};
   step.fields.forEach(field => {
     if (field.type === 'file_upload') {
-      schemaShape[field.name] = field.required ? z.string().min(1, 'Required') : z.string().optional();
+      schemaShape[field.name] = field.required ? z.any().refine(val => !!val, 'Please upload a document') : z.any().optional();
     } else if (field.type === 'checkbox') {
       schemaShape[field.name] = field.required ? z.boolean().refine(v => v === true, 'Required') : z.boolean().optional();
     } else if (field.type === 'integer') {
@@ -257,7 +257,7 @@ function StepForm({ token, step, stepIndex, project, onSuccess, isLast, onFinalS
 
         <div className="grid grid-cols-1 gap-6">
           {step.fields.map(field => (
-            <FormField key={field.name} field={field} token={token} />
+            <FormField key={field.name} field={field} token={token} stepName={step.step_name} />
           ))}
         </div>
 
@@ -280,21 +280,21 @@ function StepForm({ token, step, stepIndex, project, onSuccess, isLast, onFinalS
   );
 }
 
-function FormField({ field, token }) {
+function FormField({ field, token, stepName }) {
   const { register, formState: { errors }, setValue, watch } = useForm({
     // We get methods from context if we used FormProvider, but here we're passing props
     // Correcting to use useFormContext
   });
   
   // Actually I need useFormContext to access methods from FormProvider
-  return <FormFieldContent field={field} token={token} />;
+  return <FormFieldContent field={field} token={token} stepName={stepName} />;
 }
 
 import { useFormContext } from 'react-hook-form';
 import FileUploader from '@/components/portal/FileUploader';
 
-function FormFieldContent({ field, token }) {
-  const { register, formState: { errors }, setValue, watch } = useFormContext();
+function FormFieldContent({ field, token, stepName }) {
+  const { register, formState: { errors }, setValue, watch, getValues } = useFormContext();
   const fieldValue = watch(field.name);
 
   const commonCls = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-[#F59F01]/40 focus:ring-1 focus:ring-[#F59F01]/10 transition-all";
@@ -329,8 +329,50 @@ function FormFieldContent({ field, token }) {
           <FileUploader 
             token={token} 
             category={field.category || 'OTHER'} 
-            onSuccess={(docId) => setValue(field.name, docId, { shouldValidate: true })}
             label={`Upload ${field.label}`}
+            allowedExtensions={
+              {
+                'audited_financials': '.pdf,.xlsx,.xls',
+                'moa_aoa': '.pdf',
+                'company_registration': '.pdf',
+                'pitch_deck': '.pdf,.pptx',
+                'business_plan': '.pdf,.docx'
+              }[field.name] || ".pdf,.docx,.xlsx"
+            }
+            formatText={
+              {
+                'audited_financials': 'PDF or XLSX',
+                'moa_aoa': 'PDF',
+                'company_registration': 'PDF',
+                'pitch_deck': 'PDF or PPTX',
+                'business_plan': 'PDF or DOCX'
+              }[field.name] || "PDF, DOCX, or XLSX"
+            }
+            description={
+              field.help_text || {
+                'audited_financials': 'Upload audited P&L, Balance Sheet, and Cash Flow statements for the last 3 fiscal years.',
+                'moa_aoa': 'The legal charter of your company (Memorandum and Articles of Association).',
+                'company_registration': 'Certificate of incorporation or OCR registration certificate.',
+                'pitch_deck': 'A presentation deck covering problem, solution, market size, and traction.',
+                'business_plan': 'Detailed document outlining strategy, operations, and financial projections.'
+              }[field.name] || ""
+            }
+            onSuccess={async (docId) => {
+              setValue(field.name, docId, { shouldValidate: true });
+              // Auto-save in the background
+              try {
+                const currentData = getValues();
+                currentData[field.name] = docId;
+                const stepUrl = '/deals/projects/invite/' + token + '/step/' + stepName + '/';
+                await api.post(stepUrl, currentData);
+              } catch(e) {
+                console.error("Auto-save failed", e);
+              }
+            }}
+            onRemove={() => {
+              setValue(field.name, "", { shouldValidate: true });
+              clearErrors(field.name);
+            }}
           />
           {fieldValue && (
             <div className="flex items-center gap-2 text-xs text-[#16c784]">
