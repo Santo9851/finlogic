@@ -32,7 +32,8 @@ from deals.serializers import (
     RegulatoryChecklistSerializer,
     ConflictOfInterestSerializer,
     FilingTypeConfigSerializer,
-    ImmutableAuditEventSerializer
+    ImmutableAuditEventSerializer,
+    PEProjectDetailSerializer
 )
 
 def log_admin_action(user, event_type, obj, payload=None):
@@ -553,3 +554,15 @@ class SuperAdminAnalyticsViewSet(viewsets.ViewSet):
             writer.writerow(['Unsupported export type'])
 
         return response
+
+class SuperAdminDealViewSet(viewsets.ModelViewSet):
+    queryset = PEProject.objects.all().order_by('-created_at')
+    serializer_class = PEProjectDetailSerializer
+    permission_classes = [IsSuperAdmin]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['legal_name', 'ocr_registration_number', 'sector']
+    ordering_fields = ['created_at', 'legal_name']
+
+    def perform_update(self, serializer):
+        deal = serializer.save()
+        log_admin_action(self.request.user, ImmutableAuditEvent.EventType.COMPLIANCE_REVIEW, deal, {"action": "superadmin_deal_update"})

@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, Calendar, LogOut, Settings, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, Calendar, LogOut, Settings, Menu, X, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { PortalGuard } from '@/components/portal/PortalShell';
 
 const NAV = [
   { href: '/gp-investor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/gp-investor/documents', label: 'IR Documents', icon: FileText },
+  { href: '/gp-investor/governance', label: 'Governance', icon: ShieldCheck },
   { href: '/gp-investor/meetings', label: 'Meetings', icon: Calendar },
   { href: '/gp-investor/profile', label: 'Profile Settings', icon: Settings },
 ];

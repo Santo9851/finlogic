@@ -35,7 +35,7 @@ export default function GPGovernancePage() {
 
   const fetchProposals = async () => {
     try {
-      const res = await api.get('/deals/admin/governance-proposals/');
+      const res = await api.get('/deals/governance-proposals/');
       setProposals(res.data.results || res.data || []);
     } catch (err) {
       toast.error('Failed to load proposals');
@@ -48,7 +48,7 @@ export default function GPGovernancePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post('/deals/admin/governance-proposals/', newProposal);
+      await api.post('/deals/governance-proposals/', newProposal);
       toast.success('Proposal created');
       setShowCreateModal(false);
       setNewProposal({ title: '', description: '', expiry_date: '', status: 'DRAFT' });
@@ -62,7 +62,7 @@ export default function GPGovernancePage() {
 
   const updateStatus = async (id, status) => {
     try {
-      await api.patch(`/deals/admin/governance-proposals/${id}/`, { status });
+      await api.patch(`/deals/governance-proposals/${id}/`, { status });
       toast.success(`Proposal status updated to ${status}`);
       fetchProposals();
     } catch (err) {
@@ -73,7 +73,7 @@ export default function GPGovernancePage() {
   const handleDelete = async (id) => {
     if (!confirm('Are you sure?')) return;
     try {
-      await api.delete(`/deals/admin/governance-proposals/${id}/`);
+      await api.delete(`/deals/governance-proposals/${id}/`);
       toast.success('Proposal deleted');
       fetchProposals();
     } catch (err) {

@@ -119,6 +119,9 @@ class PEProject(models.Model):
         VIDEO_PITCH = 'VIDEO_PITCH', 'Video Pitch'
         DUE_DILIGENCE = 'DUE_DILIGENCE', 'Due Diligence'
         TERM_SHEET = 'TERM_SHEET', 'Term Sheet'
+        IC_APPROVED = 'IC_APPROVED', 'IC Approved'
+        LOI_ISSUED = 'LOI_ISSUED', 'LOI Issued'
+        CONTRACT_SIGNED = 'CONTRACT_SIGNED', 'Contract Signed'
         CLOSED = 'CLOSED', 'Closed'
         DECLINED = 'DECLINED', 'Declined'
 
@@ -193,6 +196,16 @@ class PEProject(models.Model):
         null=True,
         related_name='created_pe_projects',
     )
+    collaborators = models.ManyToManyField(
+        User,
+        related_name='collaborating_pe_projects',
+        blank=True,
+        help_text="Other GP users who are authorized to work on this deal.",
+    )
+    
+    # Roadmap improvements
+    analysis_progress = models.JSONField(default=dict, blank=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -250,6 +263,10 @@ class PEProjectDocument(models.Model):
         KYC = 'KYC', 'KYC Documents'
         PITCH_DECK = 'PITCH_DECK', 'Pitch Deck'
         BUSINESS_PLAN = 'BUSINESS_PLAN', 'Business Plan'
+        CONTRACTS = 'CONTRACTS', 'Legal Contracts'
+        LOAN_DOCS = 'LOAN_DOCS', 'Loan & Offer Letters'
+        LOI = 'LOI', 'Letter of Intent'
+        SIGNED_CONTRACT = 'SIGNED_CONTRACT', 'Signed Contract'
         OTHER = 'OTHER', 'Other'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -993,11 +1010,16 @@ class ExtractedFinancials(models.Model):
     fiscal_year_bs = models.CharField(max_length=10, help_text="e.g. 2080/81")
     
     # Core P&L / BS items (NPR)
+    revenue_npr = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    ebitda_npr = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    net_profit_npr = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="Profit After Tax")
+    total_assets_npr = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_debt_npr = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    # Deprecated fields (keep for migration compatibility)
     revenue = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     ebitda = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    pat = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="Profit After Tax")
-    total_assets = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    total_debt = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    pat = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     
     # Calculated Margins & Growth (Stored for performance)
     gross_margin_pct = models.FloatField(default=0)
@@ -1012,6 +1034,7 @@ class ExtractedFinancials(models.Model):
     
     # Verification
     is_verified_by_gp = models.BooleanField(default=False)
+    verified_fields = models.JSONField(default=dict, blank=True)
     verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_financials')
     verified_at = models.DateTimeField(null=True, blank=True)
     
@@ -1398,6 +1421,8 @@ class DealMemo(models.Model):
     ], default='DRAFT')
     
     version = models.PositiveIntegerField(default=1)
+    
+    ic_notes = models.TextField(blank=True)
     
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_memos')
     created_at = models.DateTimeField(auto_now_add=True)

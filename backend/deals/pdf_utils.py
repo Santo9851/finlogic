@@ -16,6 +16,20 @@ except (ImportError, OSError):
 from .models import FundDocument, PEInvestment, PEProject, LPFundCommitment, ImmutableAuditEvent
 from .b2_utils import get_b2_client
 
+def render_pdf(template_name, context):
+    """
+    Generic function to render a PDF from a Django template.
+    """
+    if HTML is None:
+        raise ImportError("PDF generation dependencies are missing (WeasyPrint/libgobject).")
+    
+    html_string = render_to_string(template_name, context)
+    pdf_file = io.BytesIO()
+    HTML(string=html_string).write_pdf(target=pdf_file)
+    
+    return pdf_file.getvalue()
+
+
 def generate_capital_account_pdf(lp_commitment, quarter, year):
     """
     Render a capital account statement PDF for a specific LP.

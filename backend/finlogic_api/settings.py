@@ -212,6 +212,8 @@ CELERY_TIMEZONE = TIME_ZONE
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:3001',
+    'http://127.0.0.1:3001',
 ]
 # Only allow all origins in development for troubleshooting
 CORS_ALLOW_ALL_ORIGINS = DEBUG
@@ -291,7 +293,7 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://finlogiccapital.com')
 
 # Where contact form submissions should be sent
 ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'info@finlogiccapital.com')
-FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://localhost:3000')
+FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://localhost:3001')
 
 
 # ---------------------------------------------------------------------------

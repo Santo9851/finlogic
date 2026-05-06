@@ -28,6 +28,7 @@ from .views import (
     DocumentConfirmView,
     EntrepreneurFinalizeView,
     DocumentDownloadURLView,
+    DocumentServeView,
     DocumentDeleteView,
     # Entrepreneur dashboard (JWT-auth)
     EntrepreneurSubmissionsListView,
@@ -62,6 +63,7 @@ from .views import (
     GPProjectExtractedFinancialsView,
     GPProjectQoEAnalysisView,
     GPExtractedFinancialsVerifyView,
+    GPExtractedFinancialsUpdateView,
     GPProjectCommercialAnalysisView,
     GPProjectOperationalAnalysisView,
     GPLegalScannerView,
@@ -95,6 +97,7 @@ from .views import (
     WaterfallCalculateView,
     WaterfallHistoryView,
     DistributionCreateView,
+    GPProjectQoEUpdateView,
     LPDistributionListView,
     LPStatementGenerateView,
     LPStatementListView,
@@ -106,6 +109,7 @@ from .views import (
     IPOEligibilityView,
     ExitSummaryView,
 )
+from .conversion_views import IssueLOIView, SuperadminFinalizeInvestmentView
 
 router = DefaultRouter()
 router.register(r'admin/ir-documents', GPIRDocumentViewSet, basename='admin-ir-docs')
@@ -171,6 +175,11 @@ urlpatterns = [
         name='gp-project-extracted-financials',
     ),
     path(
+        'deals/projects/<uuid:pk>/extracted-financials/<uuid:fin_id>/',
+        GPExtractedFinancialsUpdateView.as_view(),
+        name='gp-project-extracted-financials-detail',
+    ),
+    path(
         'deals/projects/<uuid:pk>/extracted-financials/<uuid:fin_id>/verify/',
         GPExtractedFinancialsVerifyView.as_view(),
         name='gp-project-extracted-financials-verify',
@@ -179,6 +188,11 @@ urlpatterns = [
         'deals/projects/<uuid:pk>/qoe-analysis/',
         GPProjectQoEAnalysisView.as_view(),
         name='gp-project-qoe-analysis',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/qoe-analysis/<uuid:report_id>/',
+        GPProjectQoEUpdateView.as_view(),
+        name='gp-project-qoe-update',
     ),
     path(
         'deals/projects/<uuid:pk>/run-commercial-analysis/',
@@ -304,6 +318,16 @@ urlpatterns = [
         'deals/projects/<uuid:pk>/run-full-analysis/',
         GPFullAnalysisView.as_view(),
         name='gp-project-run-full-analysis',
+    ),
+    path(
+        'deals/projects/<uuid:project_id>/issue-loi/',
+        IssueLOIView.as_view(),
+        name='gp-project-issue-loi',
+    ),
+    path(
+        'deals/projects/<uuid:project_id>/finalize-investment/',
+        SuperadminFinalizeInvestmentView.as_view(),
+        name='superadmin-finalize-investment',
     ),
     path(
         'portfolio/waterfall/calculate/',
@@ -535,6 +559,11 @@ urlpatterns = [
         'deals/documents/<uuid:pk>/',
         DocumentDeleteView.as_view(),
         name='document-delete',
+    ),
+    path(
+        'deals/documents/<uuid:pk>/serve/',
+        DocumentServeView.as_view(),
+        name='document-serve',
     ),
     
     # ── Entrepreneur KYB ───────────────────────────────────────────────────

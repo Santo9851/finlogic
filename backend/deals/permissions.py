@@ -74,3 +74,21 @@ class IsOwnerEntrepreneur(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         # obj is a PEProject
         return obj.entrepreneur_user == request.user
+
+class IsDealAccessible(permissions.BasePermission):
+    """
+    Object-level: access allowed if user is super_admin, created_by, or in collaborators.
+    """
+    message = "You do not have permission to access the details of this deal."
+
+    def has_object_permission(self, request, view, obj):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if request.user.has_role('super_admin'):
+            return True
+        if obj.created_by == request.user:
+            return True
+        # If the project has collaborators and user is one of them
+        if hasattr(obj, 'collaborators') and obj.collaborators.filter(id=request.user.id).exists():
+            return True
+        return False

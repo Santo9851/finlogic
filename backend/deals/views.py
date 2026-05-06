@@ -8,14 +8,19 @@ URL namespace: api/deals/  (GP & public)
               api/gp-investor/   (GP Investor portal)
 """
 import logging
+import mimetypes
 from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.http import FileResponse
+from django.urls import reverse
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.clickjacking import xframe_options_exempt
 from rest_framework import generics, permissions, status, viewsets, parsers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
@@ -58,6 +63,8 @@ from .models import (
     WaterfallRun,
     ValuationRecord,
     ExitScenario,
+    ExtractedFinancials,
+    QoEReport,
 )
 
 
@@ -70,6 +77,7 @@ from .permissions import (
     IsGPInvestorRole,
     IsGPStaff,
     IsLPRole,
+    IsDealAccessible,
 )
 from .serializers import (
     DocumentUploadRequestSerializer,
@@ -146,6 +154,17 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def get_deal_for_user(request, **kwargs):
+    project = get_object_or_404(PEProject, **kwargs)
+    if request.user.has_role('super_admin'):
+        return project
+    if project.created_by == request.user:
+        return project
+    if hasattr(project, 'collaborators') and project.collaborators.filter(id=request.user.id).exists():
+        return project
+    raise PermissionDenied("You do not have permission to access the details of this deal.")
 
 def _get_client_ip(request):
     x_fwd = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -442,13 +461,58 @@ class DocumentDownloadURLView(APIView):
             return Response({'detail': 'Missing key'}, status=400)
         
         # Security check: ensure user has access to this project
-        # For brevity, we'll check if they are GP or own the project
-        # In prod, check project FK via document model
         try:
+            # Look up the document to see if it's local or B2
+            doc = PEProjectDocument.objects.filter(file_key=file_key).first()
+            if doc and doc.local_file:
+                # Return the local serve URL instead of the raw media URL
+                return Response({'url': request.build_absolute_uri(reverse('deals:document-serve', args=[doc.id]))})
+            
+            # Fallback to B2 presigned URL
             url = generate_presigned_download_url(file_key)
             return Response({'url': url})
         except Exception as exc:
             return Response({'detail': str(exc)}, status=500)
+
+
+@method_decorator(xframe_options_exempt, name='dispatch')
+class DocumentServeView(APIView):
+    """
+    GET /api/deals/documents/{id}/serve/
+    Streams a local document. Handles PDF/Images inline and Office files as attachments.
+    """
+    permission_classes = [permissions.IsAuthenticated] # Adjust to IsGPStaff if needed
+
+    def get(self, request, pk):
+        from .permissions import IsGPStaff, IsDealAccessible
+        doc = get_object_or_404(PEProjectDocument, pk=pk)
+        
+        # Security: check if user has access to the parent project
+        project = doc.project
+        if not (request.user.has_role('super_admin') or 
+                project.created_by == request.user or 
+                project.collaborators.filter(id=request.user.id).exists()):
+             return Response({'detail': 'Access denied to this document.'}, status=403)
+
+        # Determine MIME type
+        mime_type = doc.mime_type
+        if not mime_type and doc.local_file:
+            mime_type, _ = mimetypes.guess_type(doc.local_file.path)
+        mime_type = mime_type or 'application/octet-stream'
+
+        # Hybrid Logic: PDF/Images inline, others (Office) as attachment
+        inline_types = ['application/pdf', 'text/plain']
+        is_inline = mime_type.startswith('image/') or mime_type in inline_types
+
+        try:
+            return FileResponse(
+                doc.local_file.open('rb'),
+                content_type=mime_type,
+                as_attachment=not is_inline,
+                filename=doc.filename
+            )
+        except Exception as e:
+            return Response({'detail': str(e)}, status=404)
 
 
 class DocumentDeleteView(APIView):
@@ -678,7 +742,7 @@ class DocumentConfirmView(APIView):
             project = get_object_or_404(PEProject, invitation_token=token)
             doc = get_object_or_404(PEProjectDocument, pk=doc_id, project=project)
         else:
-            project = get_object_or_404(PEProject, pk=project_id)
+            project = get_deal_for_user(request, pk=project_id)
             # Permission check: Either GP Staff or the project's entrepreneur
             is_gp = any(r in ('admin', 'super_admin') for r in request.user.role_list)
             is_owner = (project.entrepreneur_user == request.user)
@@ -1054,10 +1118,10 @@ class GPProjectDetailView(generics.RetrieveUpdateAPIView):
     GET /api/deals/projects/{id}/
     PATCH /api/deals/projects/{id}/
     Full project detail / Update workflow fields.
-    Permission: IsGPStaff
+    Permission: IsGPStaff, IsDealAccessible
     """
     serializer_class = PEProjectDetailSerializer
-    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff, IsDealAccessible]
     queryset = PEProject.objects.select_related('fund', 'entrepreneur_user', 'created_by')
 
     def perform_update(self, serializer):
@@ -1077,10 +1141,10 @@ class GPProjectUpdateView(generics.UpdateAPIView):
     """
     PATCH /api/deals/projects/{id}/
     Update status and other workflow fields.
-    Permission: IsGPStaff
+    Permission: IsGPStaff, IsDealAccessible
     """
     serializer_class = PEProjectDetailSerializer
-    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff, IsDealAccessible]
     queryset = PEProject.objects.all()
     http_method_names = ['patch']
 
@@ -1106,7 +1170,7 @@ class GPProjectDocumentsView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def get_queryset(self):
-        project = get_object_or_404(PEProject, pk=self.kwargs['pk'])
+        project = get_deal_for_user(self.request, pk=self.kwargs['pk'])
         return PEProjectDocument.objects.filter(project=project).order_by('-uploaded_at')
 
 
@@ -1119,7 +1183,7 @@ class GPProjectFormResponsesView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def get_queryset(self):
-        project = get_object_or_404(PEProject, pk=self.kwargs['pk'])
+        project = get_deal_for_user(self.request, pk=self.kwargs['pk'])
         return PEProjectFormResponse.objects.filter(project=project).order_by('step_index')
 
 
@@ -1131,7 +1195,7 @@ class GPGetUploadURLView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, project_id):
-        project = get_object_or_404(PEProject, pk=project_id)
+        project = get_deal_for_user(request, pk=project_id)
         serializer = DocumentUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         d = serializer.validated_data
@@ -1440,7 +1504,7 @@ class EntrepreneurAuthSubmitStepView(APIView):
 
     def post(self, request, project_id, step_name):
         from django.utils import timezone
-        project = get_object_or_404(PEProject, pk=project_id, entrepreneur_user=request.user)
+        project = get_deal_for_user(self.request, pk=project_id, entrepreneur_user=request.user)
         
         template = PEFormTemplate.objects.filter(
             form_type=PEFormTemplate.FormType.DEAL_SUBMISSION,
@@ -1522,7 +1586,7 @@ class EntrepreneurAuthFinalizeView(APIView):
 
     def post(self, request, project_id):
         from django.utils import timezone
-        project = get_object_or_404(PEProject, pk=project_id, entrepreneur_user=request.user)
+        project = get_deal_for_user(self.request, pk=project_id, entrepreneur_user=request.user)
 
         template = PEFormTemplate.objects.filter(
             form_type=PEFormTemplate.FormType.DEAL_SUBMISSION,
@@ -1604,7 +1668,7 @@ class EntrepreneurAuthGetUploadURLView(APIView):
 
     def post(self, request, project_id):
         from deals.b2_utils import generate_presigned_upload_url
-        project = get_object_or_404(PEProject, pk=project_id, entrepreneur_user=request.user)
+        project = get_deal_for_user(self.request, pk=project_id, entrepreneur_user=request.user)
         
         serializer = DocumentUploadRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -1651,7 +1715,7 @@ class EntrepreneurAuthUploadLocalView(APIView):
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def post(self, request, project_id):
-        project = get_object_or_404(PEProject, pk=project_id, entrepreneur_user=request.user)
+        project = get_deal_for_user(self.request, pk=project_id, entrepreneur_user=request.user)
         file_obj = request.FILES.get('file')
         category = request.data.get('document_type', 'OTHER')
 
@@ -1706,15 +1770,19 @@ class GPProjectExtractFinancialsView(APIView):
         }, status=status.HTTP_202_ACCEPTED)
 
 
-class GPProjectExtractedFinancialsView(generics.ListAPIView):
+class GPProjectExtractedFinancialsView(generics.ListCreateAPIView):
     """
     GET /api/deals/projects/<uuid>/extracted-financials/
+    POST /api/deals/projects/<uuid>/extracted-financials/ (Manual Entry)
     """
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
     serializer_class = ExtractedFinancialsSerializer
 
     def get_queryset(self):
         return ExtractedFinancials.objects.filter(project_id=self.kwargs['pk'])
+
+    def perform_create(self, serializer):
+        serializer.save(project_id=self.kwargs['pk'])
 
 
 class GPProjectQoEAnalysisView(APIView):
@@ -1725,7 +1793,7 @@ class GPProjectQoEAnalysisView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def get(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         
         # Check if they want to trigger a new analysis
         if request.query_params.get('trigger') == 'true':
@@ -1738,17 +1806,69 @@ class GPProjectQoEAnalysisView(APIView):
             
         return Response(QoEReportSerializer(report).data)
 
+class GPProjectQoEUpdateView(generics.RetrieveUpdateAPIView):
+    """
+    PATCH /api/deals/projects/<uuid>/qoe-analysis/<id>/
+    Manual edit of the QoE report by GP.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = QoEReportSerializer
+    lookup_url_kwarg = 'report_id'
+
+    def get_queryset(self):
+        return QoEReport.objects.filter(project_id=self.kwargs['pk'])
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        _log_audit_event(
+            event_type='QOE_REPORT_EDITED',
+            actor=self.request.user,
+            obj=instance,
+            payload=self.request.data,
+            request=self.request
+        )
+
+
+class GPExtractedFinancialsUpdateView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    PATCH /api/deals/projects/<uuid>/extracted-financials/<id>/
+    DELETE /api/deals/projects/<uuid>/extracted-financials/<id>/
+    GP manually overrides or deletes the extracted financial data.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    serializer_class = ExtractedFinancialsSerializer
+    lookup_url_kwarg = 'fin_id'
+
+    def get_queryset(self):
+        return ExtractedFinancials.objects.filter(project_id=self.kwargs['pk'])
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        _log_audit_event(
+            event_type='FINANCIAL_OVERRIDE',
+            actor=self.request.user,
+            obj=instance,
+            payload=self.request.data,
+            request=self.request
+        )
+
 
 class GPExtractedFinancialsVerifyView(APIView):
     """
     PATCH /api/deals/projects/<uuid>/extracted-financials/<id>/verify/
-    GP verifies the extracted financial data.
+    GP verifies (and optionally updates) the extracted financial data.
     """
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def patch(self, request, pk, fin_id):
         financial = get_object_or_404(ExtractedFinancials, pk=fin_id, project_id=pk)
         
+        # If data is provided, update before verifying
+        if request.data:
+            serializer = ExtractedFinancialsSerializer(financial, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            financial = serializer.save()
+
         financial.is_verified_by_gp = True
         financial.verified_by = request.user
         financial.verified_at = timezone.now()
@@ -1765,12 +1885,12 @@ class GPProjectCommercialAnalysisView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         task = run_commercial_analysis.delay(str(project.pk))
         return Response({"status": "Commercial analysis triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
 
     def get(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         analysis = project.commercial_analyses.first()
         if not analysis:
             return Response({"detail": "No commercial analysis found."}, status=status.HTTP_404_NOT_FOUND)
@@ -1785,12 +1905,12 @@ class GPProjectOperationalAnalysisView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         task = run_operational_analysis.delay(str(project.pk))
         return Response({"status": "Operational analysis triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
 
     def get(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         analysis = project.operational_analyses.first()
         if not analysis:
             return Response({"detail": "No operational analysis found."}, status=status.HTTP_404_NOT_FOUND)
@@ -1804,7 +1924,7 @@ class GPLegalScannerView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk, doc_id):
-        get_object_or_404(PEProject, pk=pk)
+        get_deal_for_user(self.request, pk=pk)
         doc = get_object_or_404(PEProjectDocument, pk=doc_id, project_id=pk)
         
         task = scan_legal_document.delay(str(doc.id))
@@ -1844,7 +1964,7 @@ class GPTriggerScoringView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         task = run_finlo_scoring.delay(str(project.id), request.user.id)
         return Response({"status": "FINLO scoring triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
 
@@ -1856,7 +1976,7 @@ class GPProjectLatestScoringView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def get(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         run = project.scoring_runs.first()
         if not run:
             return Response({"detail": "No scoring run found."}, status=status.HTTP_404_NOT_FOUND)
@@ -1942,7 +2062,7 @@ class GPApproveForLPView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         run = project.scoring_runs.first()
         
         if not run:
@@ -1989,7 +2109,7 @@ class GPDCFValuationView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         assumptions = request.data.get('assumptions', {})
         
         # Calculate
@@ -2025,7 +2145,7 @@ class GPLBOValuationView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         assumptions = request.data.get('assumptions', {})
         
         # Calculate
@@ -2119,7 +2239,7 @@ class GPRegulatoryChecklistView(generics.RetrieveUpdateAPIView):
     serializer_class = RegulatoryChecklistSerializer
 
     def get_object(self):
-        project = get_object_or_404(PEProject, pk=self.kwargs['pk'])
+        project = get_deal_for_user(self.request, pk=self.kwargs['pk'])
         obj, _ = RegulatoryChecklist.objects.get_or_create(project=project)
         return obj
 
@@ -2140,7 +2260,7 @@ class GPGenerateMemoView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         generate_memo_draft.delay(project.id)
         return Response({"status": "AI memo generation triggered"}, status=status.HTTP_202_ACCEPTED)
 
@@ -2154,7 +2274,7 @@ class GPMemoDetailView(generics.RetrieveUpdateAPIView):
     serializer_class = DealMemoSerializer
 
     def get_object(self):
-        project = get_object_or_404(PEProject, pk=self.kwargs['pk'])
+        project = get_deal_for_user(self.request, pk=self.kwargs['pk'])
         if 'memo_id' in self.kwargs:
             return get_object_or_404(DealMemo, pk=self.kwargs['memo_id'], project=project)
         return project.memos.order_by('-version', '-created_at').first()
@@ -2167,10 +2287,81 @@ class GPMemoFinalizeView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk, memo_id):
-        memo = get_object_or_404(DealMemo, pk=memo_id, project_id=pk)
+        from .pdf_utils import render_pdf
+        from .b2_utils import get_b2_client
+        from django.conf import settings
+        from django.utils import timezone
+        
+        project = get_deal_for_user(request, pk=pk)
+        memo = get_object_or_404(DealMemo, pk=memo_id, project=project)
+        
+        ic_notes = request.data.get('ic_notes', '')
+        
+        # 1. Update Memo
         memo.status = 'FINAL'
+        memo.ic_notes = ic_notes
         memo.save()
-        return Response({"status": "Memo finalized"})
+        
+        # 2. Generate PDF
+        context = {
+            'project': project,
+            'memo': memo,
+            'ic_notes': ic_notes,
+            'date': timezone.now().date(),
+            'gp_name': request.user.get_full_name() or request.user.email,
+            'investment_amount': request.data.get('investment_amount', '')
+        }
+        
+        try:
+            pdf_bytes = render_pdf('deals/ic_memo_template.html', context)
+        except Exception as e:
+            return Response({"detail": f"PDF Generation failed: {str(e)}"}, status=500)
+            
+        # 3. Upload to B2
+        file_name = f"IC_Memo_{project.legal_name.replace(' ', '_')}_v{memo.version}.pdf"
+        file_key = f"projects/{project.id}/legal/{file_name}"
+        
+        try:
+            bucket = getattr(settings, 'B2_BUCKET_NAME', '')
+            client = get_b2_client()
+            client.put_object(
+                Bucket=bucket,
+                Key=file_key,
+                Body=pdf_bytes,
+                ContentType='application/pdf'
+            )
+            
+            # Create Document record
+            doc = PEProjectDocument.objects.create(
+                project=project,
+                file_key=file_key,
+                filename=file_name,
+                file_size=len(pdf_bytes),
+                mime_type='application/pdf',
+                category='LEGAL',
+                uploaded_by=request.user
+            )
+            
+            # 4. Update Project Status
+            project.status = PEProject.Status.IC_APPROVED
+            project.save()
+            
+            # 5. Log Audit Event
+            ImmutableAuditEvent.objects.create(
+                event_type='MEMO_FINALIZED',
+                project=project,
+                actor=request.user,
+                payload={'memo_id': str(memo.id), 'document_id': str(doc.id)}
+            )
+            
+            return Response({
+                "status": "Memo finalized and IC approved",
+                "document_id": str(doc.id),
+                "url": doc.url
+            })
+            
+        except Exception as e:
+            return Response({"detail": f"Upload failed: {str(e)}"}, status=500)
 
 
 class GPFullAnalysisView(APIView):
@@ -2180,7 +2371,7 @@ class GPFullAnalysisView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
     def post(self, request, pk):
-        project = get_object_or_404(PEProject, pk=pk)
+        project = get_deal_for_user(self.request, pk=pk)
         run_full_analysis.delay(project.id, user_id=request.user.id)
         return Response({"status": "Full AI analysis pipeline triggered"}, status=status.HTTP_202_ACCEPTED)
 
@@ -2203,7 +2394,7 @@ class PortfolioKPIReportListView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         project_id = self.kwargs.get('pk')
-        project = get_object_or_404(PEProject, pk=project_id)
+        project = get_deal_for_user(request, pk=project_id)
         serializer.save(
             project=project,
             submitted_by=self.request.user,

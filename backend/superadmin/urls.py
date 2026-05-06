@@ -8,7 +8,8 @@ from .views import (
     SuperAdminSEBONDeadlineViewSet,
     SuperAdminRegulatoryChecklistViewSet,
     SuperAdminConflictOfInterestViewSet,
-    SuperAdminAnalyticsViewSet
+    SuperAdminAnalyticsViewSet,
+    SuperAdminDealViewSet
 )
 
 router = DefaultRouter()
@@ -20,6 +21,7 @@ router.register(r'sebon-deadlines', SuperAdminSEBONDeadlineViewSet, basename='su
 router.register(r'regulatory-checklists', SuperAdminRegulatoryChecklistViewSet, basename='superadmin-checklists')
 router.register(r'conflicts-of-interest', SuperAdminConflictOfInterestViewSet, basename='superadmin-conflicts')
 router.register(r'analytics', SuperAdminAnalyticsViewSet, basename='superadmin-analytics')
+router.register(r'deals', SuperAdminDealViewSet, basename='superadmin-deals')
 
 urlpatterns = [
     path('', include(router.urls)),

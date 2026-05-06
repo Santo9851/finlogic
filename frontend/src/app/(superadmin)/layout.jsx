@@ -18,6 +18,7 @@ const NAV = [
   { href: '/superadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/superadmin/users', label: 'Users', icon: Users },
   { href: '/superadmin/funds', label: 'Funds', icon: Briefcase },
+  { href: '/superadmin/deals', label: 'Deals', icon: FileText },
   { href: '/superadmin/prompts', label: 'Prompt Library', icon: BookOpen },
   { href: '/superadmin/audit', label: 'Audit Logs', icon: Activity },
   { href: '/superadmin/compliance', label: 'Compliance', icon: ShieldCheck },

@@ -12,6 +12,8 @@ import {
   closestCorners, 
   KeyboardSensor, 
   PointerSensor, 
+  MouseSensor,
+  TouchSensor,
   useSensor, 
   useSensors 
 } from '@dnd-kit/core';
@@ -21,7 +23,7 @@ import {
   verticalListSortingStrategy,
   useSortable
 } from '@dnd-kit/sortable';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { 
@@ -31,7 +33,8 @@ import {
   Clock, 
   BrainCircuit, 
   CheckSquare, 
-  Loader2
+  Loader2,
+  Lock
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
@@ -39,6 +42,7 @@ import Link from 'next/link';
 
 // Column definitions based on backend model
 const COLUMNS = [
+  { id: 'PENDING_SUBMISSION', title: 'Pending', color: '#94a3b8' },
   { id: 'SUBMITTED', title: 'Submitted', color: '#6366f1' },
   { id: 'SCREENING', title: 'Screening', color: '#3b82f6' },
   { id: 'AI_REVIEW_NEEDED', title: 'AI Review', color: '#f59e0b' },
@@ -55,6 +59,8 @@ export default function GPDealsKanbanPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [activeId, setActiveId] = useState(null);
+  const searchParams = useSearchParams();
+  const filter = searchParams.get('filter');
 
   // 1. Fetch data
   const { data: projects = [], isLoading } = useQuery({
@@ -94,16 +100,28 @@ export default function GPDealsKanbanPage() {
 
   // 3. DND Sensors
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   // 4. Group projects by column
   const filteredProjects = useMemo(() => {
-    return projects.filter(p => 
-      p.legal_name.toLowerCase().includes(search.toLowerCase())
+    let result = projects;
+    
+    if (filter === 'pending') {
+      result = result.filter(p => p.status === 'PENDING_SUBMISSION');
+    } else if (filter === 'submitted') {
+      result = result.filter(p => p.status !== 'PENDING_SUBMISSION');
+    } else if (filter === 'review') {
+      result = result.filter(p => ['AI_REVIEW_NEEDED', 'SCREENING'].includes(p.status));
+    }
+
+    return result.filter(p => 
+      p.legal_name?.toLowerCase().includes(search.toLowerCase()) ||
+      p.company_name?.toLowerCase().includes(search.toLowerCase())
     );
-  }, [projects, search]);
+  }, [projects, search, filter]);
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -225,7 +243,7 @@ function KanbanCard({ deal, isOverlay = false }) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id: deal.id });
+  } = useSortable({ id: deal.id, disabled: !deal.can_access });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -240,6 +258,10 @@ function KanbanCard({ deal, isOverlay = false }) {
   const handleCardClick = (e) => {
     // Prevent navigation if clicking the drag handle or specific actions
     if (e.target.closest('.drag-handle')) return;
+    if (!deal.can_access) {
+      toast.error('You do not have permission to view this deal.');
+      return;
+    }
     router.push(`/gp/deals/${deal.id}`);
   };
 
@@ -247,21 +269,20 @@ function KanbanCard({ deal, isOverlay = false }) {
     <div 
       ref={setNodeRef}
       style={style}
+      {...(deal.can_access ? attributes : {})}
+      {...(deal.can_access ? listeners : {})}
       onClick={handleCardClick}
-      className={`group bg-[#0A0014] border rounded-xl p-4 shadow-xl hover:border-white/20 transition-all cursor-pointer active:scale-[0.98] ${
+      className={`group bg-[#0A0014] border rounded-xl p-4 shadow-xl hover:border-white/20 transition-all ${deal.can_access ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed opacity-75'} ${
         isAIRework ? 'border-[#f59e0b]/60 shadow-[0_0_20px_rgba(245,158,11,0.05)] animate-pulse-orange' : 'border-white/10'
-      } ${isOverlay ? 'shadow-2xl z-50' : ''}`}
+      } ${isOverlay ? 'shadow-2xl z-50 scale-105 rotate-2' : ''} ${isDragging ? 'opacity-0' : ''}`}
     >
       <div className="space-y-4">
         <div className="flex justify-between items-start gap-4">
           <h4 className="text-sm font-semibold text-white group-hover:text-[#F59F01] transition-colors line-clamp-2 leading-relaxed">
+            {!deal.can_access && <Lock size={14} className="inline-block mr-2 text-white/40" />}
             {deal.legal_name}
           </h4>
-          <div 
-            {...attributes}
-            {...listeners}
-            className="drag-handle text-white/10 hover:text-white p-1 rounded-lg hover:bg-white/5 transition-colors cursor-grab active:cursor-grabbing"
-          >
+          <div className="text-white/10 group-hover:text-white transition-colors">
             <MoreVertical size={16} />
           </div>
         </div>
@@ -291,7 +312,7 @@ function KanbanCard({ deal, isOverlay = false }) {
           
           <div className="flex items-center gap-1.5 text-[10px] text-white/50 font-bold bg-white/5 px-2 py-1 rounded-full border border-white/5">
             <CheckSquare size={12} className="text-[#10b981]" />
-            <span>{deal.compliance_gates || "3/5"}</span>
+            <span>{deal.compliance_stats?.cleared ?? 0}/{deal.compliance_stats?.total ?? 5}</span>
           </div>
         </div>
       </div>

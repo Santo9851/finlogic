@@ -7,7 +7,9 @@ import {
   DollarSign, 
   Compass, 
   ArrowRight,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -44,6 +46,22 @@ export default function PortfolioOverview() {
       href: '/gp/portfolio/exit-planning',
       color: 'bg-purple-500/10 text-purple-400',
       stats: '3 IPO Pipeline'
+    },
+    {
+      title: 'Governance',
+      description: 'Manage shareholder voting, governance proposals, and board ballots.',
+      icon: ShieldCheck,
+      href: '/gp/governance',
+      color: 'bg-emerald-500/10 text-emerald-400',
+      stats: 'Active Ballots'
+    },
+    {
+      title: 'Compliance',
+      description: 'Track SEBON deadlines, regulatory filings, and Nepal-specific reporting.',
+      icon: ShieldAlert,
+      href: '/gp/compliance',
+      color: 'bg-rose-500/10 text-rose-400',
+      stats: 'Regulatory Calendar'
     }
   ];
 

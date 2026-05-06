@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, ArrowRight, ArrowLeft, Save, Check } from 'lucide-react';
-import { toast, Toaster } from 'sonner';
+import { toast } from 'sonner';
 
 import { projectSubmissionSchema } from '@/lib/validations/project';
 import { projectService } from '@/services/project';
@@ -106,7 +106,7 @@ function SubmitProjectForm() {
 
   return (
     <div className="min-h-screen bg-abstract-gradient text-white pb-20 pt-24">
-      <Toaster position="top-right" theme="dark" />
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Header */}

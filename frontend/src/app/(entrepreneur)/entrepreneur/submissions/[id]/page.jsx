@@ -5,16 +5,19 @@
  */
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ChevronLeft, FileText, CheckCircle2, LayoutDashboard } from 'lucide-react';
+import { ChevronLeft, FileText, CheckCircle2, LayoutDashboard, Download, Upload, X } from 'lucide-react';
+import FileUploader from '@/components/portal/FileUploader';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/portal/PortalShell';
 import api from '@/services/api';
 import { toast } from 'sonner';
+import LOIActionCenter from '@/components/entrepreneur/LOIActionCenter';
 
 export default function EntrepreneurSubmissionDetailPage() {
   const { id } = useParams();
   const [deal, setDeal] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showUpload, setShowUpload] = useState(false);
 
   useEffect(() => {
     api.get(`/entrepreneur/submissions/${id}/`)
@@ -31,6 +34,11 @@ export default function EntrepreneurSubmissionDetailPage() {
       <Link href="/entrepreneur/dashboard" className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition-colors">
         <ChevronLeft size={16} /> Back to Dashboard
       </Link>
+      
+      <LOIActionCenter 
+        deal={deal} 
+        onUploadContract={() => setShowUpload(true)} 
+      />
 
       <div className="rounded-xl border border-white/10 bg-white/5 p-6 md:p-8 space-y-8">
         {/* Header */}
@@ -160,9 +168,69 @@ export default function EntrepreneurSubmissionDetailPage() {
                 </Link>
               )}
             </div>
+
+            {/* Document Section for Entrepreneur */}
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 space-y-4">
+               <h3 className="text-sm font-semibold text-white uppercase tracking-widest flex items-center justify-between">
+                 Documents
+                 <FileText size={16} className="text-[#F59F01]" />
+               </h3>
+               <div className="space-y-3">
+                  {deal.documents?.filter(d => ['LOI', 'SIGNED_CONTRACT', 'LEGAL'].includes(d.category)).map(doc => (
+                    <div key={doc.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
+                      <div className="flex items-center gap-3">
+                         <div className="text-[#F59F01]"><FileText size={14} /></div>
+                         <div className="flex flex-col">
+                            <span className="text-xs text-white font-medium truncate max-w-[150px]">{doc.filename}</span>
+                            <span className="text-[10px] text-white/30 uppercase">{doc.category_display}</span>
+                         </div>
+                      </div>
+                      <a href={doc.url} target="_blank" rel="noreferrer" className="text-white/40 hover:text-[#F59F01] transition-colors">
+                        <Download size={14} />
+                      </a>
+                    </div>
+                  ))}
+                  {deal.documents?.filter(d => ['LOI', 'SIGNED_CONTRACT', 'LEGAL'].includes(d.category)).length === 0 && (
+                    <p className="text-[10px] text-white/20 italic">No legal documents yet.</p>
+                  )}
+               </div>
+               
+               {deal.status === 'LOI_ISSUED' && (
+                 <div className="pt-4 border-t border-white/5">
+                    <button 
+                      onClick={() => setShowUpload(true)}
+                      className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                      <Upload size={14} /> Upload Signed Contract
+                    </button>
+                 </div>
+               )}
+            </div>
           </div>
         </div>
       </div>
+
+      {showUpload && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-[#0f172a] border border-white/10 rounded-[32px] p-8 w-full max-w-md relative">
+            <button onClick={() => setShowUpload(false)} className="absolute top-6 right-6 text-white/20 hover:text-white">
+              <X size={20} />
+            </button>
+            <h3 className="text-xl font-bold text-white mb-6">Upload Signed Contract</h3>
+            <FileUploader 
+              projectId={deal.id} 
+              category="SIGNED_CONTRACT"
+              isEntrepreneur={true}
+              onSuccess={() => {
+                setShowUpload(false);
+                toast.success("Contract uploaded successfully");
+                // Refresh data
+                api.get(`/entrepreneur/submissions/${id}/`).then(r => setDeal(r.data));
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

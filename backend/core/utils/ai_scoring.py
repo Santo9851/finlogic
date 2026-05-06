@@ -30,7 +30,8 @@ import time
 from dataclasses import dataclass, field
 from typing import Any
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from core.utils.scoring import SCORING_CONFIG
 
@@ -229,11 +230,8 @@ class AIScoringAssistant:
     """
 
     def __init__(self, api_key: str | None = None):
-        genai.configure(api_key=api_key or os.environ.get("GEMINI_API_KEY"))
-        self.client = genai.GenerativeModel(
-            model_name=AI_SCORING_MODEL,
-            system_instruction=NepalPEPromptBuilder.SYSTEM_PROMPT,
-        )
+        self.client = genai.Client(api_key=api_key or os.environ.get("GEMINI_API_KEY"))
+        self.model_name = AI_SCORING_MODEL
         self.prompt_builder = NepalPEPromptBuilder()
 
     # ------------------------------------------------------------------
@@ -326,12 +324,15 @@ class AIScoringAssistant:
 
         for attempt in range(retries + 1):
             try:
-                response = self.client.generate_content(
-                    user_prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        max_output_tokens=AI_SCORING_MAX_TOKENS,
-                        temperature=0.2,
-                    ),
+                config = types.GenerateContentConfig(
+                    system_instruction=NepalPEPromptBuilder.SYSTEM_PROMPT,
+                    max_output_tokens=AI_SCORING_MAX_TOKENS,
+                    temperature=0.2,
+                )
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    config=config,
+                    contents=user_prompt
                 )
                 raw_text = response.text.strip()
                 parsed = self._parse_section_response(raw_text, section_id, section_config)

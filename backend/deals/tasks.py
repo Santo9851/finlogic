@@ -41,9 +41,53 @@ logger = logging.getLogger(__name__)
 def extract_text_from_pdf(pdf_content):
     """Extracts text from PDF bytes using PyMuPDF."""
     text = ""
-    with fitz.open(stream=pdf_content, filetype="pdf") as doc:
-        for page in doc:
-            text += page.get_text()
+    try:
+        with fitz.open(stream=pdf_content, filetype="pdf") as doc:
+            for page in doc:
+                text += page.get_text()
+    except Exception as e:
+        logger.error(f"PyMuPDF error: {e}")
+    return text
+
+def extract_text_from_excel(excel_content):
+    """Extracts text from Excel bytes using openpyxl."""
+    import io
+    try:
+        from openpyxl import load_workbook
+    except ImportError:
+        logger.warning("openpyxl not installed, skipping Excel extraction")
+        return ""
+    
+    text = ""
+    try:
+        wb = load_workbook(io.BytesIO(excel_content), data_only=True)
+        total_chars = 0
+        MAX_CHARS = 500000 # 500k char safety limit
+        
+        for sheet in wb.worksheets:
+            if total_chars > MAX_CHARS:
+                break
+                
+            text += f"\nSheet: {sheet.title}\n"
+            # Limit to first 1000 rows per sheet to avoid huge calculation sheets
+            for i, row in enumerate(sheet.iter_rows(values_only=True)):
+                if i > 1000:
+                    text += "... (Large sheet truncated)\n"
+                    break
+                
+                # Filter out None values and clean up row
+                row_data = [str(cell).strip() for cell in row if cell is not None]
+                if not any(row_data): continue # Skip empty rows
+                
+                row_text = " | ".join(row_data)
+                text += row_text + "\n"
+                total_chars += len(row_text)
+                    
+                if total_chars > MAX_CHARS:
+                    text += "\n... (Total document truncated for AI safety)\n"
+                    break
+    except Exception as e:
+        logger.error(f"Excel extraction error: {e}")
     return text
 
 @shared_task
@@ -55,21 +99,49 @@ def extract_financials_from_document(document_id):
         doc = PEProjectDocument.objects.get(id=document_id)
         project = doc.project
         
+        # Update progress
+        progress = project.analysis_progress or {}
+        progress['Extraction'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
+        
         logger.info(f"Starting financial extraction for document: {doc.filename}")
         
-        # 1. Download document
-        download_url = generate_presigned_download_url(doc.file_key)
-        response = requests.get(download_url)
-        if response.status_code != 200:
-            raise Exception("Failed to download document from Backblaze B2")
+        # 1. Get document content
+        file_content = None
+        if doc.local_file:
+            try:
+                # In Docker, local_file points to /app/media/... which is volume mounted
+                with doc.local_file.open('rb') as f:
+                    file_content = f.read()
+                logger.info(f"Read local file for {doc.filename}")
+            except Exception as e:
+                logger.warning(f"Could not read local file {doc.local_file}: {e}")
+        
+        if not file_content:
+            logger.info(f"Downloading from B2: {doc.file_key}")
+            download_url = generate_presigned_download_url(doc.file_key)
+            response = requests.get(download_url)
+            if response.status_code == 200:
+                file_content = response.content
+            else:
+                raise Exception(f"Failed to download from B2. Status: {response.status_code}")
             
-        # 2. Extract text from PDF
-        pdf_text = extract_text_from_pdf(response.content)
+        # 2. Extract text based on file type
+        file_ext = doc.filename.split('.')[-1].lower()
+        if file_ext in ['xlsx', 'xlsm', 'xltx', 'xltm']:
+            doc_text = extract_text_from_excel(file_content)
+        else:
+            doc_text = extract_text_from_pdf(file_content)
+            
+        if not doc_text:
+            # Fallback for scanned PDFs or empty files
+            logger.warning(f"No text extracted from {doc.filename}. AI may struggle.")
         
         # 3. Call AI Client
         client = AIModelClient()
         context_data = {
-            "document_text": pdf_text,
+            "document_text": doc_text,
             "project_name": project.legal_name
         }
         
@@ -103,20 +175,38 @@ def extract_financials_from_document(document_id):
                 fiscal_year_bs=entry.get("fiscal_year_bs"),
                 defaults={
                     "source_document": doc,
+                    "revenue_npr": entry.get("revenue", 0),
+                    "ebitda_npr": entry.get("ebitda", 0),
+                    "net_profit_npr": entry.get("net_profit", entry.get("pat", 0)),
+                    "total_assets_npr": entry.get("total_assets", 0),
+                    "total_debt_npr": entry.get("total_debt", 0),
+                    # Backwards compatibility
                     "revenue": entry.get("revenue", 0),
                     "ebitda": entry.get("ebitda", 0),
-                    "pat": entry.get("pat", 0),
-                    "total_assets": entry.get("total_assets", 0),
-                    "total_debt": entry.get("total_debt", 0),
+                    "pat": entry.get("net_profit", entry.get("pat", 0)),
                     "extraction_confidence": data.get("confidence", 0.85),
                     "raw_ai_output": entry
                 }
             )
             
+        # Finalize progress
+        progress = project.analysis_progress or {}
+        progress['Extraction'] = 'completed'
+        project.analysis_progress = progress
+        project.save()
+        
         return f"Successfully extracted {len(fiscal_years)} years of financials for {project.legal_name}"
         
     except Exception as e:
         logger.error(f"Error in extract_financials_from_document: {str(e)}")
+        # Mark as failed in progress
+        try:
+            progress = project.analysis_progress or {}
+            progress['Extraction'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
         raise e
 
 @shared_task
@@ -126,6 +216,13 @@ def run_qoe_analysis(project_id):
     """
     try:
         project = PEProject.objects.get(id=project_id)
+        
+        # Update progress
+        progress = project.analysis_progress or {}
+        progress['QoE'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
+        
         financials = project.financials.all().order_by('fiscal_year_bs')
         
         if not financials.exists():
@@ -135,8 +232,8 @@ def run_qoe_analysis(project_id):
         financial_summary = "Financial Data History:\n"
         for f in financials:
             financial_summary += (
-                f"FY {f.fiscal_year_bs}: Revenue={f.revenue}, EBITDA={f.ebitda}, "
-                f"PAT={f.pat}, Assets={f.total_assets}, Debt={f.total_debt}\n"
+                f"FY {f.fiscal_year_bs}: Revenue={f.revenue_npr}, EBITDA={f.ebitda_npr}, "
+                f"PAT={f.net_profit_npr}, Assets={f.total_assets_npr}, Debt={f.total_debt_npr}\n"
             )
             
         # 2. Call AI Client (Routed to DeepSeek R1)
@@ -168,6 +265,12 @@ def run_qoe_analysis(project_id):
                 "fiscal_years_analyzed": [f.fiscal_year_bs for f in financials]
             }
         )
+        
+        # Finalize progress
+        progress = project.analysis_progress or {}
+        progress['QoE'] = 'completed'
+        project.analysis_progress = progress
+        project.save()
         
         return f"QoE Report generated for {project.legal_name} (Status: {status})"
         
@@ -216,6 +319,12 @@ def run_commercial_analysis(project_id):
             ai_call_log=AICallLog.objects.filter(project=project, task_type='commercial_analysis').first()
         )
         
+        # Finalize progress
+        progress = project.analysis_progress or {}
+        progress['Commercial'] = 'completed'
+        project.analysis_progress = progress
+        project.save()
+        
         return f"Commercial Analysis completed for {project.legal_name}"
         
     except Exception as e:
@@ -230,6 +339,12 @@ def run_operational_analysis(project_id):
     """
     try:
         project = PEProject.objects.get(id=project_id)
+        
+        # Update progress
+        progress = project.analysis_progress or {}
+        progress['Operational'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
         
         client = AIModelClient()
         context_data = {
@@ -257,6 +372,12 @@ def run_operational_analysis(project_id):
             ai_call_log=AICallLog.objects.filter(project=project, task_type='operational_analysis').first()
         )
         
+        # Finalize progress
+        progress = project.analysis_progress or {}
+        progress['Operational'] = 'completed'
+        project.analysis_progress = progress
+        project.save()
+        
         return f"Operational Analysis completed for {project.legal_name}"
         
     except Exception as e:
@@ -271,6 +392,12 @@ def scan_legal_document(document_id):
     try:
         doc_obj = PEProjectDocument.objects.get(id=document_id)
         project = doc_obj.project
+        
+        # Update progress
+        progress = project.analysis_progress or {}
+        progress['Legal Scan'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
         
         # 1. Download and Extract Text
         url = generate_presigned_download_url(doc_obj.file_key)
@@ -319,6 +446,12 @@ def scan_legal_document(document_id):
         if findings_to_create:
             RedFlagFinding.objects.bulk_create(findings_to_create)
             
+        # Finalize progress
+        progress = project.analysis_progress or {}
+        progress['Legal Scan'] = 'completed'
+        project.analysis_progress = progress
+        project.save()
+            
         return f"Legal scan completed for {doc_obj.filename}. Found {len(findings_to_create)} red flags."
 
     except Exception as e:
@@ -338,6 +471,13 @@ def run_finlo_scoring(project_id, user_id=None):
     
     try:
         project = PEProject.objects.get(id=project_id)
+        
+        # Update progress
+        progress = project.analysis_progress or {}
+        progress['Scoring'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
+        
         user = User.objects.get(id=user_id) if user_id else None
         
         # 1. Create Scoring Run
@@ -406,6 +546,9 @@ def run_finlo_scoring(project_id, user_id=None):
                 "project_data": context
             }
             
+            # Add a small delay between pillar calls to avoid hitting Rate Per Minute (RPM) limits
+            time.sleep(2)
+            
             # This uses the 'scoring' task type in PromptLibrary
             raw_json = client.execute_task("scoring", prompt_data, project=project)
             
@@ -466,6 +609,12 @@ def run_finlo_scoring(project_id, user_id=None):
             
         # 7. Update Project Status
         project.status = 'AI_REVIEW_NEEDED'
+        project.save()
+        
+        # Finalize progress
+        progress = project.analysis_progress or {}
+        progress['Scoring'] = 'completed'
+        project.analysis_progress = progress
         project.save()
         
         return f"FINLO Scoring completed for {project.legal_name}. Score: {run.total_deal_score}"
@@ -529,6 +678,12 @@ def generate_memo_draft(project_id):
     """
     project = PEProject.objects.get(id=project_id)
     
+    # Update progress
+    progress = project.analysis_progress or {}
+    progress['Memo'] = 'processing'
+    project.analysis_progress = progress
+    project.save()
+    
     # 1. Gather Context
     financials = list(project.financials.values())
     scoring = project.scoring_runs.first()
@@ -586,6 +741,12 @@ def generate_memo_draft(project_id):
             version=new_version
         )
         
+        # Finalize progress
+        progress = project.analysis_progress or {}
+        progress['Memo'] = 'completed'
+        project.analysis_progress = progress
+        project.save()
+        
         return f"Memo v{new_version} drafted for {project.legal_name}"
         
     except Exception as e:
@@ -598,41 +759,69 @@ def run_full_analysis(project_id, user_id=None):
     """
     Triggers the complete AI due diligence pipeline in sequence.
     """
-    from .models import PEProjectDocument
-    project = PEProject.objects.get(id=project_id)
-    
-    # 1. Find the most recent financial document
-    doc = project.documents.filter(category='FINANCIAL').order_by('-uploaded_at').first()
-    legal_doc = project.documents.filter(category='LEGAL').order_by('-uploaded_at').first()
-    
-    if not doc:
-        return f"Full analysis aborted: No financial document found for {project.legal_name}"
+    try:
+        from .models import PEProjectDocument
+        project = PEProject.objects.get(id=project_id)
+        
+        # Initialize Progress
+        project.analysis_progress = {
+            "Extraction": "pending",
+            "QoE": "pending",
+            "Commercial": "pending",
+            "Operational": "pending",
+            "Compliance": "pending",
+            "Legal Scan": "pending",
+            "Scoring": "pending",
+            "Memo": "pending"
+        }
+        project.save()
+        
+        # 1. Find the most recent financial document
+        doc = project.documents.filter(category='FINANCIAL').order_by('-uploaded_at').first()
+        legal_doc = project.documents.filter(category='LEGAL').order_by('-uploaded_at').first()
+        
+        if not doc:
+            return f"Full analysis aborted: No financial document found for {project.legal_name}"
 
-    # 2. Build the chain
-    # We use .si() for immutable signatures to ignore return values of previous tasks if needed
-    analysis_chain = chain(
-        extract_financials_from_document.si(doc.id),
-        run_qoe_analysis.si(project.id),
-        run_commercial_analysis.si(project.id),
-        run_operational_analysis.si(project.id),
-        run_nepal_compliance_check.si(project.id),
-        scan_legal_document.si(legal_doc.id) if legal_doc else run_finlo_scoring.si(project.id), # Fallback if no legal doc
-        run_finlo_scoring.si(project.id),
-        generate_memo_draft.si(project.id)
-    )
-    
-    analysis_chain.apply_async()
-    
-    # Log Audit Event
-    from .signals import _log_audit_event
-    _log_audit_event(
-        event_type='FULL_ANALYSIS_TRIGGERED',
-        actor_id=user_id,
-        project=project,
-        payload={"document_id": str(doc.id)}
-    )
-    
-    return f"Full analysis chain started for {project.legal_name}"
+        # 2. Build the chain
+        analysis_chain = chain(
+            extract_financials_from_document.si(doc.id),
+            run_qoe_analysis.si(project.id),
+            run_commercial_analysis.si(project.id),
+            run_operational_analysis.si(project.id),
+            run_nepal_compliance_check.si(project.id),
+            scan_legal_document.si(legal_doc.id) if legal_doc else run_finlo_scoring.si(project.id),
+            run_finlo_scoring.si(project.id),
+            generate_memo_draft.si(project.id)
+        )
+        
+        analysis_chain.apply_async()
+        
+        # Log Audit Event
+        from .signals import _log_audit_event
+        _log_audit_event(
+            event_type='FULL_ANALYSIS_TRIGGERED',
+            actor_id=user_id,
+            project=project,
+            payload={"document_id": str(doc.id)}
+        )
+        
+        return f"Full analysis chain started for {project.legal_name}"
+    except Exception as e:
+        logger.error(f"Error in run_full_analysis: {str(e)}")
+        # Mark all steps as failed
+        try:
+            from .models import PEProject
+            project = PEProject.objects.get(id=project_id)
+            progress = project.analysis_progress or {}
+            for k in progress:
+                if progress[k] in ['processing', 'pending']:
+                    progress[k] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
+        raise e
 
 
 @shared_task

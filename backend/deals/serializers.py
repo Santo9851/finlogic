@@ -155,6 +155,8 @@ class PEProjectListSerializer(serializers.ModelSerializer):
     deal_type_display = serializers.CharField(source='get_deal_type_display', read_only=True)
     data_room_completeness = serializers.IntegerField(read_only=True)
     total_steps = serializers.SerializerMethodField()
+    compliance_stats = serializers.SerializerMethodField()
+    can_access = serializers.SerializerMethodField()
 
     class Meta:
         model = PEProject
@@ -162,7 +164,7 @@ class PEProjectListSerializer(serializers.ModelSerializer):
             'id', 'legal_name', 'fund', 'fund_name', 'deal_type',
             'deal_type_display', 'sector', 'status', 'status_display',
             'submission_type', 'form_step_completed', 'total_steps',
-            'submitted_at', 'data_room_completeness', 'created_at',
+            'submitted_at', 'data_room_completeness', 'compliance_stats', 'can_access', 'created_at',
         )
         read_only_fields = ('id', 'created_at', 'data_room_completeness')
 
@@ -175,6 +177,30 @@ class PEProjectListSerializer(serializers.ModelSerializer):
         if template and template['steps']:
             return len(template['steps'])
         return 6  # safe fallback
+
+    def get_compliance_stats(self, obj):
+        """Return {cleared, total} based on the latest scoring run's gates."""
+        latest_run = obj.scoring_runs.filter(status='COMPLETED').order_by('-created_at').first()
+        if not latest_run:
+            return {'cleared': 0, 'total': 5}
+        
+        gates = latest_run.compliance_gates.all()
+        return {
+            'cleared': gates.filter(status='CLEARED').count(),
+            'total': gates.count() or 5
+        }
+
+    def get_can_access(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        if request.user.has_role('super_admin'):
+            return True
+        if obj.created_by == request.user:
+            return True
+        if hasattr(obj, 'collaborators') and obj.collaborators.filter(id=request.user.id).exists():
+            return True
+        return False
 
 
 
@@ -202,6 +228,8 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
     regulatory_checklist = serializers.SerializerMethodField()
     latest_memo = serializers.SerializerMethodField()
     kpi_reports = serializers.SerializerMethodField()
+    can_access = serializers.SerializerMethodField()
+    collaborators_detail = UserMiniSerializer(source='collaborators', many=True, read_only=True)
 
 
 
@@ -221,12 +249,11 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
             'entrepreneur_user', 'entrepreneur_detail',
             'invitation_token', 'invitation_sent_at', 'invitation_expires_at',
             'is_invitation_valid', 'form_step_completed', 'submitted_at',
+            'analysis_progress',
             'data_room_completeness', 'documents', 'form_responses', 'audit_events',
             'extracted_financials', 'qoe_reports', 'commercial_analyses', 'operational_analyses', 'red_flags',
             'latest_scoring', 'valuations', 'regulatory_checklist', 'latest_memo', 'kpi_reports',
-            'created_by', 'created_by_detail', 'created_at', 'updated_at',
-
-
+            'created_by', 'created_by_detail', 'collaborators', 'collaborators_detail', 'can_access', 'created_at', 'updated_at',
 
 
 
@@ -242,6 +269,18 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
             'entrepreneur_user': {'write_only': True, 'required': False},
             'created_by': {'write_only': True, 'required': False},
         }
+
+    def get_can_access(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return False
+        if request.user.has_role('super_admin'):
+            return True
+        if obj.created_by == request.user:
+            return True
+        if hasattr(obj, 'collaborators') and obj.collaborators.filter(id=request.user.id).exists():
+            return True
+        return False
 
     def get_audit_events(self, obj):
         events = ImmutableAuditEvent.objects.filter(object_id=obj.id).order_by('-created_at')[:20]
@@ -710,7 +749,7 @@ class ExtractedFinancialsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExtractedFinancials
         fields = '__all__'
-        read_only_fields = ('id', 'created_at', 'updated_at', 'verified_by', 'verified_at')
+        read_only_fields = ('id', 'project', 'created_at', 'updated_at', 'verified_by', 'verified_at')
 
 class QoEReportSerializer(serializers.ModelSerializer):
     class Meta:

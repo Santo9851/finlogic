@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PieChart, FileText, LogOut, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, PieChart, FileText, LogOut, User, Menu, X, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { PortalGuard } from '@/components/portal/PortalShell';
 
 const NAV = [
   { href: '/lp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/lp/portfolio', label: 'Portfolio', icon: PieChart },
+  { href: '/lp/distributions', label: 'Distributions', icon: TrendingUp },
   { href: '/lp/documents', label: 'Documents', icon: FileText },
   { href: '/lp/profile', label: 'Profile & KYC', icon: User },
 ];

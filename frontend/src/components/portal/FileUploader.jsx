@@ -47,6 +47,7 @@ export default function FileUploader({
   description = "",
   allowedExtensions = ".pdf,.docx,.xlsx,.png,.jpg,.jpeg",
   formatText = "PDF, DOCX, or Image",
+  isEntrepreneur = false,
   onRemove = () => {}
 }) {
   const [file, setFile] = useState(null);
@@ -67,10 +68,16 @@ export default function FileUploader({
   }, [value]);
 
   const CATEGORIES = [
-    { value: 'INCORPORATION', label: 'Incorporation Documents' },
     { value: 'FINANCIALS', label: 'Financial Statements' },
+    { value: 'CONTRACTS', label: 'Legal Contracts' },
+    { value: 'LOAN_DOCS', label: 'Loan & Offer Letters' },
+    { value: 'LEGAL', label: 'Other Legal Documents' },
+    { value: 'INCORPORATION', label: 'Incorporation Documents' },
     { value: 'TAX_CLEARANCE', label: 'Tax Clearance' },
     { value: 'KYC', label: 'KYC Documents' },
+    { value: 'PITCH_DECK', label: 'Pitch Deck' },
+    { value: 'BUSINESS_PLAN', label: 'Business Plan' },
+    { value: 'COMMERCIAL', label: 'Commercial' },
     { value: 'OTHER', label: 'Other' },
   ];
 
@@ -143,7 +150,9 @@ export default function FileUploader({
       } else if (fundId) {
         urlPath = `deals/funds/${fundId}/get-upload-url/`;
       } else if (projectId) {
-        urlPath = `entrepreneur/submissions/${projectId}/get-upload-url/`;
+        urlPath = isEntrepreneur 
+          ? `entrepreneur/submissions/${projectId}/get-upload-url/`
+          : `deals/projects/${projectId}/get-upload-url/`;
       }
       
       const res = await api.post(urlPath, {

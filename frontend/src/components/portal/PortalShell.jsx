@@ -7,6 +7,7 @@
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export function PortalLoader() {
   return (
@@ -37,9 +38,9 @@ export function PortalGuard({ children, allowedRoles }) {
 }
 
 /** Metric card used in dashboards */
-export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', trend }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 flex flex-col gap-3 hover:border-white/20 transition-all">
+export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', trend, href }) {
+  const content = (
+    <div className={`rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 flex flex-col gap-3 hover:border-white/20 transition-all ${href ? 'cursor-pointer hover:bg-white/10' : ''}`}>
       <div className="flex items-center justify-between">
         <span className="text-xs text-white/40 uppercase tracking-widest">{label}</span>
         {Icon && (
@@ -57,6 +58,12 @@ export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', t
       )}
     </div>
   );
+
+  if (href) {
+    return <Link href={href}>{content}</Link>;
+  }
+
+  return content;
 }
 
 /** Status badge */
@@ -71,6 +78,9 @@ export function StatusBadge({ status }) {
     VIDEO_PITCH: { label: 'Video Pitch', cls: 'bg-cyan-500/20 text-cyan-300' },
     DUE_DILIGENCE: { label: 'Due Diligence', cls: 'bg-orange-500/20 text-orange-300' },
     TERM_SHEET: { label: 'Term Sheet', cls: 'bg-amber-500/20 text-amber-300' },
+    IC_APPROVED: { label: 'IC Approved', cls: 'bg-indigo-500/20 text-indigo-300' },
+    LOI_ISSUED: { label: 'LOI Issued', cls: 'bg-[#F59F01]/20 text-[#F59F01]' },
+    CONTRACT_SIGNED: { label: 'Contract Signed', cls: 'bg-[#10b981]/20 text-[#10b981]' },
     CLOSED: { label: 'Closed', cls: 'bg-emerald-500/20 text-emerald-300' },
     DECLINED: { label: 'Declined', cls: 'bg-red-500/20 text-red-300' },
     RAISING: { label: 'Raising', cls: 'bg-blue-500/20 text-blue-300' },

@@ -1,143 +1,119 @@
-# Finlogic Capital — End-to-End Deal Flow Guide
+# Finlogic Capital — Deep Technical Deal Flow Guide
 
-This document outlines the complete lifecycle of a Private Equity deal within the Finlogic platform, from initial sourcing to exit and distribution. Use this as a step-by-step guide for testing and operational workflow.
+This document provides a comprehensive technical map of the Deal Flow lifecycle, including specific Views, Models, and Serializers involved in every state transition.
 
 ---
 
-## Phase 1: Deal Sourcing & Entrepreneur Onboarding
-
+## Phase 1: Sourcing & Entrepreneur Onboarding
 **Objective:** Initiate a new deal and collect initial company data.
 
-1.  **GP: Send Invite** (Frontend GP Dashboard)
-    *   Navigate to **Deals** -> **Pipeline**.
-    *   Click **Invite Entrepreneur**.
-    *   Enter basic details (Legal Name, Sector, Entrepreneur Email).
-    *   *Action:* System generates a unique `invitation_token` and sends an email.
-2.  **Entrepreneur: Submission** (Entrepreneur Portal)
-    *   Entrepreneur receives email and clicks the link.
-    *   Fills out the multi-step form (Company Profile, Team, Market, Financial Highlights).
-    *   *Action:* Data is saved as `PEProjectFormResponse` records.
-3.  **Entrepreneur: Document Upload** (Entrepreneur Portal)
-    *   Upload mandatory documents: Certificate of Incorporation, Tax Clearances, and most importantly, **Audited Financial Statements (PDF)**.
-    *   *Target:* Upload to the **Data Room** section of the submission.
+### 1. GP: Send Invitation
+- **Frontend Action:** Click "Invite Entrepreneur" in Pipeline.
+- **Backend View:** `GPCreateInviteView` (POST)
+- **Model:** `PEProject` (Status: `PENDING_SUBMISSION`)
+- **Serializer:** `PEProjectListSerializer`
+- **Side Effect:** `signals.py` generates `invitation_token` and sends email via Brevo.
+
+### 2. Entrepreneur: Step-by-Step Submission
+- **Frontend Action:** Fills multi-step form at `/entrepreneur/invite/{token}`.
+- **Backend View:** `EntrepreneurSubmitStepView` (POST)
+- **Model:** `PEProjectFormResponse`
+- **Serializer:** `PEProjectFormResponseSerializer`
+- **Tracking:** `PEProject.form_step_completed` tracks progress index.
+
+### 3. Entrepreneur: Data Room Upload
+- **Frontend Action:** Uploads documents in "Documents" step.
+- **Backend View:** `EntrepreneurGetUploadURLView` -> `DocumentConfirmView`.
+- **Model:** `PEProjectDocument`
+- **Storage:** Local Media or Backblaze B2.
+- **Status:** `is_confirmed = True` on metadata creation.
+
+### 4. Final Submission
+- **Frontend Action:** Click "Submit Project".
+- **Backend View:** `EntrepreneurFinalizeView`
+- **Logic:** Validates all required fields from `PEFormTemplate` steps.
+- **Outcome:** Status -> `SUBMITTED`. Audit Log: `PROJECT_SUBMITTED`.
 
 ---
 
-## Phase 2: Due Diligence & AI-Powered Analysis
+## Phase 2: Due Diligence & AI Analysis
+**Objective:** Move from raw data to actionable investment insights.
 
-**Objective:** Extract insights from raw data and evaluate deal quality.
+### 1. The Screening Gate (CRITICAL)
+- **Action:** GP must manually move status to `SCREENING`.
+- **Backend View:** `GPProjectUpdateView` (PATCH)
+- **Significance:** Unlocks AI extraction and scanning buttons in the UI.
 
-1.  **GP: Financial Extraction** (Frontend GP Dashboard -> Deal Detail -> Financials Tab)
-    *   Locate the uploaded Audited Financials in the Data Room.
-    *   Click **Trigger AI Extraction**.
-    *   *Automatic:* Celery worker parses the PDF, maps P&L and Balance Sheet items to the `ExtractedFinancials` model.
-2.  **GP: Data Verification** (Frontend GP Dashboard -> Financials Tab)
-    *   Review the extracted numbers.
-    *   **Manual Task:** Verify "Net Profit After Tax" and "Total Assets" against the PDF. Click **Verify Data**.
-3.  **GP: Multi-Vector Analysis** (Frontend GP Dashboard -> Deal Detail -> Header)
-    *   Click **Run Full Analysis**.
-    *   *Automatic:* AI engine runs four sub-tasks:
-        *   **Quality of Earnings (QoE):** Analyzes margins, revenue concentration, and EBITDA adjustments.
-        *   **Commercial Analysis:** Evaluates market size and competitive moat.
-        *   **Operational Analysis:** Reviews supply chain and team structure.
-        *   **Legal/Compliance:** Scans documents for red flags using `GPLegalScannerView`.
-4.  **GP: Red Flag Review** (Frontend GP Dashboard -> Red Flags Tab)
-    *   Review findings identified by AI.
-    *   **Manual Task:** Mark red flags as "Resolved", "Mitigated", or "Critical".
+### 2. Financial AI Extraction
+- **Backend View:** `GPProjectExtractFinancialsView` (POST)
+- **Task:** `tasks.extract_financials_from_document` (Celery)
+- **AI Logic:** `AIModelClient` parses PDF -> `ExtractedFinancials` model.
+- **Model:** `ExtractedFinancials` (Stores 3 years of P&L/BS data).
 
----
+### 3. Legal/Red-Flag Scanning
+- **Backend View:** `GPLegalScannerView` (POST)
+- **Trigger:** Only for `LEGAL` documents or filenames containing "Contract".
+- **Model:** `RedFlagFinding` (Links specific findings to a document).
 
-## Phase 3: Deal Scoring & Internal Approval
-
-**Objective:** Standardize deal evaluation and prepare for the Investment Committee (IC).
-
-1.  **GP: Finlo Scoring** (Frontend GP Dashboard -> Scoring Tab)
-    *   Click **Calculate Score**.
-    *   *Automatic:* System weights factors across Financials, Team, and Market to produce a score (0-100).
-2.  **GP: Investment Memo** (Frontend GP Dashboard -> Memo Tab)
-    *   Click **Generate AI Draft**.
-    *   *Automatic:* System compiles all previous analysis into a structured Investment Memo.
-    *   **Manual Task:** Edit the memo sections for specific investment thesis points. Click **Finalize Memo**.
-3.  **GP: LP Approval** (Frontend GP Dashboard -> Header)
-    *   Click **Approve for LP**.
-    *   *Action:* Project status changes to `GP_APPROVED`. It now becomes visible to LPs (if published).
+### 4. Full Analysis Chain
+- **Backend View:** `GPFullAnalysisView`
+- **Tasks:** `chain(run_qoe_analysis, run_commercial_analysis, run_operational_analysis)`
+- **Models:** `QoEReport`, `CommercialAnalysis`, `OperationalAnalysis`.
 
 ---
 
-## Phase 4: Investment Execution (Closing the Deal)
+## Phase 3: Scoring & LP Approval
+**Objective:** Standardize deal quality and prepare for capital calls.
 
-**Objective:** Finalize the legal transfer and record the investment.
+### 1. Quantitative Scoring
+- **Backend View:** `GPTriggerScoringView`
+- **Model:** `ScoringRun` (Parent), `CriterionScore` (Line items).
+- **Compliance:** `ComplianceGate` records manual clearing of KYC/KYB blocks.
 
-1.  **GP: Close Investment** (Django Admin Area)
-    *   Go to **Deals** -> **PE Investments**.
-    *   Click **Add PE Investment**.
-    *   Select the **Project** and the **Fund**.
-    *   Enter **Investment Amount**, **Ownership %**, and **Entry Valuation**.
-    *   **Manual Task:** This is the bridge between a "Project" (Lead) and an "Investment" (Portfolio Asset).
-
----
-
-## Phase 5: Portfolio Monitoring & Valuations
-
-**Objective:** Track the performance of the closed investment.
-
-1.  **GP: Valuation Tracking** (Frontend GP Dashboard -> Deal Detail -> Valuations Tab)
-    *   Regularly (Quarterly/Annually) click **Add New Valuation**.
-    *   Enter the Fair Value (NPR) and Methodology (e.g., DCF).
-    *   *Automatic:* The system calculates **Implied MoIC** and **Valuation Change %**.
-    *   *Visual:* The **ValuationLineChart** updates automatically.
-2.  **GP: Modelling** (Frontend GP Dashboard -> Modelling Tab)
-    *   Run **DCF** or **LBO** simulations to predict future returns based on current operational data.
-    *   *Automatic:* Calculates Enterprise Value and IRR.
+### 2. Investment Memo
+- **Backend View:** `GPGenerateMemoView`
+- **Model:** `DealMemo`
+- **Action:** Status -> `GP_APPROVED`. Audit Log: `PROJECT_STATUS_CHANGED`.
 
 ---
 
-## Phase 6: Exit Planning & Risk Simulation
+## Phase 4: Investment Execution & Closing
+**Objective:** Bridge the gap between a "Lead" and a "Portfolio Asset".
 
-**Objective:** Plan for the harvest phase and evaluate risks.
+### 1. Closing the Deal
+- **Current Method:** Manual entry in Django Admin.
+- **Model:** `PEInvestment` (Links `PEProject` to a `Fund`).
+- **Data Points:** Entry Valuation, Ownership %, Invested Amount.
 
-1.  **GP: Risk Analysis** (Frontend GP Dashboard -> Monte Carlo Tab)
-    *   Configure exit multiple and growth rate assumptions (Mean/StdDev).
-    *   Click **Run Risk Simulation**.
-    *   *Automatic:* Runs 10,000 simulations using NumPy. Calculates **Probability of Loss** and **Expected MOIC**.
-2.  **GP: Exit Scenarios** (Frontend GP Dashboard -> Exit Planning Tab)
-    *   Create multiple scenarios: "Trade Sale (Base)", "IPO (Upside)", "Liquidation (Downside)".
-    *   Click **Check IPO Eligibility**.
-    *   *Automatic:* `IPOEligibilityEngine` checks SEBON rules for NEPSE listing.
-3.  **GP: IC Approval for Exit** (Frontend GP Dashboard -> Exit Planning Tab)
-    *   **Manual Task:** Super-Admin clicks **Approve** on the target exit scenario.
+### 2. Capital Calls
+- **Model:** `CapitalCall`
+- **Logic:** Calculates LP-wise commitment split based on `LPFundCommitment`.
 
 ---
 
-## Phase 7: Harvest & LP Distribution
+## Phase 5: Monitoring & Exit Planning
+**Objective:** Track Fair Value and simulate future harvest scenarios.
 
-**Objective:** Liquidate the asset and distribute proceeds to LPs.
+### 1. Quarterly Valuations
+- **Viewset:** `ValuationRecordViewSet`
+- **Logic:** Computes **Implied MoIC** and **Valuation Change %** in real-time.
 
-1.  **GP: Record Exit** (Django Admin Area)
-    *   Update the **PE Investment** record with `Exit Date`, `Exit Value`, and `Exit Type`.
-2.  **GP: Waterfall Calculation** (Frontend GP Dashboard -> Pipeline -> Waterfall)
-    *   Enter the total Exit Proceeds.
-    *   *Automatic:* System calculates the split:
-        *   1. Return of Capital (to LPs)
-        *   2. Hurdle / Preferred Return (to LPs)
-        *   3. GP Catch-up (to GP)
-        *   4. Carried Interest (split GP/LP)
-3.  **GP: Distribution** (Django Admin Area)
-    *   Create **Distribution** records for each LP.
-4.  **LP: Statements** (LP Portal)
-    *   *Automatic:* The system generates a PDF **Capital Account Statement** with diagonal watermarks and secure B2 links.
-    *   LP views distributions and updated Portfolio MOIC.
+### 2. Risk Simulation (Monte Carlo)
+- **Backend View:** `MonteCarloSimulationView`
+- **Logic:** Runs 10k simulations via NumPy based on `ExitScenario` assumptions.
+
+### 3. Exit Execution (The Waterfall)
+- **Backend View:** `WaterfallCalculateView`
+- **Logic:** Computes split between LP Return, Hurdle, Catch-up, and Carry.
+- **Model:** `WaterfallRun`.
 
 ---
 
-## Summary of Automatic vs. Manual Actions
-
-| Category | Automatic / AI Task | Manual / GP Task |
-| :--- | :--- | :--- |
-| **Onboarding** | Token generation, Email delivery | Invite creation, Form filling (Entrepreneur) |
-| **Financials** | PDF Extraction, P&L Mapping | Verification, Variance analysis |
-| **Analysis** | QoE, Market analysis, Legal scan | Red flag resolution, Qualitative review |
-| **Scoring** | Quantitative score calculation | Metric overrides, Gate clearing |
-| **Monitoring** | MoIC calc, Chart rendering | Valuation entry, Scenario naming |
-| **Risk** | 10k Monte Carlo simulations | Assumption setting (Mean/StdDev) |
-| **Exit** | IPO Eligibility check, Waterfall split | Closing the deal, Distribution execution |
+## Technical Summary Table
+| Phase | Critical View | Primary Model | AI Engine |
+| :--- | :--- | :--- | :--- |
+| **Sourcing** | `EntrepreneurFinalizeView` | `PEProject` | N/A |
+| **DD** | `GPFullAnalysisView` | `ExtractedFinancials` | DeepSeek R1 / Gemini |
+| **Scoring** | `GPTriggerScoringView` | `ScoringRun` | GPT-4o (Weighting) |
+| **Closing** | `PEInvestmentAdmin` | `PEInvestment` | N/A |
+| **Exit** | `WaterfallCalculateView` | `WaterfallRun` | NumPy (Deterministic) |

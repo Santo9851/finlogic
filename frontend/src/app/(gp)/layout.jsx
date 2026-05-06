@@ -20,17 +20,19 @@ const NAV = [
   { href: '/gp/deals', label: 'Deals', icon: Briefcase },
   { 
     label: 'Portfolio', 
+    href: '/gp/portfolio',
     icon: PieChart,
     children: [
       { href: '/gp/portfolio/analytics', label: 'Analytics' },
       { href: '/gp/portfolio/waterfall', label: 'Waterfall' },
       { href: '/gp/portfolio/valuations', label: 'Valuations' },
       { href: '/gp/portfolio/exit-planning', label: 'Exit Planning' },
+      { href: '/gp/governance', label: 'Governance' },
+      { href: '/gp/compliance', label: 'Compliance' },
     ]
   },
   { href: '/gp/fund-admin/documents', label: 'Fund Admin', icon: Files },
   { href: '/gp/ir-documents', label: 'Shareholder IR', icon: FileText },
-  { href: '/gp/governance', label: 'Governance', icon: ShieldCheck },
   { href: '/gp/audit', label: 'Audit Log', icon: ShieldCheck },
   { href: '/gp/deals/invite', label: 'Invite Entrepreneur', icon: UserPlus },
   { href: '/gp/profile', label: 'Profile Settings', icon: User },
@@ -38,6 +40,7 @@ const NAV = [
 
 function Sidebar({ collapsed, onClose }) {
   const pathname = usePathname();
+  const router = require('next/navigation').useRouter();
   const [openSection, setOpenSection] = useState('Portfolio');
 
   return (
@@ -83,16 +86,19 @@ function Sidebar({ collapsed, onClose }) {
               return (
                 <div key={item.label} className="mb-1">
                   <button
-                    onClick={() => setOpenSection(isOpen ? null : item.label)}
+                    onClick={() => {
+                      if (item.href) router.push(item.href);
+                      setOpenSection(isOpen ? null : item.label);
+                    }}
                     className={`
                       w-full flex items-center gap-3 px-4 py-3 mx-2 rounded-lg
                       text-sm font-medium transition-all group
-                      ${hasActiveChild ? 'text-[#F59F01]' : 'text-white/50 hover:text-white'}
+                      ${hasActiveChild || (item.href && pathname === item.href) ? 'text-[#F59F01]' : 'text-white/50 hover:text-white'}
                     `}
                   >
                     <item.icon size={18} className="flex-shrink-0" />
                     {!collapsed && <span>{item.label}</span>}
-                    {!collapsed && (
+                    {!collapsed && item.children && (
                       <ChevronRight 
                         size={14} 
                         className={`ml-auto transition-transform ${isOpen ? 'rotate-90' : ''}`} 
@@ -108,7 +114,9 @@ function Sidebar({ collapsed, onClose }) {
                           <Link
                             key={child.href}
                             href={child.href}
-                            onClick={onClose}
+                            onClick={() => {
+                              if (window.innerWidth < 1024) onClose();
+                            }}
                             className={`
                               block px-4 py-2 rounded-lg text-xs font-medium transition-all
                               ${active ? 'text-[#F59F01] bg-[#F59F01]/10' : 'text-white/30 hover:text-white/60'}
@@ -129,7 +137,9 @@ function Sidebar({ collapsed, onClose }) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={onClose}
+                onClick={() => {
+                  if (window.innerWidth < 1024) onClose();
+                }}
                 className={`
                   flex items-center gap-3 px-4 py-3 mx-2 rounded-lg mb-1
                   text-sm font-medium transition-all group
