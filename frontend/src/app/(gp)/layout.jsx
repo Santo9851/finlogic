@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, PieChart, ShieldCheck,
-  UserPlus, LogOut, Menu, X, ChevronRight, Files, User, FileText
+  UserPlus, LogOut, Menu, X, ChevronDown, Files, User, FileText, Settings, HelpCircle, ArrowLeftRight, Library
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
@@ -57,8 +57,9 @@ function Sidebar({ collapsed, onClose }) {
         className={`
           fixed top-0 left-0 h-screen z-40
           flex flex-col
-          bg-[#08001a] border-r border-white/8
+          bg-[#140b2e] border-r border-white/8
           transition-all duration-300 ease-in-out
+          overflow-x-hidden
           ${collapsed ? '-translate-x-full lg:translate-x-0 lg:w-16' : 'w-64'}
           lg:static lg:translate-x-0
         `}
@@ -99,9 +100,9 @@ function Sidebar({ collapsed, onClose }) {
                     <item.icon size={18} className="flex-shrink-0" />
                     {!collapsed && <span>{item.label}</span>}
                     {!collapsed && item.children && (
-                      <ChevronRight 
+                      <ChevronDown 
                         size={14} 
-                        className={`ml-auto transition-transform ${isOpen ? 'rotate-90' : ''}`} 
+                        className={`ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} 
                       />
                     )}
                   </button>
@@ -150,7 +151,7 @@ function Sidebar({ collapsed, onClose }) {
               >
                 <item.icon size={18} className="flex-shrink-0" />
                 {!collapsed && <span>{item.label}</span>}
-                {!collapsed && active && <ChevronRight size={14} className="ml-auto" />}
+                {!collapsed && active && <ChevronDown size={14} className="ml-auto -rotate-90" />}
               </Link>
             );
           })}
@@ -186,10 +187,12 @@ function GPSidebarFooter({ collapsed }) {
 
 export default function GPLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <PortalGuard allowedRoles={['admin', 'super_admin']}>
-      <div className="flex h-screen bg-[#060010] overflow-hidden">
+      <div className="flex h-screen bg-[#100226] overflow-hidden">
         <Sidebar
           collapsed={!sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -198,17 +201,63 @@ export default function GPLayout({ children }) {
         {/* Main area */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Top bar */}
-          <header className="h-14 flex items-center gap-3 px-4 border-b border-white/8 bg-[#08001a]/80 backdrop-blur flex-shrink-0">
+          <header className="h-14 flex items-center gap-3 px-4 border-b border-white/8 bg-[#140b2e]/80 backdrop-blur flex-shrink-0">
             <button
               className="lg:hidden text-white/60 hover:text-white p-1"
               onClick={() => setSidebarOpen((v) => !v)}
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-[#F59F01] bg-[#F59F01]/10 px-2.5 py-1 rounded-full font-medium">
-                GP Staff
-              </span>
+            <div className="flex items-center gap-4 ml-auto relative">
+              {/* Profile Dropdown */}
+              <div 
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="flex items-center gap-3 px-3 py-1.5 bg-white/5 border border-white/8 rounded-full hover:bg-white/10 transition-all cursor-pointer active:scale-95"
+              >
+                <div className="w-6 h-6 rounded-full bg-[#F59F01] flex items-center justify-center text-[10px] font-black text-black">
+                  {user?.first_name?.[0] || user?.username?.[0] || 'U'}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-[11px] text-white font-bold leading-tight">{user?.first_name || user?.username}</p>
+                  <p className="text-[9px] text-[#F59F01] uppercase tracking-tighter leading-none">GP Staff</p>
+                </div>
+                <ChevronDown className={`w-3 h-3 text-white/20 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+              </div>
+
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-[#140b2e] border border-white/8 rounded-2xl shadow-2xl z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
+                    <Link 
+                      href="/gp/profile" 
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                    >
+                      <User size={14} /> Profile Settings
+                    </Link>
+                    <Link 
+                      href="/wisdom-hub" 
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-xs text-[#F59F01] hover:text-[#F59F01]/80 hover:bg-white/5 rounded-xl transition-all"
+                    >
+                      <Library size={14} /> My Library
+                    </Link>
+                    <Link 
+                      href="/" 
+                      className="flex items-center gap-3 px-4 py-2.5 text-xs text-white/60 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                    >
+                      <ArrowLeftRight size={14} /> Switch Portal
+                    </Link>
+                    <div className="h-px bg-white/5 my-1" />
+                    <button 
+                      onClick={logout}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs text-rose-400/60 hover:text-rose-400 hover:bg-rose-400/5 rounded-xl transition-all"
+                    >
+                      <LogOut size={14} /> Sign Out
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </header>
 

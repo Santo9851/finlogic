@@ -101,8 +101,8 @@ export default function FinancialsTab({
 
   return (
     <div className={`space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 ${isSplitView ? 'pb-20' : ''}`}>
-      {/* Financials Table */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+      {/* Main Financials Table */}
+      <div className="bg-black/40 rounded-3xl border border-white/5 backdrop-blur-xl overflow-hidden">
         <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
            <div>
               <h3 className="text-xl font-black text-white tracking-tight uppercase flex items-center gap-2">
@@ -111,6 +111,7 @@ export default function FinancialsTab({
               </h3>
               <p className="text-white/40 text-xs mt-1">Directly extracted from submitted documents</p>
            </div>
+           <div className="flex items-center gap-4">
                <span className="text-[10px] text-white/30 font-black uppercase tracking-widest border border-white/10 px-3 py-1 rounded-full">
                 {financials.length} Years Processed
               </span>
@@ -122,8 +123,10 @@ export default function FinancialsTab({
                 Add Year
               </button>
            </div>
+        </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[800px]">
             <thead className="bg-white/5 text-white/20 uppercase text-[10px] font-bold tracking-widest border-b border-white/5">
               <tr>
                 <th className="px-8 py-5">Fiscal Year</th>
