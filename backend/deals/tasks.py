@@ -1,9 +1,11 @@
 import json
 import logging
+import time
 import fitz  # PyMuPDF
 import requests
 from celery import shared_task, chain
 
+from django.db import models
 from django.utils import timezone
 from .models import (
     PEProject, 
@@ -289,16 +291,58 @@ def run_commercial_analysis(project_id):
         
         # Prepare context
         client = AIModelClient()
+        
+        # Aggregate multiple form responses for a richer context
+        all_responses = project.form_responses.all()
+        business_desc = project.legal_name
+        market_info = ""
+        competition = ""
+        usp = ""
+        
+        for r in all_responses:
+            step = r.step_name.lower()
+            data_str = str(r.response_data)
+            if 'info' in step or 'overview' in step: business_desc = data_str
+            if 'market' in step: market_info = data_str
+            if 'competi' in step: competition = data_str
+            if 'usp' in step or 'advantage' in step: usp = data_str
+
+        # --- NEW: SCAN PITCH DECK/BUSINESS PLAN ---
+        # Expanded to include COMMERCIAL category and filename heuristics
+        pitch_deck = project.documents.filter(
+            models.Q(category__in=['PITCH_DECK', 'BUSINESS_PLAN', 'COMMERCIAL']) |
+            models.Q(filename__icontains='deck') |
+            models.Q(filename__icontains='pitch')
+        ).first()
+        
+        pitch_deck_content = ""
+        if pitch_deck:
+            logger.info(f"--- ATTEMPTING PITCH DECK SCAN: {pitch_deck.filename} ---")
+            try:
+                # We reuse the AI client to summarize the pitch deck specifically for commercial strategy
+                pitch_deck_content = client.execute_task(
+                    "document_qualitative_summary", 
+                    {"filename": pitch_deck.filename}, 
+                    project=project,
+                    document=pitch_deck
+                )
+                logger.info(f"--- PITCH DECK SCAN SUCCESS: {len(pitch_deck_content)} chars ---")
+            except Exception as scan_err:
+                logger.error(f"--- PITCH DECK SCAN FAILED: {str(scan_err)} ---")
+                pitch_deck_content = "Document scanning failed. Relying on form responses."
+        else:
+            logger.warning("--- NO PITCH DECK FOUND FOR SCANNING ---")
+
         context_data = {
             "project_name": project.legal_name,
             "sector": project.get_sector_display(),
-            "business_desc": project.legal_name, # Fallback
+            "business_desc": business_desc,
+            "market_info": market_info,
+            "competition": competition,
+            "usp": usp,
+            "pitch_deck_insights": pitch_deck_content,
+            "market_data": f"Sector: {project.get_sector_display()}. Analysis requested for Nepal market context. {market_info} {pitch_deck_content}",
         }
-        
-        # Get business description from form responses if available
-        resp = project.form_responses.filter(step_name__icontains='info').first()
-        if resp:
-            context_data["business_desc"] = str(resp.response_data)
 
         # Call AI (Routed to Gemini)
         raw_json = client.execute_task("commercial_analysis", context_data, project=project)
@@ -315,7 +359,7 @@ def run_commercial_analysis(project_id):
             project=project,
             customer_concentration_pct=data.get("customer_concentration_pct", 0),
             top_customer_names=data.get("top_customer_names", ""),
-            market_positioning_notes=data.get("market_positioning_notes", raw_json),
+            market_positioning_notes=data.get("market_positioning_notes", ""),
             ai_call_log=AICallLog.objects.filter(project=project, task_type='commercial_analysis').first()
         )
         
@@ -333,7 +377,7 @@ def run_commercial_analysis(project_id):
 
 
 @shared_task
-def run_operational_analysis(project_id):
+def run_operational_analysis(project_id, manual_context=""):
     """
     Analyzes technology stack and operational risks.
     """
@@ -347,20 +391,97 @@ def run_operational_analysis(project_id):
         project.save()
         
         client = AIModelClient()
+        
+        # 1. Aggregate Operational Context from Form Responses
+        tech_info = ""
+        team_info = ""
+        ops_info = ""
+        
+        responses = project.form_responses.all()
+        for resp in responses:
+            step = resp.step_name.lower()
+            data_str = json.dumps(resp.response_data)
+            if 'tech' in step or 'product' in step: tech_info = data_str
+            if 'team' in step or 'founder' in step: team_info = data_str
+            if 'operation' in step or 'supply' in step: ops_info = data_str
+
+        # --- NEW: SCAN DOCUMENTS FOR OPERATIONAL DATA ---
+        op_doc = project.documents.filter(
+            models.Q(category__in=['PITCH_DECK', 'BUSINESS_PLAN', 'TECHNICAL', 'COMMERCIAL', 'OPERATIONAL_AUDIT', 'TECH_STACK', 'ORG_CHART']) |
+            models.Q(filename__icontains='tech') |
+            models.Q(filename__icontains='ops')
+        ).first()
+        
+        doc_insights = ""
+        if op_doc:
+            try:
+                doc_insights = client.execute_task(
+                    "document_qualitative_summary", 
+                    {"filename": op_doc.filename, "focus": "technology stack, operational logic, and founder expertise"}, 
+                    project=project,
+                    document=op_doc
+                )
+            except:
+                doc_insights = "No document insights available."
+
         context_data = {
             "project_name": project.legal_name,
-            "ops_data": "See project documents" # Placeholder
+            "tech_stack_raw": tech_info,
+            "team_details": team_info,
+            "operational_notes": ops_info,
+            "manual_context": manual_context,
+            "document_insights": doc_insights,
+            "market_sector": project.get_sector_display()
         }
 
-        # Call AI (Routed to Gemini)
-        raw_json = client.execute_task("operational_analysis", context_data, project=project)
+        # 2. Call AI (Generates JSON + Markdown)
+        # We append a strict formatting instruction to ensure the AI always provides the JSON block
+        context_data["formatting_instruction"] = """
+        IMPORTANT: Your response MUST end with a JSON block enclosed in ```json ... ``` tags.
+        The JSON must follow this exact structure:
+        {
+          "technology_stack": { "Frontend": "...", "Backend": "...", "Database": "...", "Infrastructure": "..." },
+          "key_person_risk_score": 1-10 integer,
+          "supply_chain_risks": ["Risk 1", "Risk 2"],
+          "operational_red_flags": ["Blocker 1"]
+        }
+        Do not include any text after the JSON block.
+        """
         
+        raw_output = client.execute_task("operational_analysis", context_data, project=project)
+        
+        data = {
+            "technology_stack": {}, 
+            "key_person_risk_score": 5, 
+            "supply_chain_risks": [], 
+            "operational_red_flags": [],
+            "thesis_markdown": raw_output
+        }
+
         try:
-            if "```json" in raw_json:
-                raw_json = raw_json.split("```json")[1].split("```")[0].strip()
-            data = json.loads(raw_json)
-        except:
-            data = {"technology_stack": {}, "key_person_risk_score": 5, "supply_chain_risks": [], "operational_red_flags": [raw_json]}
+            # 1. Try standard markdown code block extraction
+            json_str = None
+            if "```json" in raw_output:
+                json_str = raw_output.split("```json")[1].split("```")[0].strip()
+            elif "{" in raw_output and "}" in raw_output:
+                # Fallback: Find the last JSON-like structure in the text
+                import re
+                matches = re.findall(r'\{.*\}', raw_output, re.DOTALL)
+                if matches:
+                    json_str = matches[-1]
+
+            if json_str:
+                parsed = json.loads(json_str)
+                data.update(parsed)
+                # Aggressively clean up markdown: remove everything from the first ```json to the end
+                if "```json" in raw_output:
+                    data["thesis_markdown"] = raw_output.split("```json")[0].strip()
+                elif json_str in raw_output:
+                    data["thesis_markdown"] = raw_output.split(json_str)[0].strip()
+            else:
+                data["operational_red_flags"] = ["AI provided insights but skipped structured metrics. Please review thesis for details."]
+        except Exception as e:
+            logger.warning(f"Operational JSON parsing failed: {e}")
 
         # Create Record
         OperationalAnalysis.objects.create(
@@ -369,6 +490,7 @@ def run_operational_analysis(project_id):
             key_person_risk_score=data.get("key_person_risk_score", 5),
             supply_chain_risks=data.get("supply_chain_risks", []),
             operational_red_flags=data.get("operational_red_flags", []),
+            thesis_markdown=data.get("thesis_markdown", raw_output),
             ai_call_log=AICallLog.objects.filter(project=project, task_type='operational_analysis').first()
         )
         
@@ -492,6 +614,8 @@ def run_finlo_scoring(project_id, user_id=None):
         qoe = project.qoe_reports.first()
         red_flags = list(project.red_flags.all())
         responses = list(project.form_responses.all())
+        operational = project.operational_analyses.first()
+        commercial = project.commercial_analyses.first()
         
         context = {
             "project_name": project.legal_name,
@@ -506,7 +630,10 @@ def run_finlo_scoring(project_id, user_id=None):
                 } for f in financials
             ],
             "qoe_status": qoe.status if qoe else "N/A",
-            "red_flags": [f"{f.pattern.name}: {f.severity}" for f in red_flags if f.pattern],
+            "legal_red_flags": [f"{f.pattern.name}: {f.severity}" for f in red_flags if f.pattern],
+            "operational_thesis": operational.thesis_markdown if operational else "No operational audit performed yet.",
+            "operational_red_flags": operational.operational_red_flags if operational else [],
+            "commercial_notes": commercial.market_positioning_notes if commercial else "No commercial audit performed yet.",
             "submission_data": [str(r.response_data) for r in responses]
         }
         
@@ -783,27 +910,36 @@ def run_full_analysis(project_id, user_id=None):
         if not doc:
             return f"Full analysis aborted: No financial document found for {project.legal_name}"
 
-        # 2. Build the chain
-        analysis_chain = chain(
+        # 2. Build the chain dynamically
+        steps = [
             extract_financials_from_document.si(doc.id),
             run_qoe_analysis.si(project.id),
             run_commercial_analysis.si(project.id),
             run_operational_analysis.si(project.id),
-            run_nepal_compliance_check.si(project.id),
-            scan_legal_document.si(legal_doc.id) if legal_doc else run_finlo_scoring.si(project.id),
-            run_finlo_scoring.si(project.id),
-            generate_memo_draft.si(project.id)
-        )
+            run_nepal_compliance_check.si(project.id)
+        ]
+        
+        if legal_doc:
+            steps.append(scan_legal_document.si(legal_doc.id))
+            
+        steps.append(run_finlo_scoring.si(project.id))
+        steps.append(generate_memo_draft.si(project.id))
+        
+        analysis_chain = chain(*steps)
         
         analysis_chain.apply_async()
         
         # Log Audit Event
         from .signals import _log_audit_event
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        actor = User.objects.filter(id=user_id).first() if user_id else None
+
         _log_audit_event(
             event_type='FULL_ANALYSIS_TRIGGERED',
-            actor_id=user_id,
-            project=project,
-            payload={"document_id": str(doc.id)}
+            actor=actor,
+            obj=project,
+            payload={"document_id": str(doc.id) if doc else None}
         )
         
         return f"Full analysis chain started for {project.legal_name}"

@@ -49,7 +49,19 @@ export const projectService = {
   
   // Trigger score calculation
   calculateScore: async (id) => {
-      const response = await api.post(`/projects/${id}/calculate_score/`);
+      const response = await api.post(`/deals/projects/${id}/trigger-scoring/`);
       return response.data;
+  },
+
+  // Update commercial analysis manually
+  updateCommercialAnalysis: async (projectId, data) => {
+    const response = await api.patch(`/deals/projects/${projectId}/commercial-analysis/`, data);
+    return response.data;
+  },
+
+  // Update operational analysis manually
+  updateOperationalAnalysis: async (projectId, data) => {
+    const response = await api.patch(`/deals/projects/${projectId}/operational-analysis/`, data);
+    return response.data;
   }
 };

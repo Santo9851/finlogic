@@ -64,7 +64,7 @@ class AIModelClient:
     def get_model_for_task(self, task_type):
         return self.TASK_ROUTING.get(task_type, "gemini-2.0-flash")
 
-    def _call_gemini(self, model_name, system_prompt, user_prompt):
+    def _call_gemini(self, model_name, system_prompt, user_prompt, document=None):
         max_retries = 3
         backoff = 10
         
@@ -81,10 +81,22 @@ class AIModelClient:
                     ) if hasattr(types, 'AutomaticFunctionCallingConfig') else None
                 )
                 
+                contents = [user_prompt]
+                if document:
+                    # Logic to attach file part
+                    try:
+                        file_path = document.local_file.path if document.local_file else None
+                        if file_path and os.path.exists(file_path):
+                            with open(file_path, "rb") as f:
+                                file_data = f.read()
+                                contents.append(types.Part.from_bytes(data=file_data, mime_type=document.mime_type or "application/pdf"))
+                    except:
+                        pass # Fallback to text only
+
                 response = self.client.models.generate_content(
                     model=model_name,
                     config=config,
-                    contents=user_prompt
+                    contents=contents
                 )
                 latency = int((time.time() - start_time) * 1000)
                 
@@ -106,14 +118,21 @@ class AIModelClient:
                     # If we hit a "limit: 0" error, it's a project/tier restriction. Fallback immediately.
                     if "limit: 0" in str(e):
                          import logging
-                         next_model = "gemini-2.0-flash" if "latest" in model_name else "gemini-flash-latest"
+                         # Progressive Fallback: 2.0 -> 1.5 Flash -> 1.5 Pro
+                         if "2.0" in model_name:
+                             next_model = "gemini-flash-latest"
+                         elif "flash" in model_name:
+                             next_model = "gemini-1.5-pro"
+                         else:
+                             raise e
+                             
                          logging.getLogger('django').warning(f"Gemini hit quota restriction. Falling back to {next_model} immediately.")
-                         return self._call_gemini(next_model, system_prompt, user_prompt)
+                         return self._call_gemini(next_model, system_prompt, user_prompt, document=document)
 
                     if attempt == max_retries - 1:
-                        # Final fallback
-                        if "latest" in model_name:
-                            return self._call_gemini("gemini-2.0-flash", system_prompt, user_prompt)
+                        # Final attempt with the most stable model
+                        if "flash" in model_name:
+                            return self._call_gemini("gemini-1.5-pro", system_prompt, user_prompt, document=document)
                         raise e
                     time.sleep(backoff)
                     backoff *= 2
@@ -160,7 +179,7 @@ class AIModelClient:
 
     def execute_task(self, task_type, context_data, project=None, document=None):
         """
-        Main entry point for AI tasks.
+        Main entry point for executing a structured AI task.
         Handles budget guarding, prompt retrieval, execution, and logging.
         """
         if not AIBudgetGuard.can_make_call():
@@ -173,7 +192,20 @@ class AIModelClient:
             raise Exception(f"No active prompt found in library for task: {task_type}")
 
         system_prompt = prompt_obj.system_prompt
-        user_prompt = prompt_obj.user_prompt_template.format(**context_data)
+        
+        # Use a safe formatter to prevent KeyError if some keys are missing in context_data
+        from string import Formatter
+        class SafeFormatter(Formatter):
+            def get_value(self, key, args, kwargs):
+                if isinstance(key, str):
+                    return kwargs.get(key, f"[{key} NOT PROVIDED]")
+                return Formatter.get_value(self, key, args, kwargs)
+        
+        user_prompt = SafeFormatter().format(prompt_obj.user_prompt_template, **context_data)
+        
+        # Ensure formatting instructions are appended if not already in the template
+        if "formatting_instruction" in context_data and "{formatting_instruction}" not in prompt_obj.user_prompt_template:
+            user_prompt += "\n\n" + context_data["formatting_instruction"]
         model_name = self.get_model_for_task(task_type)
 
         # DEBUG: Log the payload being sent to the AI
@@ -189,7 +221,7 @@ class AIModelClient:
         try:
             # 2. Call AI
             if "gemini" in model_name:
-                text, p_tokens, c_tokens, latency, cost = self._call_gemini(model_name, system_prompt, user_prompt)
+                text, p_tokens, c_tokens, latency, cost = self._call_gemini(model_name, system_prompt, user_prompt, document=document)
             else:
                 text, p_tokens, c_tokens, latency, cost = self._call_deepseek(model_name, system_prompt, user_prompt)
 

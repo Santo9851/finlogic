@@ -85,13 +85,13 @@ export default function GPDealDetailPage() {
       const res = await api.get(`/deals/projects/${id}/`);
       return res.data;
     },
-    // Poll every 5s if there are active AI tasks (processing or pending)
+    // Poll every 3s if there are active AI tasks (processing or pending)
     refetchInterval: (query) => {
       if (query.state.status === 'error') return false;
       const p = query.state.data?.analysis_progress;
       if (!p) return false;
       const hasActive = Object.values(p).some(s => s === 'processing' || s === 'pending');
-      return hasActive ? 5000 : false;
+      return hasActive ? 3000 : false;
     }
   });
 
@@ -211,25 +211,64 @@ export default function GPDealDetailPage() {
     }
   });
 
-  const operationalMutation = useMutation({
-    mutationFn: async () => {
-      const res = await api.post(`/deals/projects/${id}/run-operational-analysis/`);
-      return res.data;
+  const runOperationalAnalysisMutation = useMutation({
+    mutationFn: (manual_context) => 
+      api.post(`/deals/projects/${id}/run-operational-analysis/`, { manual_context }),
+    onMutate: async () => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      // Snapshot the previous value
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      // Optimistically update to "processing"
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            Operational: 'processing'
+          }
+        });
+      }
+      return { previousDeal };
     },
     onSuccess: () => {
-      toast.success('Operational analysis triggered');
+      toast.success('Operational analysis task triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err, context) => {
+      toast.error('Task trigger failed');
+      // Rollback on error
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
     }
   });
 
   const legalScanMutation = useMutation({
-    mutationFn: async (docId) => {
-      const res = await api.post(`/deals/projects/${id}/documents/${docId}/scan-legal/`);
-      return res.data;
+    mutationFn: (docId) => api.post(`/deals/projects/${id}/documents/${docId}/scan-legal/`),
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            "Legal Scan": 'processing'
+          }
+        });
+      }
+      return { previousDeal };
     },
     onSuccess: () => {
-      toast.success('Legal scan triggered');
+      toast.success('Legal AI scan triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err, context) => {
+      toast.error('Scan trigger failed');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
     }
   });
 
@@ -249,9 +288,35 @@ export default function GPDealDetailPage() {
       const res = await api.post(`/deals/projects/${id}/run-full-analysis/`);
       return res.data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            "Extraction": "processing",
+            "QoE": "processing",
+            "Commercial": "processing",
+            "Operational": "processing",
+            "Compliance": "processing",
+            "Legal Scan": "processing",
+            "Scoring": "processing",
+            "Memo": "processing"
+          }
+        });
+      }
+      return { previousDeal };
+    },
     onSuccess: () => {
       toast.success('Complete AI pipeline triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err, context) => {
+      toast.error('Pipeline trigger failed');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
     }
   });
 
@@ -261,9 +326,29 @@ export default function GPDealDetailPage() {
       const res = await api.post(`/deals/projects/${id}/trigger-scoring/`);
       return res.data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            Scoring: 'processing'
+          }
+        });
+      }
+      return { previousDeal };
+    },
     onSuccess: () => {
       toast.success('FINLO scoring engine triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err, context) => {
+      toast.error('Scoring trigger failed');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
     }
   });
 
@@ -637,8 +722,8 @@ export default function GPDealDetailPage() {
         {activeTab === 'Operations' && (
           <OperationsTab 
             deal={deal} 
-            onRun={() => operationalMutation.mutate()}
-            isLoading={operationalMutation.isLoading}
+            onRun={(context) => runOperationalAnalysisMutation.mutate(context)}
+            isLoading={runOperationalAnalysisMutation.isLoading}
           />
         )}
 

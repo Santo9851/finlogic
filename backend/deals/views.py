@@ -1896,6 +1896,18 @@ class GPProjectCommercialAnalysisView(APIView):
             return Response({"detail": "No commercial analysis found."}, status=status.HTTP_404_NOT_FOUND)
         return Response(CommercialAnalysisSerializer(analysis).data)
 
+    def patch(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        analysis = project.commercial_analyses.first()
+        if not analysis:
+            return Response({"detail": "No commercial analysis found to update."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = CommercialAnalysisSerializer(analysis, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class GPProjectOperationalAnalysisView(APIView):
     """
@@ -1906,7 +1918,8 @@ class GPProjectOperationalAnalysisView(APIView):
 
     def post(self, request, pk):
         project = get_deal_for_user(self.request, pk=pk)
-        task = run_operational_analysis.delay(str(project.pk))
+        manual_context = request.data.get('manual_context', '')
+        task = run_operational_analysis.delay(str(project.pk), manual_context=manual_context)
         return Response({"status": "Operational analysis triggered", "task_id": task.id}, status=status.HTTP_202_ACCEPTED)
 
     def get(self, request, pk):
@@ -1915,6 +1928,18 @@ class GPProjectOperationalAnalysisView(APIView):
         if not analysis:
             return Response({"detail": "No operational analysis found."}, status=status.HTTP_404_NOT_FOUND)
         return Response(OperationalAnalysisSerializer(analysis).data)
+
+    def patch(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        analysis = project.operational_analyses.first()
+        if not analysis:
+            return Response({"detail": "No operational analysis found to update."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = OperationalAnalysisSerializer(analysis, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GPLegalScannerView(APIView):
@@ -2394,7 +2419,7 @@ class PortfolioKPIReportListView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         project_id = self.kwargs.get('pk')
-        project = get_deal_for_user(request, pk=project_id)
+        project = get_deal_for_user(self.request, pk=project_id)
         serializer.save(
             project=project,
             submitted_by=self.request.user,

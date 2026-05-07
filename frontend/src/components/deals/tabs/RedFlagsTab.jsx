@@ -1,24 +1,131 @@
-import React from 'react';
-import { BrainCircuit, CheckCircle2, CheckCircle, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { BrainCircuit, CheckCircle2, CheckCircle, ExternalLink, AlertTriangle, X, ShieldAlert, Edit3 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function RedFlagsTab({ deal, onReview, onViewSource, isSplitView = false }) {
-  const findings = deal.red_flags || [];
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualRisk, setManualRisk] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // Aggregate document-based legal findings
+  const legalFindings = (deal.red_flags || []).map(f => ({
+    ...f,
+    type: 'LEGAL',
+    sourceName: f.document_name,
+    title: f.pattern_detail?.name || 'Legal Risk',
+    content: f.context_snippet,
+    analysis: f.ai_analysis
+  }));
+
+  // Aggregate audit-based operational red flags
+  const latestOp = deal.operational_analyses?.[0];
+  const operationalFindings = (latestOp?.operational_red_flags || []).map((flag, idx) => ({
+    id: `op-${idx}`,
+    type: 'OPERATIONAL',
+    severity: 'WARNING',
+    sourceName: 'Operational Audit',
+    title: 'Operational Red Flag',
+    content: flag,
+    analysis: "This risk was identified during the multimodal operational due diligence audit of the firm's structure, tech stack, and supply chain.",
+    is_reviewed_by_gp: false
+  }));
+
+  // Aggregate financial red flags from QoE reports
+  const latestQoE = deal.qoe_reports?.[0];
+  const financialFindings = (latestQoE && latestQoE.status !== 'CLEAN') ? [{
+    id: `qoe-${latestQoE.id}`,
+    type: 'FINANCIAL',
+    severity: latestQoE.status === 'HIGH_RISK' ? 'CRITICAL' : 'WARNING',
+    sourceName: 'QoE Report',
+    title: `Financial ${latestQoE.status === 'HIGH_RISK' ? 'Critical' : 'Caution'}`,
+    content: `The Quality of Earnings report has flagged this project with a ${latestQoE.status} status.`,
+    analysis: latestQoE.report_text?.substring(0, 500) + '...',
+    is_reviewed_by_gp: false
+  }] : [];
+
+  const findings = [...legalFindings, ...operationalFindings, ...financialFindings].sort((a, b) => {
+    if (a.severity === 'CRITICAL' && b.severity !== 'CRITICAL') return -1;
+    if (a.severity !== 'CRITICAL' && b.severity === 'CRITICAL') return 1;
+    return 0;
+  });
 
   return (
     <div className={`space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ${isSplitView ? 'pb-20' : ''}`}>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-black text-white tracking-tight uppercase flex items-center gap-2">
-            Legal Red Flags
+            Unified Risk Intelligence
             {isSplitView && <span className="bg-[#F59F01] text-black text-[10px] px-2 py-0.5 rounded ml-2">Review Mode</span>}
           </h3>
-          <p className="text-white/40 text-sm mt-1">AI-detected legal risks and contract anomalies</p>
+          <p className="text-white/40 text-sm mt-1">Aggregated legal, operational, and commercial red flags</p>
         </div>
         <div className="flex gap-4">
+           <button 
+             onClick={() => setShowManualEntry(true)}
+             className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+           >
+             <AlertTriangle size={14} className="text-[#F59F01]" />
+             Log Manual Risk
+           </button>
            <SeveritySummary count={findings.filter(f => f.severity === 'CRITICAL').length} label="Critical" color="bg-red-500" />
-           <SeveritySummary count={findings.filter(f => f.severity === 'WARNING').length} label="Warning" color="bg-[#F59F01]" />
+           <SeveritySummary count={findings.filter(f => f.severity === 'WARNING' || f.severity === 'OPERATIONAL' || f.severity === 'FINANCIAL').length} label="Watchlist" color="bg-[#F59F01]" />
         </div>
       </div>
+
+      {/* Manual Risk Entry Modal */}
+      {showManualEntry && (
+        <div className="fixed inset-0 z-[100] bg-[#100226]/80 backdrop-blur-2xl flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="max-w-xl w-full bg-[#140b2e] border border-white/10 p-10 rounded-[2.5rem] shadow-2xl relative">
+            <button 
+              onClick={() => setShowManualEntry(false)}
+              className="absolute top-8 right-8 text-white/20 hover:text-white"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">Log Strategic Risk</h4>
+                <p className="text-white/40 text-xs font-medium">Manually identify a red flag that wasn't captured in automated scans.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Risk Title</label>
+                  <input 
+                    type="text"
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    placeholder="e.g., Hidden Key Person Dependency"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#F59F01]/50 transition-colors"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Risk Description (MD Supported)</label>
+                  <textarea 
+                    value={manualRisk}
+                    onChange={(e) => setManualRisk(e.target.value)}
+                    placeholder="Provide full context about why this is a deal-breaker..."
+                    className="w-full h-40 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#F59F01]/50 transition-colors resize-none font-serif italic"
+                  />
+                </div>
+              </div>
+
+              <button 
+                onClick={() => {
+                  // This will be connected to the onReview or a new onManualRisk prop
+                  setShowManualEntry(false);
+                }}
+                disabled={!manualTitle || manualRisk.length < 50}
+                className="w-full py-4 bg-[#F59F01] text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-[1.02] transition-all disabled:opacity-20"
+              >
+                Log Red Flag to Audit Trail
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6">
         {findings.map((f) => (
@@ -27,32 +134,40 @@ export default function RedFlagsTab({ deal, onReview, onViewSource, isSplitView 
                <div className="flex-1 space-y-4">
                   <div className="flex items-center gap-3">
                      <div className={`w-2 h-2 rounded-full ${f.severity === 'CRITICAL' ? 'bg-red-500 shadow-[0_0_8px_red]' : 'bg-[#F59F01] shadow-[0_0_8px_#F59F01]'}`} />
-                     <h4 className="text-white font-bold text-lg">{f.pattern_detail?.name || 'Manual Finding'}</h4>
-                     <button 
-                       onClick={() => onViewSource(f.document)}
-                       className="text-[10px] text-white/30 font-black uppercase tracking-widest border border-white/10 px-2 py-0.5 rounded hover:bg-white/5 transition-all flex items-center gap-1.5"
-                     >
-                       {f.document_name} <ExternalLink size={10} />
-                     </button>
+                     <h4 className="text-white font-bold text-lg">{f.title}</h4>
+                     <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter ${
+                        f.type === 'LEGAL' ? 'bg-blue-500/10 text-blue-400' : 
+                        f.type === 'FINANCIAL' ? 'bg-emerald-500/10 text-emerald-400' : 
+                        'bg-purple-500/10 text-purple-400'
+                     }`}>
+                        {f.type}
+                     </span>
+                     {f.type === 'LEGAL' ? (
+                       <button 
+                         onClick={() => onViewSource(f.document)}
+                         className="text-[10px] text-white/30 font-black uppercase tracking-widest border border-white/10 px-2 py-0.5 rounded hover:bg-white/5 transition-all flex items-center gap-1.5"
+                       >
+                         {f.sourceName} <ExternalLink size={10} />
+                       </button>
+                     ) : (
+                       <span className="text-[10px] text-white/30 font-black uppercase tracking-widest border border-white/10 px-2 py-0.5 rounded">
+                          {f.sourceName}
+                       </span>
+                     )}
                   </div>
                   
                   <div className="bg-black/20 p-4 rounded-xl border border-white/5 font-mono text-[11px] text-white/60 italic leading-relaxed">
-                     "...{f.context_snippet}..."
+                     {f.type === 'LEGAL' ? `"...${f.content}..."` : f.content}
                   </div>
 
                   <div className="space-y-2">
                      <p className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">AI Analysis & Risk Mitigation</p>
-                     <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap font-serif italic">
-                        {f.ai_analysis}
-                     </p>
+                     <div className="article-body prose prose-invert max-w-none text-white/80 text-sm leading-relaxed font-serif italic">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {f.analysis}
+                        </ReactMarkdown>
+                     </div>
                   </div>
-
-                  {f.pattern_detail?.nepal_context_note && (
-                    <div className="bg-[#F59F01]/5 border border-[#F59F01]/10 p-4 rounded-xl">
-                       <p className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest mb-1">Nepal Regulatory Context</p>
-                       <p className="text-white/60 text-xs">{f.pattern_detail.nepal_context_note}</p>
-                    </div>
-                  )}
                </div>
 
                <div className="w-48 flex flex-col items-end gap-4">
@@ -63,21 +178,27 @@ export default function RedFlagsTab({ deal, onReview, onViewSource, isSplitView 
                        </p>
                        <p className="text-white/20 text-[9px] font-bold">By {f.reviewed_by_detail?.email || 'GP'}</p>
                     </div>
-                  ) : (
+                  ) : f.type === 'LEGAL' ? (
                     <button 
                       onClick={() => onReview(f.id)}
                       className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-lg hover:shadow-white/5"
                     >
                       Mark Reviewed
                     </button>
+                  ) : (
+                    <div className="text-right">
+                      <p className="text-white/20 text-[9px] font-black uppercase tracking-widest italic">Live Audit Data</p>
+                    </div>
                   )}
                   
-                  <button 
-                    onClick={() => onViewSource(f.document)}
-                    className="w-full py-2 bg-[#F59F01]/10 border border-[#F59F01]/20 rounded-xl text-[#F59F01] text-[10px] font-black uppercase tracking-widest hover:bg-[#F59F01] hover:text-black transition-all flex items-center justify-center gap-2"
-                  >
-                    <ExternalLink size={14} /> View Evidence
-                  </button>
+                  {f.type === 'LEGAL' && (
+                    <button 
+                      onClick={() => onViewSource(f.document)}
+                      className="w-full py-2 bg-[#F59F01]/10 border border-[#F59F01]/20 rounded-xl text-[#F59F01] text-[10px] font-black uppercase tracking-widest hover:bg-[#F59F01] hover:text-black transition-all flex items-center justify-center gap-2"
+                    >
+                      <ExternalLink size={14} /> View Evidence
+                    </button>
+                  )}
                </div>
             </div>
           </div>

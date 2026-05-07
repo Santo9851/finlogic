@@ -267,6 +267,9 @@ class PEProjectDocument(models.Model):
         LOAN_DOCS = 'LOAN_DOCS', 'Loan & Offer Letters'
         LOI = 'LOI', 'Letter of Intent'
         SIGNED_CONTRACT = 'SIGNED_CONTRACT', 'Signed Contract'
+        OPERATIONAL_AUDIT = 'OPERATIONAL_AUDIT', 'Operational Audit'
+        TECH_STACK = 'TECH_STACK', 'Technology Stack Info'
+        ORG_CHART = 'ORG_CHART', 'Organization Chart'
         OTHER = 'OTHER', 'Other'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -1098,6 +1101,7 @@ class OperationalAnalysis(models.Model):
     key_person_risk_score = models.IntegerField(default=0, help_text="1 to 10 scale")
     supply_chain_risks = models.JSONField(default=list, blank=True)
     operational_red_flags = models.JSONField(default=list, blank=True)
+    thesis_markdown = models.TextField(null=True, blank=True)
     ai_call_log = models.ForeignKey('AICallLog', on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

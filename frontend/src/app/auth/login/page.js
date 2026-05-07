@@ -101,6 +101,7 @@ function LoginContent() {
                 <input
                   {...register('email')}
                   type="email"
+                  autoComplete="username"
                   className="block w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors"
                   placeholder="you@example.com"
                 />
@@ -122,6 +123,7 @@ function LoginContent() {
                 <input
                   {...register('password')}
                   type="password"
+                  autoComplete="current-password"
                   className="block w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors"
                   placeholder="••••••••"
                 />
