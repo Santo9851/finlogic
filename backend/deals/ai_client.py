@@ -46,15 +46,18 @@ class AIModelClient:
     - Memo Draft, QoE Analysis -> DeepSeek R1
     """
     
-    # Model Mappings
+    # Model Mappings — All tasks route to Gemini
     TASK_ROUTING = {
         "financial_extraction": "gemini-flash-latest",
         "scoring": "gemini-flash-latest", 
         "legal_scan": "gemini-flash-latest",
-        "memo_draft": "deepseek-reasoner",
+        "memo_draft": "gemini-flash-latest",
         "qoe_analysis": "gemini-flash-latest",
         "commercial_analysis": "gemini-flash-latest",
         "operational_analysis": "gemini-flash-latest",
+        "valuation_generation": "gemini-flash-latest",
+        "term_sheet_draft": "gemini-flash-latest",
+        "spa_draft": "gemini-flash-latest",
     }
 
     def __init__(self):
@@ -193,15 +196,34 @@ class AIModelClient:
 
         system_prompt = prompt_obj.system_prompt
         
-        # Use a safe formatter to prevent KeyError if some keys are missing in context_data
-        from string import Formatter
-        class SafeFormatter(Formatter):
-            def get_value(self, key, args, kwargs):
-                if isinstance(key, str):
-                    return kwargs.get(key, f"[{key} NOT PROVIDED]")
-                return Formatter.get_value(self, key, args, kwargs)
+        user_prompt = prompt_obj.user_prompt_template
         
-        user_prompt = SafeFormatter().format(prompt_obj.user_prompt_template, **context_data)
+        # 1. Robust Placeholder Replacement ([[key]], {key}, and nested [[key.subkey]])
+        import re
+        def replace_match(match):
+            # Extract key name, removing [[, ]], {, or }
+            raw_key = match.group(1)
+            key_path = raw_key.split('.')
+            val = context_data
+            try:
+                for k in key_path:
+                    val = val.get(k)
+                    if val is None: break
+                
+                if val is not None:
+                    return str(val)
+                # Fallback to key name if not found in context_data
+                return match.group(0)
+            except:
+                return match.group(0)
+        
+        # Replace [[key.subkey]] and [[key]]
+        user_prompt = re.sub(r'\[\[(.*?)\]\]', replace_match, user_prompt)
+        # Replace {key} - but only if it looks like a variable (no spaces, alphanumeric/underscores)
+        # to avoid accidentally replacing JSON braces.
+        user_prompt = re.sub(r'(?<!\{)\{([a-zA-Z0-9_\.]+)\}(?!\})', replace_match, user_prompt)
+        
+        # Note: We skip standard .format() entirely to prevent crashes with JSON braces {{ }} in templates.
         
         # Ensure formatting instructions are appended if not already in the template
         if "formatting_instruction" in context_data and "{formatting_instruction}" not in prompt_obj.user_prompt_template:

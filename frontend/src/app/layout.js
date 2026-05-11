@@ -4,6 +4,7 @@ import Layout from "@/components/Layout";
 import { AuthProvider } from "@/lib/AuthContext";
 import QueryProvider from "@/lib/QueryProvider";
 import { Toaster } from "sonner";
+import Script from "next/script";
 
 // const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 // const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -130,6 +131,10 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://images.unsplash.com" />
       </head>
       <body className={`antialiased`}>
+        <Script 
+          src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" 
+          strategy="afterInteractive"
+        />
         <QueryProvider>
           <AuthProvider>
             <Layout>{children}</Layout>

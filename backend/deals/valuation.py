@@ -1,26 +1,15 @@
-
 def calculate_dcf(assumptions):
     """
     Calculates DCF valuation based on provided assumptions.
-    assumptions: {
-        "current_revenue": float,
-        "revenue_growth_rate": float,
-        "ebitda_margin": float,
-        "tax_rate": float,
-        "projection_years": int,
-        "wacc": float,
-        "terminal_growth_rate": float,
-        "net_debt": float
-    }
     """
-    rev = assumptions['current_revenue']
-    growth = assumptions['revenue_growth_rate']
-    margin = assumptions['ebitda_margin']
-    tax = assumptions['tax_rate']
-    years = assumptions['projection_years']
-    wacc = assumptions['wacc']
-    t_growth = assumptions['terminal_growth_rate']
-    net_debt = assumptions.get('net_debt', 0)
+    rev = float(assumptions['current_revenue'])
+    growth = float(assumptions['revenue_growth_rate'])
+    margin = float(assumptions['ebitda_margin'])
+    tax = float(assumptions['tax_rate'])
+    years = int(assumptions['projection_years'])
+    wacc = float(assumptions['wacc'])
+    t_growth = float(assumptions['terminal_growth_rate'])
+    net_debt = float(assumptions.get('net_debt', 0))
 
     projections = []
     total_pv_fcf = 0
@@ -29,8 +18,7 @@ def calculate_dcf(assumptions):
     for y in range(1, years + 1):
         current_rev *= (1 + growth)
         ebitda = current_rev * margin
-        ebiat = ebitda * (1 - tax) # Simplified EBIAT
-        # Simplified FCF = EBIAT (assuming capex = depreciation for simplicity)
+        ebiat = ebitda * (1 - tax) 
         fcf = ebiat
         pv_fcf = fcf / ((1 + wacc) ** y)
         
@@ -43,7 +31,7 @@ def calculate_dcf(assumptions):
         })
         total_pv_fcf += pv_fcf
 
-    # Terminal Value (Gordon Growth Method)
+    # Terminal Value
     last_fcf = projections[-1]['fcf']
     terminal_value = (last_fcf * (1 + t_growth)) / (wacc - t_growth)
     pv_terminal_value = terminal_value / ((1 + wacc) ** years)
@@ -51,92 +39,98 @@ def calculate_dcf(assumptions):
     enterprise_value = total_pv_fcf + pv_terminal_value
     equity_value = enterprise_value - net_debt
     
+    # CAGR
+    revenue_cagr = ((projections[-1]['revenue'] / rev) ** (1 / years)) - 1 if years > 0 else 0
+    
     return {
         "projections": projections,
         "total_pv_fcf": round(total_pv_fcf, 2),
         "terminal_value": round(terminal_value, 2),
         "pv_terminal_value": round(pv_terminal_value, 2),
         "enterprise_value": round(enterprise_value, 2),
-        "equity_value": round(equity_value, 2)
+        "equity_value": round(equity_value, 2),
+        "revenue_cagr": round(revenue_cagr, 4)
     }
 
 def calculate_lbo(assumptions):
     """
     Calculates LBO returns based on provided assumptions.
-    assumptions: {
-        "entry_revenue": float,
-        "entry_ebitda": float,
-        "entry_multiple": float,
-        "exit_multiple": float,
-        "exit_year": int,
-        "revenue_growth": float,
-        "ebitda_margin": float,
-        "debt_financing": [{"name": "Senior Debt", "amount": 1000, "rate": 0.08}],
-        "tax_rate": float
-    }
     """
-    entry_ebitda = assumptions['entry_ebitda']
-    entry_multiple = assumptions['entry_multiple']
-    exit_multiple = assumptions['exit_multiple']
-    exit_year = assumptions['exit_year']
-    rev_growth = assumptions['revenue_growth']
-    margin = assumptions['ebitda_margin']
-    debt_list = assumptions['debt_financing']
-    tax_rate = assumptions['tax_rate']
+    entry_revenue = float(assumptions['entry_revenue'])
+    entry_ebitda = float(assumptions['entry_ebitda'])
+    entry_multiple = float(assumptions['entry_multiple'])
+    exit_multiple = float(assumptions['exit_multiple'])
+    exit_year = int(assumptions['exit_year'])
+    rev_growth = float(assumptions['revenue_growth'])
+    margin = float(assumptions['ebitda_margin'])
+    debt_list = assumptions.get('debt_financing', [])
+    tax_rate = float(assumptions['tax_rate'])
+    buyout_pct = float(assumptions.get('buyout_percentage', 100)) / 100.0
     
     # 1. Entry
     entry_ev = entry_ebitda * entry_multiple
-    total_debt = sum([d['amount'] for d in debt_list])
-    entry_equity = entry_ev - total_debt
+    total_debt = sum([float(d['amount']) for d in debt_list])
+    total_entry_equity = entry_ev - total_debt
+    # GP only pays for their percentage stake of the equity
+    gp_entry_equity = total_entry_equity * buyout_pct
     
     # 2. Operations & Debt Paydown
-    current_rev = assumptions['entry_revenue']
-    cumulative_fcf = 0
+    current_rev = entry_revenue
     projections = []
+    
+    # Track remaining debt for interest calculation
+    remaining_debts = [float(d['amount']) for d in debt_list]
     
     for y in range(1, exit_year + 1):
         current_rev *= (1 + rev_growth)
         ebitda = current_rev * margin
-        # Simplified: FCF = EBITDA - Interest - Tax
-        # Calculate interest on remaining debt (simplification: constant debt or simple paydown)
+        
+        # Calculate interest
         interest = 0
-        for d in debt_list:
-            interest += d['amount'] * d['rate']
+        for i, d in enumerate(debt_list):
+            interest += remaining_debts[i] * float(d['rate'])
             
         taxable_income = ebitda - interest
         tax = max(0, taxable_income * tax_rate)
         fcf = ebitda - interest - tax
         
-        # Pay down debt with FCF
+        # Pay down debt
         fcf_for_paydown = fcf
-        for d in debt_list:
-            payment = min(d['amount'], fcf_for_paydown)
-            d['amount'] -= payment
+        for i, d in enumerate(debt_list):
+            payment = min(remaining_debts[i], fcf_for_paydown)
+            remaining_debts[i] -= payment
             fcf_for_paydown -= payment
             
         projections.append({
             "year": y,
+            "revenue": round(current_rev, 2),
             "ebitda": round(ebitda, 2),
             "fcf": round(fcf, 2),
-            "remaining_debt": round(sum([d['amount'] for d in debt_list]), 2)
+            "remaining_debt": round(sum(remaining_debts), 2)
         })
 
     # 3. Exit
     final_ebitda = projections[-1]['ebitda']
     exit_ev = final_ebitda * exit_multiple
-    final_debt = sum([d['amount'] for d in debt_list])
-    exit_equity = exit_ev - final_debt
+    final_debt = sum(remaining_debts)
+    total_exit_equity = exit_ev - final_debt
+    # GP only receives their percentage stake of the equity
+    gp_exit_equity = total_exit_equity * buyout_pct
     
     # 4. Returns
-    moic = exit_equity / entry_equity
-    irr = (moic ** (1 / exit_year)) - 1
+    moic = gp_exit_equity / gp_entry_equity if gp_entry_equity > 0 else 0
+    irr = (moic ** (1 / exit_year)) - 1 if moic > 0 and exit_year > 0 else -1
+    
+    # CAGR
+    revenue_cagr = ((projections[-1]['revenue'] / entry_revenue) ** (1 / exit_year)) - 1 if exit_year > 0 else 0
     
     return {
         "entry_ev": round(entry_ev, 2),
-        "entry_equity": round(entry_equity, 2),
+        "gp_entry_equity": round(gp_entry_equity, 2),
         "projections": projections,
         "exit_ev": round(exit_ev, 2),
-        "exit_equity": round(exit_equity, 2),
+        "gp_exit_equity": round(gp_exit_equity, 2),
         "moic": round(moic, 2),
-        "irr": round(irr, 2)
+        "irr": round(irr, 4),
+        "revenue_cagr": round(revenue_cagr, 4)
     }

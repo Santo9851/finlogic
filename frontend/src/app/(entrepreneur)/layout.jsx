@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Rocket, LogOut, User, Menu, X, ChevronDown, Library, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { PortalGuard } from '@/components/portal/PortalShell';
+import FinlogicLogo from '@/components/FinlogicLogo';
 
 const NAV = [
   { href: '/entrepreneur/dashboard', label: 'My Submissions', icon: LayoutDashboard },
@@ -35,13 +36,10 @@ export default function EntrepreneurLayout({ children }) {
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <div className="px-4 py-5 border-b border-white/8 flex items-center justify-between">
-            <div>
-              <p className="text-white font-bold text-sm">Finlogic</p>
-              <p className="text-[#F59F01] text-[10px] uppercase tracking-widest mt-0.5">Entrepreneur</p>
-            </div>
-            <button className="lg:hidden text-white/40 p-1" onClick={() => setIsMobileMenuOpen(false)}>
-              <X size={20} />
-            </button>
+             <FinlogicLogo size={32} variant="full" darkBg={true} />
+             <button className="lg:hidden text-white/40 p-1" onClick={() => setIsMobileMenuOpen(false)}>
+               <X size={20} />
+             </button>
           </div>
           <nav className="flex-1 py-4">
             {NAV.map(({ href, label, icon: Icon }) => {
@@ -85,7 +83,9 @@ export default function EntrepreneurLayout({ children }) {
             </button>
             
             <div className="flex items-center gap-2 ml-4 lg:ml-0">
-               <span className="lg:hidden text-white font-bold text-xs uppercase tracking-tighter">Finlogic</span>
+               <div className="lg:hidden">
+                 <FinlogicLogo size={28} variant="full" darkBg={true} />
+               </div>
             </div>
 
             <div className="ml-auto flex items-center gap-4 relative">

@@ -13,7 +13,7 @@ export default function PriorityQueue() {
   const { data: projects = [], isLoading, error } = useQuery({
     queryKey: ['deals', 'priority-queue'],
     queryFn: async () => {
-      const res = await api.get('/deals/projects/?status=AI_REVIEW_NEEDED');
+      const res = await api.get('/deals/projects/?status=SUBMITTED,SCREENING');
       const data = res.data?.results ?? res.data ?? [];
       // Sort by days waiting descending
       return data.sort((a, b) => {
@@ -41,7 +41,7 @@ export default function PriorityQueue() {
     <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
       <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
         <h2 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-widest">
-          <BrainCircuit className="text-[#F59F01]" size={16} /> AI Review Queue
+          <BrainCircuit className="text-[#F59F01]" size={16} /> Deal Pipeline Queue
         </h2>
         <span className="text-[10px] bg-[#F59F01]/10 text-[#F59F01] px-2 py-0.5 rounded-full font-bold border border-[#F59F01]/20">
           {projects.length} ACTION NEEDED

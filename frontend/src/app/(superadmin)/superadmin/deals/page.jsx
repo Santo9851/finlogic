@@ -16,12 +16,14 @@ import {
   CheckCircle2,
   Building2,
   Filter,
-  Eye
+  Eye,
+  CircleDollarSign
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import InvestmentFinalizer from '@/components/admin/InvestmentFinalizer';
+import CapitalCallWizard from '@/components/admin/CapitalCallWizard';
 
 export default function SuperAdminDealsPage() {
   const queryClient = useQueryClient();
@@ -29,6 +31,7 @@ export default function SuperAdminDealsPage() {
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFinalizer, setShowFinalizer] = useState(false);
+  const [showCapitalCallWizard, setShowCapitalCallWizard] = useState(false);
   const [selectedCollaboratorIds, setSelectedCollaboratorIds] = useState([]);
 
   // 1. Fetch Deals
@@ -194,6 +197,14 @@ export default function SuperAdminDealsPage() {
                   <div className="flex items-center justify-end gap-2">
                     {deal.status === 'CONTRACT_SIGNED' && (
                       <button 
+                        onClick={() => { setSelectedDeal(deal); setShowCapitalCallWizard(true); }}
+                        className="px-4 py-2 bg-[#F59F01] text-black rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-[#F59F01]/90 transition-all flex items-center gap-2"
+                      >
+                        <CircleDollarSign size={14} /> Issue Call
+                      </button>
+                    )}
+                    {deal.status === 'CAPITAL_CALLED' && (
+                      <button 
                         onClick={() => { setSelectedDeal(deal); setShowFinalizer(true); }}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-purple-700 transition-all flex items-center gap-2"
                       >
@@ -302,6 +313,13 @@ export default function SuperAdminDealsPage() {
             </form>
           </div>
         </div>
+      )}
+      {showCapitalCallWizard && selectedDeal && (
+        <CapitalCallWizard 
+          deal={selectedDeal}
+          onClose={() => { setShowCapitalCallWizard(false); setSelectedDeal(null); }}
+          onRefresh={() => queryClient.invalidateQueries(['superadmin', 'deals'])}
+        />
       )}
       {showFinalizer && selectedDeal && (
         <InvestmentFinalizer 

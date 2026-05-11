@@ -3,7 +3,7 @@ import { FileText, Download, Upload, CheckCircle, ArrowRight, ShieldCheck } from
 
 export default function LOIActionCenter({ deal, onUploadContract }) {
   const loiDoc = deal.documents?.find(d => d.category === 'LOI');
-  const signedContract = deal.documents?.find(d => d.category === 'SIGNED_CONTRACT');
+  const signedContract = deal.documents?.find(d => d.category === 'SIGNED_CONTRACT' || d.category === 'LOI_SIGNED');
 
   if (!loiDoc && deal.status !== 'LOI_ISSUED' && deal.status !== 'CONTRACT_SIGNED') return null;
 
@@ -43,7 +43,7 @@ export default function LOIActionCenter({ deal, onUploadContract }) {
             {signedContract ? (
               <div className="px-8 py-4 bg-[#10b981]/20 text-[#10b981] rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 border border-[#10b981]/30">
                 <CheckCircle size={18} />
-                Contract Uploaded
+                {deal.documents?.find(d => d.category === 'LOI_SIGNED') ? 'LOI Uploaded' : 'Contract Uploaded'}
               </div>
             ) : (
               <button 
@@ -51,7 +51,7 @@ export default function LOIActionCenter({ deal, onUploadContract }) {
                 className="px-8 py-4 bg-transparent border border-white/20 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-white/5 transition-all"
               >
                 <Upload size={18} />
-                Upload Signed Contract
+                {deal.status === 'LOI_ISSUED' ? 'Upload Signed LOI' : 'Upload Signed Contract'}
               </button>
             )}
           </div>

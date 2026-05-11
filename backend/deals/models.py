@@ -113,15 +113,11 @@ class PEProject(models.Model):
         PENDING_SUBMISSION = 'PENDING_SUBMISSION', 'Pending Submission'
         SUBMITTED = 'SUBMITTED', 'Submitted'
         SCREENING = 'SCREENING', 'Screening'
-        AI_REVIEW_NEEDED = 'AI_REVIEW_NEEDED', 'AI Review Needed'
-        GP_APPROVED = 'GP_APPROVED', 'GP Approved'
-        SHORTLISTED = 'SHORTLISTED', 'Shortlisted'
-        VIDEO_PITCH = 'VIDEO_PITCH', 'Video Pitch'
-        DUE_DILIGENCE = 'DUE_DILIGENCE', 'Due Diligence'
+        IC_REVIEW = 'IC_REVIEW', 'IC Review'
         TERM_SHEET = 'TERM_SHEET', 'Term Sheet'
-        IC_APPROVED = 'IC_APPROVED', 'IC Approved'
         LOI_ISSUED = 'LOI_ISSUED', 'LOI Issued'
         CONTRACT_SIGNED = 'CONTRACT_SIGNED', 'Contract Signed'
+        CAPITAL_CALLED = 'CAPITAL_CALLED', 'Capital Called'
         CLOSED = 'CLOSED', 'Closed'
         DECLINED = 'DECLINED', 'Declined'
 
@@ -266,10 +262,14 @@ class PEProjectDocument(models.Model):
         CONTRACTS = 'CONTRACTS', 'Legal Contracts'
         LOAN_DOCS = 'LOAN_DOCS', 'Loan & Offer Letters'
         LOI = 'LOI', 'Letter of Intent'
+        LOI_SIGNED = 'LOI_SIGNED', 'Signed LOI'
+        IC_SIGNED = 'IC_SIGNED', 'Signed IC Memo'
         SIGNED_CONTRACT = 'SIGNED_CONTRACT', 'Signed Contract'
         OPERATIONAL_AUDIT = 'OPERATIONAL_AUDIT', 'Operational Audit'
         TECH_STACK = 'TECH_STACK', 'Technology Stack Info'
         ORG_CHART = 'ORG_CHART', 'Organization Chart'
+        COMPLIANCE = 'COMPLIANCE', 'Compliance Evidence'
+        SPA_DRAFT = 'SPA_DRAFT', 'SPA Draft'
         OTHER = 'OTHER', 'Other'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -521,6 +521,11 @@ class CapitalCall(models.Model):
     fund = models.ForeignKey(
         Fund, on_delete=models.PROTECT, related_name='capital_calls'
     )
+    project = models.ForeignKey(
+        PEProject, on_delete=models.PROTECT, related_name='capital_calls',
+        null=True, blank=True,
+        help_text='The deal this capital call is funding'
+    )
     lp_commitment = models.ForeignKey(
         LPFundCommitment,
         on_delete=models.PROTECT,
@@ -692,13 +697,28 @@ class ImmutableAuditEvent(models.Model):
         FORM_STEP_SAVED = 'FORM_STEP_SAVED', 'Form Step Saved'
         PROJECT_SUBMITTED = 'PROJECT_SUBMITTED', 'Project Submitted'
         INVESTMENT_CREATED = 'INVESTMENT_CREATED', 'Investment Created'
+        INVESTMENT_CLOSED = 'INVESTMENT_CLOSED', 'Investment Closed'
         CAPITAL_CALL_ISSUED = 'CAPITAL_CALL_ISSUED', 'Capital Call Issued'
+        CAPITAL_CALLED = 'CAPITAL_CALLED', 'Capital Called'
+        CAPITAL_RECEIVED = 'CAPITAL_RECEIVED', 'Capital Received'
         DISTRIBUTION_MADE = 'DISTRIBUTION_MADE', 'Distribution Made'
         SEBON_FILING_SUBMITTED = 'SEBON_FILING_SUBMITTED', 'SEBON Filing Submitted'
         USER_MANAGEMENT = 'USER_MANAGEMENT', 'User Management Action'
         FUND_MANAGEMENT = 'FUND_MANAGEMENT', 'Fund Management Action'
         PROMPT_MANAGEMENT = 'PROMPT_MANAGEMENT', 'Prompt Library Action'
         COMPLIANCE_REVIEW = 'COMPLIANCE_REVIEW', 'Compliance Review Action'
+        # Deal conversion events
+        VALUATION_OVERRIDE = 'VALUATION_OVERRIDE', 'Valuation Override'
+        TERM_OVERRIDE = 'TERM_OVERRIDE', 'Term Sheet Override'
+        SPA_OVERRIDE = 'SPA_OVERRIDE', 'SPA Draft Override'
+        IC_MEMO_SIGNED = 'IC_MEMO_SIGNED', 'IC Memo Signed'
+        LOI_ISSUED = 'LOI_ISSUED', 'LOI Issued'
+        LOI_SIGNED_BY_ENTREPRENEUR = 'LOI_SIGNED_BY_ENTREPRENEUR', 'LOI Signed by Entrepreneur'
+        MEMO_FINALIZED = 'MEMO_FINALIZED', 'IC Memo Finalized'
+        SCORING_OVERRIDE = 'SCORING_OVERRIDE', 'Scoring Override'
+        COMPLIANCE_CLEARED = 'COMPLIANCE_CLEARED', 'Compliance Gate Cleared'
+        COMPLIANCE_RESET = 'COMPLIANCE_RESET', 'Compliance Gate Reset'
+        DEAL_APPROVED_FOR_LP = 'DEAL_APPROVED_FOR_LP', 'Deal Approved for LP'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event_type = models.CharField(max_length=50, choices=EventType.choices)
@@ -1421,7 +1441,8 @@ class DealMemo(models.Model):
     
     status = models.CharField(max_length=20, choices=[
         ('DRAFT', 'Draft'),
-        ('FINAL', 'Final')
+        ('FINAL', 'Final'),
+        ('IC_SIGNED', 'IC Signed')
     ], default='DRAFT')
     
     version = models.PositiveIntegerField(default=1)
@@ -1644,3 +1665,80 @@ class ExitScenario(models.Model):
 
 
 
+# ---------------------------------------------------------------------------
+# 13. TermSheet
+# ---------------------------------------------------------------------------
+
+class TermSheet(models.Model):
+    """AI-generated term sheet with GP override capability."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(PEProject, on_delete=models.CASCADE, related_name='term_sheets')
+    
+    # Key financial terms (AI-generated, GP-overridable)
+    terms = models.JSONField(
+        default=dict,
+        help_text="investment_amount_npr, pre_money_valuation_npr, ownership_pct, "
+                  "board_seats, observer_rights, exclusivity_days, vesting_schedule, "
+                  "exit_strategy_summary"
+    )
+    
+    # Track what AI originally generated vs GP overrides
+    ai_generated_terms = models.JSONField(default=dict, blank=True)
+    
+    version = models.PositiveIntegerField(default=1)
+    
+    status = models.CharField(max_length=20, choices=[
+        ('DRAFT', 'Draft'),
+        ('NEGOTIATING', 'Under Negotiation'),
+        ('AGREED', 'Terms Agreed'),
+    ], default='DRAFT')
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_term_sheets'
+        ordering = ['-version', '-created_at']
+
+    def __str__(self):
+        return f"Term Sheet v{self.version} for {self.project.legal_name}"
+
+
+# ---------------------------------------------------------------------------
+# 14. SPADraft
+# ---------------------------------------------------------------------------
+
+class SPADraft(models.Model):
+    """AI-generated Share Purchase Agreement draft with GP override capability."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    project = models.ForeignKey(PEProject, on_delete=models.CASCADE, related_name='spa_drafts')
+    
+    # SPA sections stored as structured JSON
+    sections = models.JSONField(
+        default=dict,
+        help_text="recitals, definitions, purchase_price, representations, "
+                  "conditions_precedent, covenants, indemnification, governing_law"
+    )
+    
+    # Track AI original vs GP overrides
+    ai_generated_sections = models.JSONField(default=dict, blank=True)
+    
+    version = models.PositiveIntegerField(default=1)
+    
+    status = models.CharField(max_length=20, choices=[
+        ('DRAFT', 'Draft'),
+        ('REVIEW', 'Under Legal Review'),
+        ('FINAL', 'Final'),
+    ], default='DRAFT')
+    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_spa_drafts'
+        ordering = ['-version', '-created_at']
+
+    def __str__(self):
+        return f"SPA Draft v{self.version} for {self.project.legal_name}"

@@ -16,7 +16,8 @@ import {
   Building2,
   History,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Calendar
 } from 'lucide-react';
 import api from '@/services/api';
 import { MetricCard } from '@/components/portal/PortalShell';
@@ -111,7 +112,40 @@ export default function LPDashboard() {
               </a>
             </div>
           )}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+          {/* Pending Capital Calls */}
+          {dashboard?.pending_calls?.length > 0 && (
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-6 mb-8 animate-in slide-in-from-top-6">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-widest mb-4">
+                <Wallet size={16} className="text-purple-400" /> Pending Capital Calls
+              </h3>
+              <div className="space-y-3">
+                {dashboard.pending_calls.map(call => (
+                  <div key={call.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white/5 rounded-xl border border-white/5 group hover:border-purple-500/30 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                        <ArrowUpRight size={20} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">{call.fund_name} - Drawdown</p>
+                        <p className="text-xs text-white/40 flex items-center gap-2">
+                          <Calendar size={12} /> Due: {new Date(call.due_date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-6 text-right">
+                      <div>
+                        <p className="text-sm font-black text-white">NPR {parseFloat(call.amount_npr).toLocaleString()}</p>
+                        <p className="text-[10px] text-purple-400 uppercase font-black tracking-widest">Awaiting Payment</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard 
               label="Committed Capital" 
               value={`NPR ${(dashboard?.total_committed_npr / 1e6).toFixed(1)}M`} 

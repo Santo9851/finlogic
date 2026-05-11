@@ -64,7 +64,7 @@ def generate_capital_account_pdf(lp_commitment, quarter, year):
     
     for inv in investments:
         # Only show approved/closed deals
-        if inv.project.status not in [PEProject.Status.GP_APPROVED, PEProject.Status.CLOSED]:
+        if inv.project.status not in [PEProject.Status.LOI_ISSUED, PEProject.Status.CONTRACT_SIGNED, PEProject.Status.CAPITAL_CALLED, PEProject.Status.CLOSED]:
             continue
             
         # Use exit_value if exited, otherwise use investment_amount (placeholder for current valuation)

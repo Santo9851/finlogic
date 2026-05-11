@@ -219,11 +219,11 @@ export default function EntrepreneurSubmissionDetailPage() {
             <h3 className="text-xl font-bold text-white mb-6">Upload Signed Contract</h3>
             <FileUploader 
               projectId={deal.id} 
-              category="SIGNED_CONTRACT"
+              category={deal.status === 'LOI_ISSUED' ? 'LOI_SIGNED' : 'SIGNED_CONTRACT'}
               isEntrepreneur={true}
               onSuccess={() => {
                 setShowUpload(false);
-                toast.success("Contract uploaded successfully");
+                toast.success(deal.status === 'LOI_ISSUED' ? "Signed LOI uploaded successfully" : "Contract uploaded successfully");
                 // Refresh data
                 api.get(`/entrepreneur/submissions/${id}/`).then(r => setDeal(r.data));
               }}

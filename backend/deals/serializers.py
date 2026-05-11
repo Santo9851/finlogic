@@ -49,6 +49,8 @@ from .models import (
     ExitScenario,
     FilingTypeConfig,
     ConflictOfInterest,
+    TermSheet,
+    SPADraft,
 )
 
 
@@ -228,6 +230,8 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
     regulatory_checklist = serializers.SerializerMethodField()
     latest_memo = serializers.SerializerMethodField()
     kpi_reports = serializers.SerializerMethodField()
+    term_sheets = serializers.SerializerMethodField()
+    spa_drafts = serializers.SerializerMethodField()
     can_access = serializers.SerializerMethodField()
     collaborators_detail = UserMiniSerializer(source='collaborators', many=True, read_only=True)
 
@@ -253,6 +257,7 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
             'data_room_completeness', 'documents', 'form_responses', 'audit_events',
             'extracted_financials', 'qoe_reports', 'commercial_analyses', 'operational_analyses', 'red_flags',
             'latest_scoring', 'valuations', 'regulatory_checklist', 'latest_memo', 'kpi_reports',
+            'term_sheets', 'spa_drafts',
             'created_by', 'created_by_detail', 'collaborators', 'collaborators_detail', 'can_access', 'created_at', 'updated_at',
 
 
@@ -324,6 +329,12 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
 
     def get_kpi_reports(self, obj):
         return PortfolioKPIReportSerializer(obj.kpi_reports.all(), many=True).data
+
+    def get_term_sheets(self, obj):
+        return TermSheetSerializer(obj.term_sheets.all(), many=True).data
+
+    def get_spa_drafts(self, obj):
+        return SPADraftSerializer(obj.spa_drafts.all(), many=True).data
 
 
 
@@ -549,17 +560,30 @@ class PEInvestmentSerializer(serializers.ModelSerializer):
 
 class CapitalCallSerializer(serializers.ModelSerializer):
     fund_name = serializers.CharField(source='fund.name', read_only=True)
+    project_name = serializers.CharField(source='project.legal_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    lp_profile_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = CapitalCall
         fields = (
-            'id', 'fund', 'fund_name', 'lp_commitment',
+            'id', 'fund', 'fund_name', 'project', 'project_name', 'lp_commitment',
+            'lp_profile_detail',
             'call_date', 'due_date', 'amount_npr', 'status', 'status_display',
             'notice_sent_at', 'received_at', 'notes',
             'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
+
+    def get_lp_profile_detail(self, obj):
+        if obj.lp_commitment and obj.lp_commitment.lp_profile:
+             profile = obj.lp_commitment.lp_profile
+             return {
+                 'id': str(profile.id),
+                 'full_name': profile.full_name,
+                 'organization': profile.organization
+             }
+        return None
 
 
 # ---------------------------------------------------------------------------
@@ -646,7 +670,7 @@ class LPDashboardFundSerializer(serializers.ModelSerializer):
 
     def get_approved_deals_count(self, obj):
         return obj.pe_projects.filter(
-            status__in=[PEProject.Status.GP_APPROVED, PEProject.Status.CLOSED]
+            status__in=[PEProject.Status.LOI_ISSUED, PEProject.Status.CONTRACT_SIGNED, PEProject.Status.CAPITAL_CALLED, PEProject.Status.CLOSED]
         ).count()
 
     def get_total_documents_count(self, obj):
@@ -964,5 +988,23 @@ class IPOEligibilitySerializer(serializers.Serializer):
 
 
 
+# ---------------------------------------------------------------------------
+# Term Sheet & SPA Draft Serializers
+# ---------------------------------------------------------------------------
+
+class TermSheetSerializer(serializers.ModelSerializer):
+    created_by_detail = UserMiniSerializer(source='created_by', read_only=True)
+    
+    class Meta:
+        model = TermSheet
+        fields = '__all__'
+        read_only_fields = ('id', 'project', 'ai_generated_terms', 'created_by', 'created_at', 'updated_at')
 
 
+class SPADraftSerializer(serializers.ModelSerializer):
+    created_by_detail = UserMiniSerializer(source='created_by', read_only=True)
+    
+    class Meta:
+        model = SPADraft
+        fields = '__all__'
+        read_only_fields = ('id', 'project', 'ai_generated_sections', 'created_by', 'created_at', 'updated_at')

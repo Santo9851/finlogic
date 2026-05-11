@@ -13,7 +13,7 @@ import {
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { PortalGuard } from '@/components/portal/PortalShell';
-import { FinlogicLogo } from '@/components/FinlogicLogo';
+import FinlogicLogo from '@/components/FinlogicLogo';
 
 const NAV = [
   { href: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -66,15 +66,10 @@ function Sidebar({ collapsed, onClose }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-white/8">
-          <div className="w-8 h-8 rounded-lg bg-[#F59F01]/10 flex items-center justify-center flex-shrink-0">
-            <div className="w-4 h-4 rounded-sm bg-[#F59F01]" />
-          </div>
-          {!collapsed && (
-            <div>
-              <p className="text-white font-bold text-sm leading-none">Finlogic</p>
-              <p className="text-[#F59F01] text-[10px] uppercase tracking-widest mt-0.5">GP Portal</p>
-            </div>
-          )}
+           <FinlogicLogo size={32} variant={collapsed ? "icon" : "full"} darkBg={true} />
+           {!collapsed && (
+             <span className="text-[#F59F01] text-[10px] font-black uppercase tracking-widest mt-1 ml-auto">GP Staff</span>
+           )}
         </div>
 
         {/* Nav */}

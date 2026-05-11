@@ -65,6 +65,8 @@ from .models import (
     ExitScenario,
     ExtractedFinancials,
     QoEReport,
+    TermSheet,
+    SPADraft,
 )
 
 
@@ -122,6 +124,9 @@ from .serializers import (
     IRDocumentSerializer,
     GovernanceProposalSerializer,
     ProposalVoteSerializer,
+    TermSheetSerializer,
+    SPADraftSerializer,
+    CapitalCallSerializer,
 )
 
 from .valuation import calculate_dcf, calculate_lbo
@@ -424,7 +429,7 @@ class LPPortfolioView(APIView):
         
         projects = PEProject.objects.filter(
             fund_id__in=fund_ids,
-            status__in=[PEProject.Status.GP_APPROVED, PEProject.Status.CLOSED]
+            status__in=[PEProject.Status.LOI_ISSUED, PEProject.Status.CONTRACT_SIGNED, PEProject.Status.CAPITAL_CALLED, PEProject.Status.CLOSED]
         ).distinct()
 
         serializer = LPPortfolioSerializer(projects, many=True)
@@ -1094,7 +1099,10 @@ class GPProjectListView(generics.ListCreateAPIView):
         # Filters
         params = self.request.query_params
         if status_filter := params.get('status'):
-            qs = qs.filter(status=status_filter)
+            if ',' in status_filter:
+                qs = qs.filter(status__in=status_filter.split(','))
+            else:
+                qs = qs.filter(status=status_filter)
         if fund_id := params.get('fund_id'):
             qs = qs.filter(fund_id=fund_id)
         if deal_type := params.get('deal_type'):
@@ -1320,7 +1328,11 @@ class LPDashboardView(APIView):
             'total_called_npr': float(total_called),
             'total_paid_in_npr': float(paid_in_capital),
             'total_distributed_npr': float(total_distributed),
-            'nav_npr': nav
+            'nav_npr': nav,
+            'pending_calls': CapitalCallSerializer(
+                CapitalCall.objects.filter(lp_commitment__in=commitments, status='CALLED').select_related('fund'),
+                many=True
+            ).data,
         })
 
 
@@ -1338,7 +1350,7 @@ class LPFundDetailView(APIView):
         # Only approved / closed deals visible to LP
         deals = PEProject.objects.filter(
             fund=fund,
-            status__in=[PEProject.Status.GP_APPROVED, PEProject.Status.CLOSED],
+            status__in=[PEProject.Status.LOI_ISSUED, PEProject.Status.CONTRACT_SIGNED, PEProject.Status.CAPITAL_CALLED, PEProject.Status.CLOSED],
         )
 
         return Response({
@@ -2043,7 +2055,44 @@ class GPCriterionOverrideView(APIView):
             request=request
         )
 
-        return Response(CriterionScoreSerializer(score).data)
+class GPProjectUploadLocalView(APIView):
+    """
+    POST /api/deals/projects/{project_id}/upload-local/
+    Direct multipart upload to local storage for GP staff.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def post(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        file_obj = request.FILES.get('file')
+        category = request.data.get('document_type', 'OTHER')
+
+        if not file_obj:
+            return Response({'detail': 'No file uploaded.'}, status=400)
+        
+        # 3MB Size Limit
+        if file_obj.size > 3 * 1024 * 1024:
+            return Response({'detail': 'File size exceeds the 3MB limit.'}, status=400)
+
+        doc = PEProjectDocument.objects.create(
+            project=project,
+            category=category,
+            filename=file_obj.name,
+            file_key=f"local/gp/{project.id}/{file_obj.name}",
+            mime_type=file_obj.content_type,
+            file_size=file_obj.size,
+            local_file=file_obj,
+            uploaded_by=request.user,
+            is_confirmed=True,
+        )
+
+        return Response({
+            'document_id': doc.id,
+            'filename': doc.filename,
+            'category': doc.category,
+            'url': doc.url
+        }, status=status.HTTP_201_CREATED)
 
 
 class GPClearComplianceGateView(APIView):
@@ -2066,6 +2115,10 @@ class GPClearComplianceGateView(APIView):
 
         # Handle documents if provided
         doc_ids = request.data.get('document_ids', [])
+        single_doc = request.data.get('document_id')
+        if single_doc:
+            doc_ids.append(single_doc)
+            
         if doc_ids:
             gate.documents.set(doc_ids)
 
@@ -2080,51 +2133,35 @@ class GPClearComplianceGateView(APIView):
         return Response(ComplianceGateSerializer(gate).data)
 
 
-class GPApproveForLPView(APIView):
+class GPResetComplianceGateView(APIView):
     """
-    POST /api/deals/projects/<uuid:project_id>/approve-for-lp/
+    POST /api/deals/projects/<uuid:project_id>/scoring/gates/<str:gate_id>/reset/
     """
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
-    def post(self, request, pk):
-        project = get_deal_for_user(self.request, pk=pk)
-        run = project.scoring_runs.first()
-        
+    def post(self, request, pk, gate_id):
+        run = ScoringRun.objects.filter(project_id=pk).first()
         if not run:
-            return Response({"detail": "Scoring must be completed first"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 1. Check Compliance Gates
-        uncleared = run.compliance_gates.exclude(status='CLEARED').count()
-        if uncleared > 0:
-            return Response({"detail": f"{uncleared} compliance gates are still pending."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 2. Check Assessment Summary (>100 words)
-        summary = request.data.get('assessment_summary', '')
-        word_count = len(summary.split())
-        if word_count < 100:
-            return Response({"detail": f"Assessment summary must be at least 100 words (current: {word_count})."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # 3. Check Critical Red Flags
-        critical_flags = project.red_flags.filter(severity='CRITICAL', is_reviewed_by_gp=False).count()
-        if critical_flags > 0:
-            return Response({"detail": f"There are {critical_flags} unaddressed critical red flags."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Approve
-        project.status = 'GP_APPROVED'
-        project.save()
+            return Response({"detail": "No scoring run found"}, status=status.HTTP_404_NOT_FOUND)
         
-        run.gp_assessment_summary = summary
-        run.save()
+        gate = get_object_or_404(ComplianceGate, scoring_run=run, gate_id=gate_id)
+        gate.status = 'PENDING'
+        gate.cleared_by = None
+        gate.cleared_at = None
+        gate.notes = ""
+        gate.documents.clear()
+        gate.save()
 
         _log_audit_event(
-            event_type='DEAL_APPROVED_FOR_LP',
+            event_type='COMPLIANCE_RESET',
             actor=request.user,
-            obj=project,
-            payload={"final_score": run.total_deal_score},
+            obj=gate,
+            payload={"gate": gate_id},
             request=request
         )
 
-        return Response({"status": "Project approved for LP visibility"})
+        return Response(ComplianceGateSerializer(gate).data)
+
 
 
 class GPDCFValuationView(APIView):
@@ -2286,6 +2323,14 @@ class GPGenerateMemoView(APIView):
 
     def post(self, request, pk):
         project = get_deal_for_user(self.request, pk=pk)
+        
+        # Force immediate processing state
+        progress = project.analysis_progress or {}
+        progress['Memo'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
+        
+        from .tasks import generate_memo_draft
         generate_memo_draft.delay(project.id)
         return Response({"status": "AI memo generation triggered"}, status=status.HTTP_202_ACCEPTED)
 
@@ -2313,8 +2358,6 @@ class GPMemoFinalizeView(APIView):
 
     def post(self, request, pk, memo_id):
         from .pdf_utils import render_pdf
-        from .b2_utils import get_b2_client
-        from django.conf import settings
         from django.utils import timezone
         
         project = get_deal_for_user(request, pk=pk)
@@ -2342,51 +2385,42 @@ class GPMemoFinalizeView(APIView):
         except Exception as e:
             return Response({"detail": f"PDF Generation failed: {str(e)}"}, status=500)
             
-        # 3. Upload to B2
+        # 3. Create Document (Local Storage)
         file_name = f"IC_Memo_{project.legal_name.replace(' ', '_')}_v{memo.version}.pdf"
-        file_key = f"projects/{project.id}/legal/{file_name}"
+        
+        from django.core.files.base import ContentFile
         
         try:
-            bucket = getattr(settings, 'B2_BUCKET_NAME', '')
-            client = get_b2_client()
-            client.put_object(
-                Bucket=bucket,
-                Key=file_key,
-                Body=pdf_bytes,
-                ContentType='application/pdf'
-            )
-            
-            # Create Document record
             doc = PEProjectDocument.objects.create(
                 project=project,
-                file_key=file_key,
                 filename=file_name,
                 file_size=len(pdf_bytes),
                 mime_type='application/pdf',
                 category='LEGAL',
-                uploaded_by=request.user
+                uploaded_by=request.user,
+                local_file=ContentFile(pdf_bytes, name=file_name),
+                is_confirmed=True
             )
             
-            # 4. Update Project Status
-            project.status = PEProject.Status.IC_APPROVED
-            project.save()
+            # Note: Project status stays in IC_REVIEW. Signed IC memo upload advances to TERM_SHEET.
             
             # 5. Log Audit Event
             ImmutableAuditEvent.objects.create(
                 event_type='MEMO_FINALIZED',
-                project=project,
                 actor=request.user,
+                object_id=project.id,
+                object_repr=str(project),
+                content_type_label='deals.PEProject',
                 payload={'memo_id': str(memo.id), 'document_id': str(doc.id)}
             )
             
             return Response({
                 "status": "Memo finalized and IC approved",
-                "document_id": str(doc.id),
-                "url": doc.url
+                "document_id": str(doc.id)
             })
             
         except Exception as e:
-            return Response({"detail": f"Upload failed: {str(e)}"}, status=500)
+            return Response({"detail": f"Local save failed: {str(e)}"}, status=500)
 
 
 class GPFullAnalysisView(APIView):
@@ -3000,3 +3034,459 @@ class ExitSummaryView(APIView):
             "scenario_count": scenarios.count(),
             "exit_type_distribution": list(exit_types)
         })
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: AI Valuation, IC Signed Upload, Term Sheet, SPA Draft Views
+# ---------------------------------------------------------------------------
+
+class GPGenerateAIValuationView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/generate-ai-valuation/
+    Triggers Gemini-powered DCF/LBO assumption generation.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+
+        if project.status not in [PEProject.Status.IC_REVIEW, PEProject.Status.TERM_SHEET]:
+            return Response({"detail": "AI valuation is only available during IC_REVIEW or TERM_SHEET stage."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Set progress to processing immediately to avoid race condition in polling
+        progress = project.analysis_progress or {}
+        progress['Valuation'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
+
+        from .tasks import generate_ai_valuation
+        generate_ai_valuation.delay(str(project.id), str(request.user.id))
+
+        return Response({"status": "AI valuation generation started."})
+
+
+class GPValuationOverrideView(APIView):
+    """
+    PATCH /api/deals/projects/<uuid:pk>/valuations/<uuid:val_id>/override/
+    Override a specific field in a valuation model. Logged to immutable audit.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def patch(self, request, pk, val_id):
+        project = get_deal_for_user(self.request, pk=pk)
+        val = get_object_or_404(ValuationModel, pk=val_id, project=project)
+
+        field_path = request.data.get('field')  # e.g., "assumptions.wacc" or "outputs.equity_value"
+        new_value = request.data.get('value')
+        remarks = request.data.get('remarks', '')
+
+        if not field_path or new_value is None:
+            return Response({"detail": "'field' and 'value' are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Split field path into target dict and key
+        parts = field_path.split('.')
+        if len(parts) != 2 or parts[0] not in ('assumptions', 'outputs'):
+            return Response({"detail": "Field path must be 'assumptions.<key>' or 'outputs.<key>'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        target_dict_name, key = parts
+        target_dict = val.assumptions if target_dict_name == 'assumptions' else val.outputs
+        old_value = target_dict.get(key)
+
+        target_dict[key] = new_value
+        if target_dict_name == 'assumptions':
+            val.assumptions = target_dict
+        else:
+            val.outputs = target_dict
+        val.save()
+
+        # Audit log
+        ImmutableAuditEvent.objects.create(
+            event_type='VALUATION_OVERRIDE',
+            actor=request.user,
+            object_id=project.id,
+            object_repr=str(project),
+            content_type_label='deals.ValuationModel',
+            payload={
+                'valuation_id': str(val.id),
+                'model_type': val.model_type,
+                'field': field_path,
+                'old_value': old_value,
+                'new_value': new_value,
+                'remarks': remarks,
+            }
+        )
+
+        return Response({"status": "Override applied", "field": field_path, "old": old_value, "new": new_value})
+
+
+class GPUploadSignedICMemoView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/upload-signed-ic-memo/
+    Upload a physically signed IC memo document. Advances deal to TERM_SHEET.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+
+        if project.status != PEProject.Status.IC_REVIEW:
+            return Response({"detail": "Project must be in IC_REVIEW to upload signed IC memo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"detail": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Verify a finalized memo exists
+        memo = project.memos.filter(status__in=['FINAL', 'IC_SIGNED']).first()
+        if not memo:
+            return Response({"detail": "A finalized IC memo must exist before uploading a signed copy."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Save document locally
+        doc = PEProjectDocument.objects.create(
+            project=project,
+            filename=file.name,
+            category='IC_SIGNED',
+            local_file=file,
+            mime_type=file.content_type,
+            file_size=file.size,
+            uploaded_by=request.user,
+            is_confirmed=True
+        )
+
+        # 3. Update memo status
+        memo.status = 'IC_SIGNED'
+        memo.save()
+
+        # 4. Advance project to TERM_SHEET
+        project.status = PEProject.Status.TERM_SHEET
+        project.save()
+
+        # 5. Audit
+        ImmutableAuditEvent.objects.create(
+            event_type='IC_MEMO_SIGNED',
+            actor=request.user,
+            object_id=project.id,
+            object_repr=str(project),
+            content_type_label='deals.PEProject',
+            payload={
+                'document_id': str(doc.id),
+                'memo_id': str(memo.id),
+                'filename': file.name,
+            }
+        )
+
+        return Response({
+            "status": "Signed IC memo uploaded. Deal advanced to TERM_SHEET.",
+            "document_id": str(doc.id),
+        })
+
+
+class GPTermSheetListView(APIView):
+    """
+    GET  /api/deals/projects/<uuid:pk>/term-sheets/        - List all term sheets
+    POST /api/deals/projects/<uuid:pk>/term-sheets/        - Trigger AI generation
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        term_sheets = project.term_sheets.all()
+        return Response(TermSheetSerializer(term_sheets, many=True).data)
+
+    def post(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        if project.status not in [PEProject.Status.IC_REVIEW, PEProject.Status.TERM_SHEET]:
+            return Response({"detail": "Term sheet generation requires IC_REVIEW or TERM_SHEET status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .tasks import generate_ai_term_sheet
+        generate_ai_term_sheet.delay(str(project.id), str(request.user.id))
+        return Response({"status": "AI term sheet generation started."})
+
+
+class GPTermSheetDetailView(APIView):
+    """
+    GET   /api/deals/projects/<uuid:pk>/term-sheets/<uuid:ts_id>/
+    PATCH /api/deals/projects/<uuid:pk>/term-sheets/<uuid:ts_id>/   - Override fields
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, pk, ts_id):
+        project = get_deal_for_user(self.request, pk=pk)
+        ts = get_object_or_404(TermSheet, pk=ts_id, project=project)
+        return Response(TermSheetSerializer(ts).data)
+
+    def patch(self, request, pk, ts_id):
+        project = get_deal_for_user(self.request, pk=pk)
+        ts = get_object_or_404(TermSheet, pk=ts_id, project=project)
+
+        # Allow overriding individual terms
+        overrides = request.data.get('terms', {})
+        remarks = request.data.get('remarks', '')
+        new_status = request.data.get('status')
+
+        if overrides:
+            old_terms = dict(ts.terms)
+            ts.terms.update(overrides)
+            ts.save()
+
+            # Audit each override
+            for key, new_val in overrides.items():
+                ImmutableAuditEvent.objects.create(
+                    event_type='TERM_OVERRIDE',
+                    actor=request.user,
+                    object_id=project.id,
+                    object_repr=str(project),
+                    content_type_label='deals.TermSheet',
+                    payload={
+                        'term_sheet_id': str(ts.id),
+                        'field': key,
+                        'old_value': old_terms.get(key),
+                        'new_value': new_val,
+                        'remarks': remarks,
+                    }
+                )
+
+        if new_status and new_status in dict(TermSheet._meta.get_field('status').choices):
+            ts.status = new_status
+            ts.save()
+
+        return Response(TermSheetSerializer(ts).data)
+
+
+class GPSPADraftListView(APIView):
+    """
+    GET  /api/deals/projects/<uuid:pk>/spa-drafts/         - List all SPA drafts
+    POST /api/deals/projects/<uuid:pk>/spa-drafts/         - Trigger AI generation
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        spa_drafts = project.spa_drafts.all()
+        return Response(SPADraftSerializer(spa_drafts, many=True).data)
+
+    def post(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        if project.status not in [PEProject.Status.TERM_SHEET, PEProject.Status.LOI_ISSUED, PEProject.Status.CONTRACT_SIGNED]:
+            return Response({"detail": "SPA draft generation requires TERM_SHEET, LOI_ISSUED or CONTRACT_SIGNED status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .tasks import generate_ai_spa_draft
+        generate_ai_spa_draft.delay(str(project.id), str(request.user.id))
+        return Response({"status": "AI SPA draft generation started."})
+
+
+class GPSPADraftDetailView(APIView):
+    """
+    GET   /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/
+    PATCH /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/   - Override sections
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, pk, spa_id):
+        project = get_deal_for_user(self.request, pk=pk)
+        spa = get_object_or_404(SPADraft, pk=spa_id, project=project)
+        return Response(SPADraftSerializer(spa).data)
+
+    def patch(self, request, pk, spa_id):
+        project = get_deal_for_user(self.request, pk=pk)
+        spa = get_object_or_404(SPADraft, pk=spa_id, project=project)
+
+        overrides = request.data.get('sections', {})
+        remarks = request.data.get('remarks', '')
+        new_status = request.data.get('status')
+
+        if overrides:
+            old_sections = dict(spa.sections)
+            spa.sections.update(overrides)
+            spa.save()
+
+            for key, new_val in overrides.items():
+                ImmutableAuditEvent.objects.create(
+                    event_type='SPA_OVERRIDE',
+                    actor=request.user,
+                    object_id=project.id,
+                    object_repr=str(project),
+                    content_type_label='deals.SPADraft',
+                    payload={
+                        'spa_draft_id': str(spa.id),
+                        'section': key,
+                        'old_value': old_sections.get(key),
+                        'new_value': new_val,
+                        'remarks': remarks,
+                    }
+                )
+
+        if new_status and new_status in dict(SPADraft._meta.get_field('status').choices):
+            spa.status = new_status
+            spa.save()
+
+        return Response(SPADraftSerializer(spa).data)
+
+# ---------------------------------------------------------------------------
+# Phase 3: LOI Entrepreneur Flow & Capital Calls
+# ---------------------------------------------------------------------------
+
+class EntrepreneurUploadSignedLOIView(APIView):
+    """
+    POST /api/entrepreneur/submissions/{id}/upload-signed-loi/
+    Entrepreneur uploads the signed LOI to move the deal forward.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsEntrepreneurRole]
+
+    def post(self, request, pk):
+        project = get_object_or_404(PEProject, pk=pk, entrepreneur_user=request.user)
+        
+        if project.status != PEProject.Status.LOI_ISSUED:
+            return Response({"detail": "Project must be in LOI_ISSUED status to upload signed LOI."}, status=400)
+            
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"detail": "No file provided."}, status=400)
+            
+        # 1. Create document
+        doc = PEProjectDocument.objects.create(
+            project=project,
+            filename=file.name,
+            category='LOI_SIGNED',
+            local_file=file,
+            mime_type=file.content_type,
+            file_size=file.size,
+            uploaded_by=request.user,
+            is_confirmed=True
+        )
+        
+        # 2. Log Audit
+        ImmutableAuditEvent.objects.create(
+            event_type='LOI_SIGNED_BY_ENTREPRENEUR',
+            actor=request.user,
+            object_id=project.id,
+            object_repr=str(project),
+            content_type_label='deals.PEProject',
+            payload={
+                'document_id': str(doc.id),
+                'filename': file.name,
+            }
+        )
+        
+        return Response({
+            "status": "Signed LOI uploaded successfully. GP staff notified.",
+            "document_id": str(doc.id)
+        })
+
+
+class GPCapitalCallBatchView(APIView):
+    """
+    POST /api/deals/projects/{id}/create-capital-calls/
+    Creates pro-rata capital calls for all LPs in the fund for this deal.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, pk):
+        project = get_deal_for_user(self.request, pk=pk)
+        
+        if project.status != PEProject.Status.CONTRACT_SIGNED:
+             return Response({"detail": "Deal must be in CONTRACT_SIGNED status to issue capital calls."}, status=400)
+             
+        fund = project.fund
+        if not fund:
+             return Response({"detail": "No fund associated with this project."}, status=400)
+             
+        amount = request.data.get('total_amount_npr')
+        due_date = request.data.get('due_date')
+        
+        if not amount or not due_date:
+            return Response({"detail": "total_amount_npr and due_date are required."}, status=400)
+            
+        total_committed = fund.lp_commitments.aggregate(total=Sum('committed_amount_npr'))['total'] or 0
+        if total_committed == 0:
+            return Response({"detail": "Fund has no LP commitments."}, status=400)
+            
+        # Create calls
+        calls = []
+        for comm in fund.lp_commitments.all():
+            lp_share = (comm.committed_amount_npr / total_committed) * float(amount)
+            call = CapitalCall.objects.create(
+                fund=fund,
+                project=project,
+                lp_commitment=comm,
+                call_date=timezone.now().date(),
+                due_date=due_date,
+                amount_npr=lp_share,
+                status=CapitalCall.Status.CALLED,
+                notes=request.data.get('notes', '')
+            )
+            calls.append(call)
+            
+        # Advance project status
+        project.status = PEProject.Status.CAPITAL_CALLED
+        project.save()
+        
+        # Audit
+        ImmutableAuditEvent.objects.create(
+            event_type='CAPITAL_CALLED',
+            actor=request.user,
+            object_id=project.id,
+            object_repr=str(project),
+            content_type_label='deals.PEProject',
+            payload={
+                'total_amount': float(amount),
+                'due_date': str(due_date),
+                'call_count': len(calls)
+            }
+        )
+        
+        return Response({
+            "status": f"Successfully issued {len(calls)} capital calls.",
+            "total_amount_npr": amount,
+            "project_status": project.status
+        })
+
+
+class CapitalCallViewSet(viewsets.ModelViewSet):
+    """
+    CRUD for individual capital calls.
+    Enforces audit logging on receipt.
+    """
+    queryset = CapitalCall.objects.select_related('fund', 'project', 'lp_commitment__lp_profile').all()
+    serializer_class = CapitalCallSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get_queryset(self):
+        fund_id = self.request.query_params.get('fund_id')
+        project_id = self.request.query_params.get('project_id')
+        qs = super().get_queryset()
+        if fund_id:
+            qs = qs.filter(fund_id=fund_id)
+        if project_id:
+            qs = qs.filter(project_id=project_id)
+        return qs
+
+    @action(detail=True, methods=['post'])
+    def mark_received(self, request, pk=None):
+        call = self.get_object()
+        call.status = CapitalCall.Status.RECEIVED
+        call.received_at = timezone.now()
+        call.notes = f"{call.notes}\nReceived marked by {request.user} on {call.received_at}"
+        call.save()
+        
+        # Update commitment
+        if call.lp_commitment:
+            comm = call.lp_commitment
+            comm.called_amount_npr += call.amount_npr
+            comm.save()
+            
+        # Log audit
+        ImmutableAuditEvent.objects.create(
+            event_type='CAPITAL_RECEIVED',
+            actor=request.user,
+            object_id=call.project.id if call.project else call.fund.id,
+            object_repr=str(call),
+            content_type_label='deals.CapitalCall',
+            payload={
+                'call_id': str(call.id),
+                'amount': float(call.amount_npr),
+                'lp_name': call.lp_commitment.lp_profile.full_name if call.lp_commitment else 'Unknown'
+            }
+        )
+        
+        return Response({"status": "Capital call marked as received"})

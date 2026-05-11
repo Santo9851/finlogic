@@ -278,8 +278,8 @@ def pe_project_post_save(sender, instance, created, **kwargs):
                 instance,
                 payload={'old_status': old_status, 'new_status': instance.status},
             )
-            # If moved to SCREENING or GP_APPROVED, trigger B2 move for any local documents
-            if instance.status in [PEProject.Status.SCREENING, PEProject.Status.GP_APPROVED]:
+            # If moved to SCREENING, trigger B2 move for any local documents
+            if instance.status in [PEProject.Status.SCREENING]:
                 try:
                     from .tasks import move_project_documents_to_b2
                     move_project_documents_to_b2.delay(str(instance.id))

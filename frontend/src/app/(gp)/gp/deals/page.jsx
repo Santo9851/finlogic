@@ -45,12 +45,11 @@ const COLUMNS = [
   { id: 'PENDING_SUBMISSION', title: 'Pending', color: '#94a3b8' },
   { id: 'SUBMITTED', title: 'Submitted', color: '#6366f1' },
   { id: 'SCREENING', title: 'Screening', color: '#3b82f6' },
-  { id: 'AI_REVIEW_NEEDED', title: 'AI Review', color: '#f59e0b' },
-  { id: 'GP_APPROVED', title: 'GP Approved', color: '#10b981' },
-  { id: 'SHORTLISTED', title: 'Shortlisted', color: '#8b5cf6' },
-  { id: 'VIDEO_PITCH', title: 'Video Pitch', color: '#ec4899' },
-  { id: 'DUE_DILIGENCE', title: 'Due Diligence', color: '#06b6d4' },
+  { id: 'IC_REVIEW', title: 'IC Review', color: '#f59e0b' },
   { id: 'TERM_SHEET', title: 'Term Sheet', color: '#14b8a6' },
+  { id: 'LOI_ISSUED', title: 'LOI Issued', color: '#8b5cf6' },
+  { id: 'CONTRACT_SIGNED', title: 'Contract Signed', color: '#06b6d4' },
+  { id: 'CAPITAL_CALLED', title: 'Capital Called', color: '#ec4899' },
   { id: 'CLOSED', title: 'Closed', color: '#22c55e' },
   { id: 'DECLINED', title: 'Declined', color: '#ef4444' },
 ];
@@ -114,7 +113,7 @@ export default function GPDealsKanbanPage() {
     } else if (filter === 'submitted') {
       result = result.filter(p => p.status !== 'PENDING_SUBMISSION');
     } else if (filter === 'review') {
-      result = result.filter(p => ['AI_REVIEW_NEEDED', 'SCREENING'].includes(p.status));
+      result = result.filter(p => ['SCREENING', 'IC_REVIEW'].includes(p.status));
     }
 
     return result.filter(p => 
@@ -252,7 +251,7 @@ function KanbanCard({ deal, isOverlay = false }) {
   };
 
   const daysInStage = deal.created_at ? Math.floor((new Date() - new Date(deal.created_at)) / (1000 * 60 * 60 * 24)) : 0;
-  const isAIRework = deal.status === 'AI_REVIEW_NEEDED';
+  const isICReview = deal.status === 'IC_REVIEW';
   const router = useRouter();
 
   const handleCardClick = (e) => {
@@ -273,7 +272,7 @@ function KanbanCard({ deal, isOverlay = false }) {
       {...(deal.can_access ? listeners : {})}
       onClick={handleCardClick}
       className={`group bg-[#0A0014] border rounded-xl p-4 shadow-xl hover:border-white/20 transition-all ${deal.can_access ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed opacity-75'} ${
-        isAIRework ? 'border-[#f59e0b]/60 shadow-[0_0_20px_rgba(245,158,11,0.05)] animate-pulse-orange' : 'border-white/10'
+        isICReview ? 'border-[#f59e0b]/60 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : 'border-white/10'
       } ${isOverlay ? 'shadow-2xl z-50 scale-105 rotate-2' : ''} ${isDragging ? 'opacity-0' : ''}`}
     >
       <div className="space-y-4">

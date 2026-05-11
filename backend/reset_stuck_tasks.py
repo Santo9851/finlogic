@@ -7,21 +7,16 @@ django.setup()
 
 from deals.models import PEProject
 
-# Find all projects where progress is stuck in 'processing'
-stuck_projects = PEProject.objects.filter(analysis_progress__icontains='processing')
+def reset_project_progress():
+    # You might need to adjust the ID or find the specific project
+    projects = PEProject.objects.filter(analysis_progress__contains={'Scoring': 'processing'})
+    for p in projects:
+        progress = p.analysis_progress or {}
+        if progress.get('Scoring') == 'processing':
+            progress['Scoring'] = 'pending'
+            p.analysis_progress = progress
+            p.save()
+            print(f"Reset progress for project: {p.legal_name}")
 
-print(f"Found {stuck_projects.count()} projects with potentially stuck progress.")
-
-for project in stuck_projects:
-    print(f"Resetting progress for: {project.legal_name} (ID: {project.id})")
-    # Reset any 'processing' or 'pending' states to None or remove them
-    progress = project.analysis_progress or {}
-    new_progress = {}
-    for k, v in progress.items():
-        if v not in ['processing', 'pending']:
-            new_progress[k] = v
-            
-    project.analysis_progress = new_progress
-    project.save()
-
-print("Progress reset complete.")
+if __name__ == "__main__":
+    reset_project_progress()

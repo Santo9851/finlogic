@@ -8,17 +8,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Briefcase, ShieldCheck,
-  Activity, BookOpen, LogOut, Menu, X, ChevronDown, FileText, BarChart3, User, Library, ArrowLeftRight
+  Activity, BookOpen, LogOut, Menu, X, ChevronDown, FileText, BarChart3, User, Library, ArrowLeftRight,
+  CircleDollarSign, ChevronRight
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { PortalGuard } from '@/components/portal/PortalShell';
+import FinlogicLogo from '@/components/FinlogicLogo';
 
 const NAV = [
   { href: '/superadmin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/superadmin/users', label: 'Users', icon: Users },
   { href: '/superadmin/funds', label: 'Funds', icon: Briefcase },
   { href: '/superadmin/deals', label: 'Deals', icon: FileText },
+  { href: '/superadmin/capital-calls', label: 'Capital Calls', icon: CircleDollarSign },
   { href: '/superadmin/prompts', label: 'Prompt Library', icon: BookOpen },
   { href: '/superadmin/audit', label: 'Audit Logs', icon: Activity },
   { href: '/superadmin/compliance', label: 'Compliance', icon: ShieldCheck },
@@ -51,15 +54,10 @@ function Sidebar({ collapsed, onClose }) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-white/8">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-            <div className="w-4 h-4 rounded-sm bg-purple-500" />
-          </div>
-          {!collapsed && (
-            <div>
-              <p className="text-white font-bold text-sm leading-none">Finlogic</p>
-              <p className="text-purple-400 text-[10px] uppercase tracking-widest mt-0.5">Superadmin</p>
-            </div>
-          )}
+           <FinlogicLogo size={32} variant={collapsed ? "icon" : "full"} darkBg={true} />
+           {!collapsed && (
+             <span className="text-purple-400 text-[10px] font-black uppercase tracking-widest mt-1 ml-auto">Admin</span>
+           )}
         </div>
 
         {/* Nav */}

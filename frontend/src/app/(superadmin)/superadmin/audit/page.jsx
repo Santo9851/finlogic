@@ -113,9 +113,19 @@ export default function SuperAdminAuditPage() {
             <option value="">All Types</option>
             {source === 'compliance' ? (
                <>
+                  <option value="PROJECT_CREATED">Project Created</option>
+                  <option value="PROJECT_STATUS_CHANGED">Project Status Changed</option>
+                  <option value="PROJECT_SUBMITTED">Project Submitted</option>
+                  <option value="INVESTMENT_CLOSED">Investment Finalized</option>
+                  <option value="CAPITAL_CALLED">Capital Called</option>
+                  <option value="DISTRIBUTION_MADE">Distribution Made</option>
+                  <option value="VALUATION_OVERRIDE">Valuation Override</option>
+                  <option value="LOI_ISSUED">LOI Issued</option>
+                  <option value="LOI_SIGNED_BY_ENTREPRENEUR">LOI Signed by Entrepreneur</option>
+                  <option value="MEMO_FINALIZED">Memo Finalized</option>
+                  <option value="COMPLIANCE_CLEARED">Compliance Gate Cleared</option>
+                  <option value="SCORING_OVERRIDE">Scoring Override</option>
                   <option value="WATERFALL_CALCULATED">Waterfall Calculation</option>
-                  <option value="VALUATION_CREATED">Valuation Update</option>
-                  <option value="MEMO_FINALIZED">Memo Finalization</option>
                   <option value="IPO_ELIGIBILITY_CHECKED">IPO Review</option>
                </>
             ) : (

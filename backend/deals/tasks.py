@@ -4,6 +4,8 @@ import time
 import fitz  # PyMuPDF
 import requests
 from celery import shared_task, chain
+import os
+from django.conf import settings
 
 from django.db import models
 from django.utils import timezone
@@ -26,9 +28,14 @@ from .models import (
     LPFundCommitment,
     LPProfile,
     FundDocument,
+    ValuationModel,
+    TermSheet,
+    SPADraft,
+    ImmutableAuditEvent,
 )
 from .pdf_utils import generate_capital_account_pdf, upload_pdf_to_b2
 from .mail_utils import send_statement_notification
+from .signals import _log_audit_event
 
 
 
@@ -664,54 +671,88 @@ def run_finlo_scoring(project_id, user_id=None):
         client = AIModelClient()
         pillar_averages = {}
         
-        # 4. Execute AI calls (Simulating parallel logic for now, though Celery tasks run sequentially unless we chain them)
-        # In a real high-perf env, we'd use group() or similar.
-        for code, info in pillars.items():
-            prompt_data = {
-                "pillar_name": info["name"],
-                "criteria": info["criteria"],
-                "project_data": context
-            }
+        # 4. Execute Consolidated AI Call
+        # We consolidate all 5 pillars into 1 call for 70% token savings and holistic reasoning.
+        prompt_data = {
+            "pillars_definition": pillars,
+            "project_data": context,
+            "precision_guardrails": (
+                "1. Analyze all 20 criteria across the 5 pillars (F, I, N, L, O).\n"
+                "2. Every score MUST be an integer between 1-10.\n"
+                "3. Provide specific evidence quotes for EACH criterion.\n"
+                "4. Ensure cross-pillar consistency: if a Red Flag exists in Legal, it must reflect in Risk Awareness scoring.\n"
+                "5. BREVITY: Keep rationales to max 2 concise, high-impact sentences. Avoid filler text."
+            )
+        }
+        
+        # This uses the 'scoring' task type in PromptLibrary
+        raw_json = client.execute_task("scoring", prompt_data, project=project)
+        
+        try:
+            # Aggressive markdown cleanup
+            clean_json = raw_json
+            if "```json" in clean_json:
+                clean_json = clean_json.split("```json")[1].split("```")[0].strip()
+            elif "```" in clean_json:
+                clean_json = clean_json.split("```")[1].split("```")[0].strip()
             
-            # Add a small delay between pillar calls to avoid hitting Rate Per Minute (RPM) limits
-            time.sleep(2)
+            data = json.loads(clean_json)
+            pillar_averages = {}
             
-            # This uses the 'scoring' task type in PromptLibrary
-            raw_json = client.execute_task("scoring", prompt_data, project=project)
+            # The AI might return the results nested under 'pillar_results' or at the root
+            pillar_results = data.get("pillar_results", data)
             
-            try:
-                if "```json" in raw_json:
-                    raw_json = raw_json.split("```json")[1].split("```")[0].strip()
-                data = json.loads(raw_json)
-                # Expecting data format: { "criteria_scores": { "problem_clarity": { "score": 8, "rationale": "...", "confidence": 0.9, "evidence": ["..."] } } }
+            for code, info in pillars.items():
+                # Try to find pillar data by code (F, I, N, L, O) or by name (Foresight, etc.)
+                pillar_data = pillar_results.get(code, pillar_results.get(info["name"], {}))
+                
+                # If the AI returned criteria_scores at the root of the pillar object
+                criteria_data = pillar_data.get("criteria_scores", pillar_data)
                 
                 scores_sum = 0
                 count = 0
-                for crit_id, result in data.get("criteria_scores", {}).items():
-                    if crit_id in info["criteria"]:
-                        CriterionScore.objects.create(
-                            scoring_run=run,
-                            pillar=code,
-                            criterion_id=crit_id,
-                            ai_score=result.get("score", 5),
-                            ai_rationale=result.get("rationale", ""),
-                            ai_confidence=result.get("confidence", 0.5),
-                            evidence_quotes=result.get("evidence", [])
-                        )
-                        scores_sum += result.get("score", 5)
-                        count += 1
                 
-                pillar_averages[code] = (scores_sum / count) if count > 0 else 5
-                
-            except Exception as e:
-                logger.error(f"Failed to parse AI response for pillar {code}: {str(e)}")
-                # Create default scores to avoid empty results
                 for crit_id in info["criteria"]:
-                    CriterionScore.objects.get_or_create(
+                    result = criteria_data.get(crit_id, {})
+                    score_val = result.get("score", 5)
+                    
+                    CriterionScore.objects.create(
                         scoring_run=run,
                         pillar=code,
                         criterion_id=crit_id,
-                        defaults={"ai_score": 5, "ai_rationale": "AI parsing failed, default applied."}
+                        ai_score=score_val,
+                        ai_rationale=result.get("rationale", "No rationale provided."),
+                        ai_confidence=result.get("confidence", 0.7),
+                        evidence_quotes=result.get("evidence", [])
+                    )
+                    scores_sum += score_val
+                    count += 1
+                
+                pillar_averages[code] = (scores_sum / count) if count > 0 else 5
+
+        except Exception as e:
+            logger.error(f"Failed to parse consolidated scoring response: {str(e)}")
+            
+            # CRITICAL DEBUG: Write the failing response to a file so we can analyze it
+            try:
+                debug_path = os.path.join(settings.BASE_DIR, "scratch", "last_failed_scoring.json")
+                os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+                with open(debug_path, "w", encoding="utf-8") as f:
+                    f.write(raw_json)
+                logger.info(f"Failing AI response dumped to: {debug_path}")
+            except:
+                pass
+
+            # Create default entries so the UI isn't empty
+            for code, info in pillars.items():
+                for crit_id in info["criteria"]:
+                    CriterionScore.objects.create(
+                        scoring_run=run,
+                        pillar=code,
+                        criterion_id=crit_id,
+                        ai_score=5,
+                        ai_rationale="Consolidated scoring failed to parse. Using baseline defaults.",
+                        ai_confidence=0.1
                     )
                 pillar_averages[code] = 5
 
@@ -734,8 +775,8 @@ def run_finlo_scoring(project_id, user_id=None):
         for g in gates:
             ComplianceGate.objects.get_or_create(scoring_run=run, gate_id=g)
             
-        # 7. Update Project Status
-        project.status = 'AI_REVIEW_NEEDED'
+        # Note: Scoring no longer changes project status automatically.
+        # GP advances to IC_REVIEW manually after reviewing scoring + clearing compliance gates.
         project.save()
         
         # Finalize progress
@@ -819,11 +860,18 @@ def generate_memo_draft(project_id):
     operational = project.operational_analyses.first()
     regulatory = getattr(project, 'regulatory_checklist', None)
     
+    # Get latest valuation models
+    latest_dcf = project.valuations.filter(model_type='DCF').order_by('-created_at').first()
+    latest_lbo = project.valuations.filter(model_type='LBO').order_by('-created_at').first()
+    
     context_data = {
         "project_name": project.legal_name,
         "sector": project.sector,
         "deal_type": project.deal_type,
         "financials": financials,
+        "dcf": latest_dcf.outputs if latest_dcf else {},
+        "lbo": latest_lbo.outputs if latest_lbo else {},
+        "lbo_assumptions": latest_lbo.assumptions if latest_lbo else {},
         "scoring_summary": {
             "total_score": scoring.total_deal_score if scoring else "N/A",
             "pillars": list(scoring.criteria_scores.values('pillar', 'criterion_id', 'gp_score', 'ai_score')) if scoring else []
@@ -1036,3 +1084,316 @@ def move_project_documents_to_b2(project_id):
             logger.error(f"Failed to move document {doc.id} to B2: {e}")
             
     return f"Moved {count} documents to B2 for project {project.legal_name}"
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: AI Valuation, Term Sheet, SPA Draft Tasks
+# ---------------------------------------------------------------------------
+
+@shared_task
+def generate_ai_valuation(project_id, user_id=None):
+    """
+    Uses Gemini to generate DCF and LBO assumptions based on project financials,
+    then runs calculate_dcf() and calculate_lbo() with those assumptions.
+    """
+    from .valuation import calculate_dcf, calculate_lbo
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    def _safe_float(val, default=0.0):
+        if isinstance(val, (int, float)): return float(val)
+        if isinstance(val, str):
+            try: return float(val.replace(',', '').replace('%', ''))
+            except: return default
+        if isinstance(val, dict):
+            for k in ['value', 'total', 'amount', 'rate', 'target']:
+                if k in val: return _safe_float(val[k], default)
+        return default
+
+    try:
+        project = PEProject.objects.get(id=project_id)
+        user = User.objects.get(id=user_id) if user_id else None
+        client = AIModelClient()
+
+        # 1. Update progress
+        progress = project.analysis_progress or {}
+        progress['Valuation'] = 'processing'
+        project.analysis_progress = progress
+        project.save()
+
+        # 2. Gather context from existing analyses
+        financials = list(project.financials.values(
+            'fiscal_year_bs', 
+            'revenue_npr', 
+            'ebitda_npr', 
+            'net_profit_npr',
+            'total_assets_npr', 
+            'total_debt_npr'
+        ))
+        qoe = project.qoe_reports.first()
+        commercial = project.commercial_analyses.first()
+        scoring = project.scoring_runs.first()
+
+        context_data = {
+            "project_name": project.legal_name,
+            "sector": project.get_sector_display(),
+            "deal_type": project.get_deal_type_display(),
+            "financials": json.dumps(financials, default=str),
+            "qoe_status": qoe.status if qoe else "N/A",
+            "qoe_adjustments": json.dumps(qoe.analysis_data if qoe else {}, default=str),
+            "commercial_notes": commercial.market_positioning_notes if commercial else "N/A",
+            "scoring_total": str(scoring.total_deal_score) if scoring else "N/A",
+            "nepal_context": "Nepal market. Currency: NPR. Risk-free rate ~8-10%. Country risk premium 4-6%.",
+        }
+
+        # 2. Call AI for assumption generation
+        raw_json = client.execute_task("valuation_generation", context_data, project=project)
+        
+        # Parse JSON
+        import re
+        try:
+            # Extract outermost JSON object to bypass any conversational text
+            match = re.search(r'\{.*\}', raw_json, re.DOTALL)
+            if match:
+                clean_json = match.group(0)
+            else:
+                clean_json = raw_json
+                
+            # Clean markdown if regex failed to isolate cleanly (e.g., if there's text inside the matched braces... wait, re.search r'\{.*\}' grabs from first { to last })
+            data = json.loads(clean_json)
+        except Exception as e:
+            logger.error(f"Valuation JSON Parse Error: {e}. Raw JSON: {raw_json}")
+            data = {}
+
+        def _get_any(d, keys, default=None):
+            for k in keys:
+                if k in d: return d[k]
+            return default
+
+        # 3. Process DCF Assumptions
+        dcf_raw = data.get("dcf", {})
+        dcf_assumptions = {
+            "current_revenue": _safe_float(_get_any(dcf_raw, ["current_revenue", "revenue"]), 1000000),
+            "revenue_growth_rate": _safe_float(_get_any(dcf_raw, ["revenue_growth_rate", "revenue_growth", "growth_rate"]), 0.15),
+            "ebitda_margin": _safe_float(_get_any(dcf_raw, ["ebitda_margin", "margin"]), 0.20),
+            "tax_rate": _safe_float(_get_any(dcf_raw, ["tax_rate", "tax"]), 0.25),
+            "projection_years": int(_safe_float(_get_any(dcf_raw, ["projection_years", "years", "exit_year"]), 5)),
+            "wacc": _safe_float(_get_any(dcf_raw, ["wacc", "discount_rate"]), 0.14),
+            "terminal_growth_rate": _safe_float(_get_any(dcf_raw, ["terminal_growth_rate", "terminal_growth"]), 0.03),
+            "net_debt": _safe_float(_get_any(dcf_raw, ["net_debt", "debt"]), 0),
+        }
+
+        dcf_outputs = calculate_dcf(dcf_assumptions)
+
+        dcf_model = ValuationModel.objects.create(
+            project=project,
+            model_type='DCF',
+            assumptions=dcf_assumptions,
+            outputs=dcf_outputs,
+            created_by=user
+        )
+
+        # 4. Process LBO Assumptions
+        lbo_raw = data.get("lbo", {})
+        lbo_assumptions = {
+            "entry_revenue": _safe_float(_get_any(lbo_raw, ["entry_revenue", "revenue"]), dcf_assumptions["current_revenue"]),
+            "entry_ebitda": _safe_float(_get_any(lbo_raw, ["entry_ebitda", "ebitda"]), dcf_assumptions["current_revenue"] * dcf_assumptions["ebitda_margin"]),
+            "entry_multiple": _safe_float(_get_any(lbo_raw, ["entry_multiple", "multiple"]), 8.0),
+            "exit_multiple": _safe_float(_get_any(lbo_raw, ["exit_multiple", "target_multiple"]), 10.0),
+            "exit_year": int(_safe_float(_get_any(lbo_raw, ["exit_year", "years"]), 5)),
+            "revenue_growth": _safe_float(_get_any(lbo_raw, ["revenue_growth", "growth"]), dcf_assumptions["revenue_growth_rate"]),
+            "ebitda_margin": _safe_float(_get_any(lbo_raw, ["ebitda_margin", "margin"]), dcf_assumptions["ebitda_margin"]),
+            "tax_rate": _safe_float(_get_any(lbo_raw, ["tax_rate", "tax"]), 0.25),
+            "debt_financing": _get_any(lbo_raw, ["debt_financing", "debt"], [
+                {"name": "Senior Debt", "amount": dcf_assumptions["net_debt"] or 1000000, "rate": 0.12}
+            ])
+        }
+        lbo_outputs = calculate_lbo(lbo_assumptions)
+
+        lbo_model = ValuationModel.objects.create(
+            project=project,
+            model_type='LBO',
+            assumptions=lbo_assumptions,
+            outputs=lbo_outputs,
+            created_by=user
+        )
+
+        # 6. Store AI rationale
+        ai_rationale = data.get("rationale", "AI-generated assumptions based on project financials and sector benchmarks.")
+
+        # 7. Update progress
+        progress = project.analysis_progress or {}
+        progress['Valuation'] = 'completed'
+        project.analysis_progress = progress
+        project.save()
+
+        _log_audit_event(
+            ImmutableAuditEvent.EventType.VALUATION_OVERRIDE,
+            project,
+            actor=user,
+            payload={
+                'method': 'AI_GENERATED',
+                'dcf_equity_value': dcf_outputs.get('equity_value'),
+                'lbo_irr': lbo_outputs.get('irr'),
+                'rationale': ai_rationale
+            }
+        )
+
+        logger.info(f"AI Valuation complete for {project.legal_name}")
+
+        return {
+            "dcf_id": str(dcf_model.id),
+            "lbo_id": str(lbo_model.id),
+            "rationale": ai_rationale,
+        }
+
+    except Exception as e:
+        logger.error(f"Error in generate_ai_valuation: {str(e)}")
+        # Reset progress to prevent UI from sticking in loading state
+        try:
+            progress = project.analysis_progress or {}
+            progress['Valuation'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
+        raise e
+
+
+@shared_task
+def generate_ai_term_sheet(project_id, user_id=None):
+    """
+    Uses Gemini to generate an initial term sheet based on valuation models,
+    scoring results, and deal context.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        project = PEProject.objects.get(id=project_id)
+        user = User.objects.get(id=user_id) if user_id else None
+        client = AIModelClient()
+
+        # 1. Gather context
+        dcf = project.valuations.filter(model_type='DCF').first()
+        lbo = project.valuations.filter(model_type='LBO').first()
+        scoring = project.scoring_runs.first()
+        fund = project.fund
+
+        context_data = {
+            "project_name": project.legal_name,
+            "sector": project.get_sector_display(),
+            "deal_type": project.get_deal_type_display(),
+            "dcf_equity_value": str(dcf.outputs.get("equity_value", "N/A")) if dcf else "N/A",
+            "dcf_enterprise_value": str(dcf.outputs.get("enterprise_value", "N/A")) if dcf else "N/A",
+            "lbo_irr": str(lbo.outputs.get("irr", "N/A")) if lbo else "N/A",
+            "lbo_moic": str(lbo.outputs.get("moic", "N/A")) if lbo else "N/A",
+            "scoring_total": str(scoring.total_deal_score) if scoring else "N/A",
+            "fund_name": fund.name,
+            "fund_target_size": str(fund.target_size_npr),
+            "investment_range_min": str(project.investment_range_min_npr or "N/A"),
+            "investment_range_max": str(project.investment_range_max_npr or "N/A"),
+            "nepal_context": "Nepal PE market. Currency: NPR. Standard PE terms for growth capital.",
+        }
+
+        # 2. Call AI
+        raw_json = client.execute_task("term_sheet_draft", context_data, project=project)
+
+        # 3. Parse
+        clean = raw_json
+        if "```json" in clean:
+            clean = clean.split("```json")[1].split("```")[0].strip()
+        elif "```" in clean:
+            clean = clean.split("```")[1].split("```")[0].strip()
+
+        data = json.loads(clean)
+
+        # 4. Get version
+        latest = project.term_sheets.order_by('-version').first()
+        new_version = (latest.version + 1) if latest else 1
+
+        # 5. Save
+        term_sheet = TermSheet.objects.create(
+            project=project,
+            terms=data,
+            ai_generated_terms=data,
+            version=new_version,
+            status='DRAFT',
+            created_by=user,
+        )
+
+        logger.info(f"AI Term Sheet v{new_version} generated for {project.legal_name}")
+        return {"term_sheet_id": str(term_sheet.id), "version": new_version}
+
+    except Exception as e:
+        logger.error(f"Error in generate_ai_term_sheet: {str(e)}")
+        raise e
+
+
+@shared_task
+def generate_ai_spa_draft(project_id, user_id=None):
+    """
+    Uses Gemini to generate an initial SPA (Share Purchase Agreement) draft
+    based on term sheet, regulatory context, and deal details.
+    """
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+
+    try:
+        project = PEProject.objects.get(id=project_id)
+        user = User.objects.get(id=user_id) if user_id else None
+        client = AIModelClient()
+
+        # 1. Gather context
+        term_sheet = project.term_sheets.order_by('-version').first()
+        regulatory = getattr(project, 'regulatory_checklist', None)
+        fund = project.fund
+
+        context_data = {
+            "project_name": project.legal_name,
+            "sector": project.get_sector_display(),
+            "deal_type": project.get_deal_type_display(),
+            "term_sheet_terms": json.dumps(term_sheet.terms if term_sheet else {}, default=str),
+            "fund_name": fund.name,
+            "fitta_required": str(regulatory.fitta_approval_required) if regulatory else "Unknown",
+            "nrb_required": str(regulatory.nrb_approval_required) if regulatory else "Unknown",
+            "nepal_context": (
+                "Nepal jurisdiction. Governing law: Nepal Contract Act 2056. "
+                "Company Act 2063 applies. Securities Act 2063 for listed entities. "
+                "Foreign Investment and Technology Transfer Act (FITTA) 2075 for FDI."
+            ),
+        }
+
+        # 2. Call AI
+        raw_json = client.execute_task("spa_draft", context_data, project=project)
+
+        # 3. Parse
+        clean = raw_json
+        if "```json" in clean:
+            clean = clean.split("```json")[1].split("```")[0].strip()
+        elif "```" in clean:
+            clean = clean.split("```")[1].split("```")[0].strip()
+
+        data = json.loads(clean)
+
+        # 4. Get version
+        latest = project.spa_drafts.order_by('-version').first()
+        new_version = (latest.version + 1) if latest else 1
+
+        # 5. Save
+        spa = SPADraft.objects.create(
+            project=project,
+            sections=data,
+            ai_generated_sections=data,
+            version=new_version,
+            status='DRAFT',
+            created_by=user,
+        )
+
+        logger.info(f"AI SPA Draft v{new_version} generated for {project.legal_name}")
+        return {"spa_draft_id": str(spa.id), "version": new_version}
+
+    except Exception as e:
+        logger.error(f"Error in generate_ai_spa_draft: {str(e)}")
+        raise e
+

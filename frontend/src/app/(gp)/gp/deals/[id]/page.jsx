@@ -35,21 +35,19 @@ import MonteCarloTab from '@/components/deals/tabs/MonteCarloTab';
 import MemoTab from '@/components/deals/tabs/MemoTab';
 import FormResponsesTab from '@/components/deals/tabs/FormResponsesTab';
 import AuditLogTab from '@/components/deals/tabs/AuditLogTab';
+import TermSheetTab from '@/components/deals/tabs/TermSheetTab';
+import SPADraftTab from '@/components/deals/tabs/SPADraftTab';
 import InvestmentWizard from '@/components/deals/InvestmentWizard';
 
 const STATUS_ORDER = [
   'PENDING_SUBMISSION',
   'SUBMITTED',
   'SCREENING',
-  'AI_REVIEW_NEEDED',
-  'GP_APPROVED',
-  'SHORTLISTED',
-  'VIDEO_PITCH',
-  'DUE_DILIGENCE',
+  'IC_REVIEW',
   'TERM_SHEET',
-  'IC_APPROVED',
   'LOI_ISSUED',
   'CONTRACT_SIGNED',
+  'CAPITAL_CALLED',
   'CLOSED',
   'DECLINED'
 ];
@@ -62,8 +60,10 @@ const TABS_CONFIG = [
   { id: 'Operations', label: 'Operations', minStatus: 'SCREENING' },
   { id: 'Red Flags', label: 'Red Flags', minStatus: 'SCREENING' },
   { id: 'Scoring', label: 'Scoring', minStatus: 'SCREENING' },
-  { id: 'Modelling', label: 'Modelling', minStatus: 'DUE_DILIGENCE' },
-  { id: 'Memo', label: 'Memo', minStatus: 'DUE_DILIGENCE' },
+  { id: 'Modelling', label: 'Modelling', minStatus: 'IC_REVIEW' },
+  { id: 'Memo', label: 'Memo', minStatus: 'IC_REVIEW' },
+  { id: 'Term Sheet', label: 'Term Sheet', minStatus: 'TERM_SHEET' },
+  { id: 'SPA Draft', label: 'SPA Draft', minStatus: 'TERM_SHEET' },
   { id: 'Valuations', label: 'Valuations', minStatus: 'CLOSED' },
   { id: 'Exit Planning', label: 'Exit Planning', minStatus: 'CLOSED' },
   { id: 'Monte Carlo', label: 'Monte Carlo', minStatus: 'CLOSED' },
@@ -392,13 +392,28 @@ export default function GPDealDetailPage() {
     }
   });
 
-  const finalApproveMutation = useMutation({
-    mutationFn: async ({ assessment_summary }) => {
-      const res = await api.post(`/deals/projects/${id}/approve-for-lp/`, { assessment_summary });
+  const resetGateMutation = useMutation({
+    mutationFn: async ({ gateId }) => {
+      const res = await api.post(`/deals/projects/${id}/scoring/gates/${gateId}/reset/`);
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Deal approved for LP visibility');
+      toast.success('Compliance gate reset to pending');
+      queryClient.invalidateQueries(['deals', 'project', id]);
+    }
+  });
+
+  const finalApproveMutation = useMutation({
+    mutationFn: async ({ assessment_summary }) => {
+      // Use the canonical PATCH detail view to advance status
+      const res = await api.patch(`/deals/projects/${id}/`, { 
+        status: 'IC_REVIEW',
+        assessment_summary // Optionally saved if field exists
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      toast.success('Deal approved for IC Review');
       queryClient.invalidateQueries(['deals', 'project', id]);
     },
     onError: (err) => toast.error(err.response?.data?.detail || 'Approval failed')
@@ -431,9 +446,29 @@ export default function GPDealDetailPage() {
       const res = await api.post(`/deals/projects/${id}/generate-memo/`);
       return res.data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            Memo: 'processing'
+          }
+        });
+      }
+      return { previousDeal };
+    },
     onSuccess: () => {
       toast.success('AI memo drafting triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err, context) => {
+      toast.error(err.response?.data?.detail || 'Failed to start AI memo');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
     }
   });
 
@@ -446,6 +481,15 @@ export default function GPDealDetailPage() {
       toast.success('Memo draft saved');
       queryClient.invalidateQueries(['deals', 'project', id]);
     }
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (docId) => api.delete(`/deals/documents/${docId}/`),
+    onSuccess: () => {
+      toast.success('Document removed from Data Room');
+      queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to delete document')
   });
 
   const finalizeMemoMutation = useMutation({
@@ -499,6 +543,46 @@ export default function GPDealDetailPage() {
       toast.success('Exit scenario approved by IC');
       queryClient.invalidateQueries(['deals', 'project', id]);
     }
+  });
+  const generateAIValuationMutation = useMutation({
+    mutationFn: () => api.post(`/deals/projects/${id}/generate-ai-valuation/`),
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            Valuation: 'processing'
+          }
+        });
+      }
+      return { previousDeal };
+    },
+    onSuccess: () => {
+      toast.success('AI Valuation generation started');
+      queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err, context) => {
+      toast.error(err.response?.data?.detail || 'Failed to start AI valuation');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
+    }
+  });
+
+  const uploadSignedMemoMutation = useMutation({
+    mutationFn: (file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return api.post(`/deals/projects/${id}/upload-signed-ic-memo/`, formData);
+    },
+    onSuccess: () => {
+      toast.success('Signed IC Memo uploaded. Deal advanced to Term Sheet stage.');
+      queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to upload signed memo')
   });
 
 
@@ -610,25 +694,7 @@ export default function GPDealDetailPage() {
           <ChevronLeft size={16} /> Back to Pipeline
         </Link>
         <div className="flex items-center gap-2">
-           <button 
-             onClick={() => fullAnalysisMutation.mutate()}
-             disabled={fullAnalysisMutation.isLoading}
-             className="flex items-center gap-2 px-6 py-2.5 bg-[#F59F01] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
-           >
-              {fullAnalysisMutation.isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
-              Run Full Analysis
-           </button>
-
-           {deal.status !== 'GP_APPROVED' && (
-             <button 
-               onClick={() => updateMutation.mutate({ status: 'GP_APPROVED' })}
-               className="flex items-center gap-2 px-4 py-2 bg-[#F59F01] text-black rounded-lg text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20"
-             >
-               <CheckCircle2 className="w-3.5 h-3.5" /> Approve for LP
-             </button>
-           )}
-
-           {['DUE_DILIGENCE', 'TERM_SHEET', 'IC_APPROVED', 'LOI_ISSUED', 'CONTRACT_SIGNED'].includes(deal.status) && (
+           {['TERM_SHEET', 'LOI_ISSUED', 'CONTRACT_SIGNED'].includes(deal.status) && (
              <button 
                onClick={() => setShowWizard(true)}
                className="flex items-center gap-2 px-6 py-2 bg-white text-black rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-white/5"
@@ -690,6 +756,7 @@ export default function GPDealDetailPage() {
             isExtracting={extractMutation.isLoading}
             onRedFlagScan={(docId) => legalScanMutation.mutate(docId)}
             onRefresh={() => queryClient.invalidateQueries(['deals', 'project', id])}
+            onDelete={(docId) => deleteDocumentMutation.mutate(docId)}
           />
         )}
 
@@ -745,6 +812,7 @@ export default function GPDealDetailPage() {
             isTriggering={triggerScoringMutation.isLoading}
             onOverride={(data) => overrideScoreMutation.mutate(data)}
             onClearGate={(data) => clearGateMutation.mutate(data)}
+            onResetGate={(data) => resetGateMutation.mutate(data)}
             onApprove={(data) => finalApproveMutation.mutate(data)}
             isApproving={finalApproveMutation.isLoading}
           />
@@ -756,6 +824,8 @@ export default function GPDealDetailPage() {
             onRunDCF={dcfMutation.mutate}
             onRunLBO={lboMutation.mutate}
             isCalculating={dcfMutation.isLoading || lboMutation.isLoading}
+            onGenerateAI={() => generateAIValuationMutation.mutate()}
+            isGeneratingAI={generateAIValuationMutation.isLoading}
           />
         )}
 
@@ -791,12 +861,22 @@ export default function GPDealDetailPage() {
             onGenerate={() => generateMemoMutation.mutate()}
             onSave={(data) => saveMemoMutation.mutate(data)}
             onFinalize={(id) => finalizeMemoMutation.mutate(id)}
+            onUploadSignedMemo={(file) => uploadSignedMemoMutation.mutate(file)}
             isGenerating={generateMemoMutation.isLoading}
+            isUploading={uploadSignedMemoMutation.isLoading}
           />
         )}
 
         {activeTab === 'Form Responses' && (
           <FormResponsesTab responses={deal.form_responses} />
+        )}
+
+        {activeTab === 'Term Sheet' && (
+          <TermSheetTab deal={deal} />
+        )}
+
+        {activeTab === 'SPA Draft' && (
+          <SPADraftTab deal={deal} />
         )}
 
         {activeTab === 'Audit Log' && (

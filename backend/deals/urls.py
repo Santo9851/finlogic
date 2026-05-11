@@ -73,7 +73,9 @@ from .views import (
     GPProjectLatestScoringView,
     GPCriterionOverrideView,
     GPClearComplianceGateView,
-    GPApproveForLPView,
+    GPResetComplianceGateView,
+    GPProjectUploadLocalView,
+
     GPDCFValuationView,
     GPLBOValuationView,
     GPValuationDetailView,
@@ -108,6 +110,18 @@ from .views import (
     ExitScenarioViewSet,
     IPOEligibilityView,
     ExitSummaryView,
+    # Phase 2 views
+    GPGenerateAIValuationView,
+    GPValuationOverrideView,
+    GPUploadSignedICMemoView,
+    GPTermSheetListView,
+    GPTermSheetDetailView,
+    GPSPADraftListView,
+    GPSPADraftDetailView,
+    # Phase 3 views
+    EntrepreneurUploadSignedLOIView,
+    GPCapitalCallBatchView,
+    CapitalCallViewSet,
 )
 from .conversion_views import IssueLOIView, SuperadminFinalizeInvestmentView
 
@@ -116,6 +130,7 @@ router.register(r'admin/ir-documents', GPIRDocumentViewSet, basename='admin-ir-d
 router.register(r'governance-proposals', GPGovernanceProposalViewSet, basename='gp-governance-proposal')
 router.register(r'valuations', ValuationRecordViewSet, basename='valuation-record')
 router.register(r'exit-scenarios', ExitScenarioViewSet, basename='exit-scenario')
+router.register(r'capital-calls', CapitalCallViewSet, basename='capital-call')
 
 
 
@@ -245,10 +260,16 @@ urlpatterns = [
         name='gp-scoring-gate-clear',
     ),
     path(
-        'deals/projects/<uuid:pk>/approve-for-lp/',
-        GPApproveForLPView.as_view(),
-        name='gp-project-approve-for-lp',
+        'deals/projects/<uuid:pk>/scoring/gates/<str:gate_id>/reset/',
+        GPResetComplianceGateView.as_view(),
+        name='gp-scoring-gate-reset',
     ),
+    path(
+        'deals/projects/<uuid:pk>/upload-local/',
+        GPProjectUploadLocalView.as_view(),
+        name='gp-project-upload-local',
+    ),
+
     path(
         'deals/projects/<uuid:pk>/valuation/dcf/',
         GPDCFValuationView.as_view(),
@@ -328,6 +349,48 @@ urlpatterns = [
         'deals/projects/<uuid:project_id>/finalize-investment/',
         SuperadminFinalizeInvestmentView.as_view(),
         name='superadmin-finalize-investment',
+    ),
+
+    # --- Phase 2: AI Valuation, IC Signed, Term Sheet, SPA ---
+    path(
+        'deals/projects/<uuid:pk>/generate-ai-valuation/',
+        GPGenerateAIValuationView.as_view(),
+        name='gp-project-generate-ai-valuation',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/valuations/<uuid:val_id>/override/',
+        GPValuationOverrideView.as_view(),
+        name='gp-project-valuation-override',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/upload-signed-ic-memo/',
+        GPUploadSignedICMemoView.as_view(),
+        name='gp-project-upload-signed-ic-memo',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/term-sheets/',
+        GPTermSheetListView.as_view(),
+        name='gp-project-term-sheets',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/term-sheets/<uuid:ts_id>/',
+        GPTermSheetDetailView.as_view(),
+        name='gp-project-term-sheet-detail',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/spa-drafts/',
+        GPSPADraftListView.as_view(),
+        name='gp-project-spa-drafts',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/spa-draft-detail/',
+        GPSPADraftDetailView.as_view(),
+        name='gp-project-spa-draft-detail',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/create-capital-calls/',
+        GPCapitalCallBatchView.as_view(),
+        name='gp-project-create-capital-calls',
     ),
     path(
         'portfolio/waterfall/calculate/',
@@ -426,6 +489,11 @@ urlpatterns = [
         'entrepreneur/submissions/<uuid:project_id>/upload-local/',
         EntrepreneurAuthUploadLocalView.as_view(),
         name='entrepreneur-auth-upload-local',
+    ),
+    path(
+        'entrepreneur/submissions/<uuid:pk>/upload-signed-loi/',
+        EntrepreneurUploadSignedLOIView.as_view(),
+        name='entrepreneur-upload-signed-loi',
     ),
 
     # ── LP Portal ──────────────────────────────────────────────────────────

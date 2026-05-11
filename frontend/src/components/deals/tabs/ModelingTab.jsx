@@ -1,14 +1,33 @@
-import React, { useState } from 'react';
-import { BarChart4, Zap } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { BarChart4, Zap, Sparkles, Loader2 } from 'lucide-react';
 
-export default function ModelingTab({ deal, onRunDCF, onRunLBO, isCalculating }) {
+const formatCompactNumber = (val) => {
+  if (val >= 1000000000) return `${(val / 1000000000).toFixed(2)}B`;
+  if (val >= 1000000) return `${(val / 1000000).toFixed(2)}M`;
+  return val.toLocaleString();
+};
+
+export default function ModelingTab({ deal, onRunDCF, onRunLBO, isCalculating, onGenerateAI, isGeneratingAI }) {
   const [activeSubTab, setActiveSubTab] = useState('DCF');
   const valuations = deal.valuations || [];
   const latestDCF = valuations.find(v => v.model_type === 'DCF');
   const latestLBO = valuations.find(v => v.model_type === 'LBO');
 
+  const isProcessing = deal.analysis_progress?.Valuation === 'processing';
+  
+
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
+      {isProcessing && (
+        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
+           <div className="w-16 h-16 rounded-full border-4 border-[#F59F01]/20 border-t-[#F59F01] animate-spin" />
+           <div className="text-center">
+              <p className="text-white font-black text-lg uppercase tracking-tight">AI is Synthesizing Model</p>
+              <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Generating DCF & LBO Assumptions...</p>
+           </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
          <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
             {['DCF', 'LBO'].map(t => (
@@ -21,6 +40,16 @@ export default function ModelingTab({ deal, onRunDCF, onRunLBO, isCalculating })
               </button>
             ))}
          </div>
+         {onGenerateAI && (
+           <button
+             onClick={onGenerateAI}
+             disabled={isGeneratingAI}
+             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-xs font-bold hover:scale-105 transition-all shadow-lg shadow-purple-500/10 disabled:opacity-50"
+           >
+             {isGeneratingAI ? <Loader2 className="animate-spin" size={14} /> : <Sparkles size={14} />}
+             AI Generate Assumptions
+           </button>
+         )}
       </div>
 
       {activeSubTab === 'DCF' && (
@@ -53,6 +82,12 @@ function DCFModel({ model, onRun, isCalculating }) {
     net_debt: 200000
   });
 
+  useEffect(() => {
+    if (model?.assumptions) {
+      setInputs(model.assumptions);
+    }
+  }, [model]);
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl space-y-6">
@@ -63,6 +98,8 @@ function DCFModel({ model, onRun, isCalculating }) {
              <ValInput label="EBITDA Margin (%)" value={inputs.ebitda_margin * 100} onChange={v => setInputs({...inputs, ebitda_margin: v/100})} isPct />
              <ValInput label="WACC (%)" value={inputs.wacc * 100} onChange={v => setInputs({...inputs, wacc: v/100})} isPct />
              <ValInput label="Terminal Growth (%)" value={inputs.terminal_growth_rate * 100} onChange={v => setInputs({...inputs, terminal_growth_rate: v/100})} isPct />
+             <ValInput label="Tax Rate (%)" value={inputs.tax_rate * 100} onChange={v => setInputs({...inputs, tax_rate: v/100})} isPct />
+             <ValInput label="Projection Years" value={inputs.projection_years} onChange={v => setInputs({...inputs, projection_years: parseInt(v) || 5})} />
              <ValInput label="Net Debt (NPR)" value={inputs.net_debt} onChange={v => setInputs({...inputs, net_debt: parseFloat(v)})} />
           </div>
           <button 
@@ -81,6 +118,9 @@ function DCFModel({ model, onRun, isCalculating }) {
                  <OutputCard label="Enterprise Value" value={model.outputs.enterprise_value} />
                  <OutputCard label="Equity Value" value={model.outputs.equity_value} highlight />
               </div>
+              <div className="grid grid-cols-1 gap-4">
+                 <OutputCard label="Revenue CAGR" value={model.outputs.revenue_cagr * 100} isPct />
+              </div>
 
               <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
                  <table className="w-full text-left">
@@ -90,21 +130,50 @@ function DCFModel({ model, onRun, isCalculating }) {
                           <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">Revenue</th>
                           <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">EBITDA</th>
                           <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">FCF</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">PV of FCF</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">PV FCF</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                        {model.outputs.projections.map(p => (
                          <tr key={p.year} className="hover:bg-white/5 transition-colors">
                             <td className="px-6 py-4 text-xs font-bold text-white/60">{p.year}</td>
-                            <td className="px-6 py-4 text-xs font-mono text-white text-right">{p.revenue.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-xs font-mono text-white text-right">{p.ebitda.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-white/40 text-right">{p.revenue.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-white/40 text-right">{p.ebitda.toLocaleString()}</td>
                             <td className="px-6 py-4 text-xs font-mono text-[#10b981] text-right">{p.fcf.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-xs font-mono text-[#F59F01] text-right">{p.pv_fcf.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-white text-right">{p.pv_fcf.toLocaleString()}</td>
                          </tr>
                        ))}
                     </tbody>
                  </table>
+              </div>
+
+              {/* AI Insights & Methodology */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="bg-[#F59F01]/5 border border-[#F59F01]/20 rounded-3xl p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                       <Zap className="w-4 h-4 text-[#F59F01]" />
+                       <h5 className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">AI Rationale</h5>
+                    </div>
+                    <p className="text-xs text-white/70 leading-relaxed italic">
+                       "{model.ai_rationale || 'AI assumptions generated based on historical growth patterns and Nepal market risk premiums.'}"
+                    </p>
+                 </div>
+                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                    <h5 className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4">Calculation Methodology</h5>
+                    <div className="space-y-3">
+                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                          <span className="text-[10px] text-white/40 font-bold uppercase">Terminal Value</span>
+                          <span className="text-[10px] font-mono text-white/60">Gordon Growth Model</span>
+                       </div>
+                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                          <span className="text-[10px] text-white/40 font-bold uppercase">Discounting</span>
+                          <span className="text-[10px] font-mono text-white/60">WACC (Present Value)</span>
+                       </div>
+                       <p className="text-[9px] text-white/20 leading-tight mt-2">
+                          Enterprise Value = Sum(PV of FCFs) + PV(Terminal Value). Equity Value = EV - Net Debt.
+                       </p>
+                    </div>
+                 </div>
               </div>
             </>
           ) : (
@@ -128,11 +197,20 @@ function LBOModel({ model, onRun, isCalculating }) {
     revenue_growth: 0.1,
     ebitda_margin: 0.22,
     tax_rate: 0.25,
+    buyout_percentage: 100,
+    target_irr: 19,
+    target_moic: 2.75,
     debt_financing: [
        { name: "Senior Term Loan", amount: 2000000, rate: 0.12 },
        { name: "Mezzanine Debt", amount: 1000000, rate: 0.18 }
     ]
   });
+
+  useEffect(() => {
+    if (model?.assumptions) {
+      setInputs(model.assumptions);
+    }
+  }, [model]);
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -140,17 +218,36 @@ function LBOModel({ model, onRun, isCalculating }) {
           <h4 className="text-xs font-black text-white uppercase tracking-widest mb-8 border-b border-white/5 pb-4">Transaction Inputs</h4>
           <div className="grid grid-cols-1 gap-4">
              <ValInput label="Entry EBITDA (NPR)" value={inputs.entry_ebitda} onChange={v => setInputs({...inputs, entry_ebitda: parseFloat(v)})} />
+             <ValInput label="EBITDA Margin (%)" value={inputs.ebitda_margin * 100} onChange={v => setInputs({...inputs, ebitda_margin: v/100})} isPct />
              <ValInput label="Entry Multiple" value={inputs.entry_multiple} onChange={v => setInputs({...inputs, entry_multiple: parseFloat(v)})} />
              <ValInput label="Exit Multiple" value={inputs.exit_multiple} onChange={v => setInputs({...inputs, exit_multiple: parseFloat(v)})} />
              <ValInput label="Revenue Growth (%)" value={inputs.revenue_growth * 100} onChange={v => setInputs({...inputs, revenue_growth: v/100})} isPct />
+             <ValInput label="Tax Rate (%)" value={inputs.tax_rate * 100} onChange={v => setInputs({...inputs, tax_rate: v/100})} isPct />
+             <ValInput label="Buyout Stake (%)" value={inputs.buyout_percentage} onChange={v => setInputs({...inputs, buyout_percentage: parseFloat(v)})} isPct />
+             <ValInput label="Target IRR (%)" value={inputs.target_irr} onChange={v => setInputs({...inputs, target_irr: parseFloat(v)})} isPct />
+             <ValInput label="Target MOIC (x)" value={inputs.target_moic} onChange={v => setInputs({...inputs, target_moic: parseFloat(v)})} isRaw />
+             <ValInput label="Exit Year" value={inputs.exit_year} onChange={v => setInputs({...inputs, exit_year: parseInt(v) || 5})} />
              <div className="space-y-2 mt-4">
                 <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Debt Structure</p>
-                {inputs.debt_financing.map((d, i) => (
-                  <div key={i} className="flex gap-2">
-                     <input className="flex-1 bg-black/20 border border-white/5 rounded-lg p-2 text-xs text-white" value={d.name} disabled />
-                     <input className="w-24 bg-black/20 border border-white/5 rounded-lg p-2 text-xs text-white text-right" value={d.amount.toLocaleString()} disabled />
-                  </div>
-                ))}
+                 {inputs.debt_financing.map((d, i) => (
+                   <div key={i} className="flex gap-2">
+                      <input 
+                        className="flex-1 bg-black/20 border border-white/5 rounded-lg p-2 text-xs text-white/40" 
+                        value={d.name} 
+                        readOnly 
+                      />
+                      <input 
+                        className="w-24 bg-black/20 border border-white/5 rounded-lg p-2 text-xs text-white text-right focus:border-[#F59F01]/50" 
+                        value={d.amount} 
+                        type="number"
+                        onChange={(e) => {
+                          const newDebt = [...inputs.debt_financing];
+                          newDebt[i] = { ...newDebt[i], amount: parseFloat(e.target.value) || 0 };
+                          setInputs({ ...inputs, debt_financing: newDebt });
+                        }}
+                      />
+                   </div>
+                 ))}
              </div>
           </div>
           <button 
@@ -165,10 +262,18 @@ function LBOModel({ model, onRun, isCalculating }) {
        <div className="xl:col-span-2 space-y-8">
           {model ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <OutputCard label="Exit Equity Value" value={model.outputs.exit_equity} />
-                 <OutputCard label="MOIC" value={model.outputs.moic} isRaw />
-                 <OutputCard label="IRR (%)" value={model.outputs.irr * 100} isPct highlight />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <OutputCard label="GP Entry Equity" value={model.outputs.gp_entry_equity || model.outputs.entry_equity} />
+                 <OutputCard label="GP Exit Equity" value={model.outputs.gp_exit_equity || model.outputs.exit_equity} />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                 <OutputCard label="MOIC" value={model.outputs.moic} isRaw highlight={model.outputs.moic >= (inputs.target_moic || 3.0)} />
+                 <OutputCard label="IRR (%)" value={model.outputs.irr * 100} isPct highlight={model.outputs.irr * 100 >= (inputs.target_irr || 30)} />
+                 <OutputCard label="Revenue CAGR" value={model.outputs.revenue_cagr * 100} isPct />
+                 <OutputCard label="Exit Year" value={inputs.exit_year} isRaw />
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                 <OutputCard label="Total Enterprise Value (Exit)" value={model.outputs.exit_ev} />
               </div>
 
               <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
@@ -192,6 +297,35 @@ function LBOModel({ model, onRun, isCalculating }) {
                        ))}
                     </tbody>
                  </table>
+              </div>
+
+              {/* AI Insights & Methodology */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="bg-[#F59F01]/5 border border-[#F59F01]/20 rounded-3xl p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                       <Zap className="w-4 h-4 text-[#F59F01]" />
+                       <h5 className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">AI Rationale</h5>
+                    </div>
+                    <p className="text-xs text-white/70 leading-relaxed italic">
+                       "{model.ai_rationale || 'LBO assumptions generated based on cash flow stability and target debt-service coverage ratios.'}"
+                    </p>
+                 </div>
+                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+                    <h5 className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4">LBO Logic</h5>
+                    <div className="space-y-3">
+                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                          <span className="text-[10px] text-white/40 font-bold uppercase">Debt Paydown</span>
+                          <span className="text-[10px] font-mono text-white/60">Waterfall Basis (CFADS)</span>
+                       </div>
+                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                          <span className="text-[10px] text-white/40 font-bold uppercase">Exit Value</span>
+                          <span className="text-[10px] font-mono text-white/60">EBITDA x Exit Multiple</span>
+                       </div>
+                       <p className="text-[9px] text-white/20 leading-tight mt-2">
+                          Returns driven by operational growth, multiple expansion, and deleveraging (debt paydown).
+                       </p>
+                    </div>
+                 </div>
               </div>
             </>
           ) : (
@@ -224,10 +358,10 @@ function ValInput({ label, value, onChange, isPct }) {
 
 function OutputCard({ label, value, isPct, isRaw, highlight }) {
   return (
-    <div className={`p-6 rounded-3xl border border-white/10 shadow-xl ${highlight ? 'bg-[#F59F01] text-black border-transparent' : 'bg-white/5 text-white'}`}>
+    <div className={`p-4 rounded-3xl border border-white/10 shadow-xl min-h-[90px] flex flex-col justify-center ${highlight ? 'bg-[#F59F01] text-black border-transparent' : 'bg-white/5 text-white'}`}>
        <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${highlight ? 'text-black/40' : 'text-white/20'}`}>{label}</p>
-       <div className="text-2xl font-black tabular-nums">
-          {isPct ? `${value.toFixed(1)}%` : (isRaw ? value.toFixed(2) : `NPR ${value.toLocaleString()}`)}
+       <div className="text-xl font-black tabular-nums truncate">
+          {isPct ? `${value.toFixed(1)}%` : (isRaw ? value.toFixed(2) : `NPR ${value >= 1000000 ? formatCompactNumber(value) : value.toLocaleString()}`)}
        </div>
     </div>
   );

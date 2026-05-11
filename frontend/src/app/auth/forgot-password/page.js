@@ -8,6 +8,7 @@ import { authService } from '@/services/auth';
 import Link from 'next/link';
 import { Loader2, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import FinlogicLogo from '@/components/FinlogicLogo';
 
 const schema = z.object({
   email: z.string().email('Invalid email address'),
@@ -35,11 +36,8 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-abstract-gradient flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-6">
-            <div className="w-10 h-10 bg-[#F59F01] rounded flex items-center justify-center shadow-lg shadow-[#F59F01]/20">
-              <span className="text-[#100226] font-bold text-xl">FL</span>
-            </div>
-            <span className="text-xl font-bold text-white tracking-wide">FINLOGIC</span>
+          <Link href="/" className="inline-block mb-6 hover:scale-105 transition-transform">
+            <FinlogicLogo size={44} variant="full" darkBg={true} />
           </Link>
           <h1 className="text-3xl font-bold text-white mb-2">Reset Password</h1>
           <p className="text-white/60">
