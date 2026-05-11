@@ -576,7 +576,9 @@ export default function GPDealDetailPage() {
     mutationFn: (file) => {
       const formData = new FormData();
       formData.append('file', file);
-      return api.post(`/deals/projects/${id}/upload-signed-ic-memo/`, formData);
+      return api.post(`/deals/projects/${id}/upload-signed-ic-memo/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
     },
     onSuccess: () => {
       toast.success('Signed IC Memo uploaded. Deal advanced to Term Sheet stage.');

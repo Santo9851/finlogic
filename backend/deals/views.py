@@ -3125,26 +3125,32 @@ class GPUploadSignedICMemoView(APIView):
     Upload a physically signed IC memo document. Advances deal to TERM_SHEET.
     """
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 
     def post(self, request, pk):
-        project = get_deal_for_user(self.request, pk=pk)
+        project = get_deal_for_user(request, pk=pk)
 
-        if project.status != PEProject.Status.IC_REVIEW:
-            return Response({"detail": "Project must be in IC_REVIEW to upload signed IC memo."}, status=status.HTTP_400_BAD_REQUEST)
+        # Allow upload in IC_REVIEW (standard) or TERM_SHEET (re-upload)
+        allowed_statuses = [PEProject.Status.IC_REVIEW, PEProject.Status.TERM_SHEET]
+        if project.status not in allowed_statuses:
+            return Response({
+                "detail": f"Project must be in IC_REVIEW to upload signed IC memo. Current status: {project.status}"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         file = request.FILES.get('file')
         if not file:
-            return Response({"detail": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "No file provided in 'file' field."}, status=status.HTTP_400_BAD_REQUEST)
 
         # 1. Verify a finalized memo exists
         memo = project.memos.filter(status__in=['FINAL', 'IC_SIGNED']).first()
         if not memo:
-            return Response({"detail": "A finalized IC memo must exist before uploading a signed copy."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "A finalized IC memo draft must exist before uploading a signed copy."}, status=status.HTTP_400_BAD_REQUEST)
 
         # 2. Save document locally
         doc = PEProjectDocument.objects.create(
             project=project,
             filename=file.name,
+            file_key=f"local/gp/{project.id}/signed_{file.name}",
             category='IC_SIGNED',
             local_file=file,
             mime_type=file.content_type,
