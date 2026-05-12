@@ -12,12 +12,12 @@ export default function MonteCarloTab({ deal, onRun, isLoading, results }) {
   });
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 theme-transition">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Input Panel */}
         <div className="space-y-6">
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-xl">
-            <h3 className="text-sm font-black text-white mb-6 uppercase tracking-widest border-b border-white/5 pb-4 flex items-center gap-2">
+          <div className="bg-card border border-border-theme rounded-3xl p-6 shadow-xl theme-transition">
+            <h3 className="text-sm font-black text-ls-primary dark:text-white mb-6 uppercase tracking-widest border-b border-border-theme pb-4 flex items-center gap-2">
               <TrendingUp size={16} className="text-[#F59F01]" /> Simulation Parameters
             </h3>
             
@@ -26,21 +26,21 @@ export default function MonteCarloTab({ deal, onRun, isLoading, results }) {
                 <p className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">Exit Multiple (Normal Dist)</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/30 uppercase font-bold">Mean (x)</label>
+                    <label className="text-[10px] text-text-muted uppercase font-bold">Mean (x)</label>
                     <input 
                       type="number" step="0.1"
                       value={assumptions.exit_multiple_mean}
                       onChange={(e) => setAssumptions({...assumptions, exit_multiple_mean: e.target.value})}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                      className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/30 uppercase font-bold">Std Dev</label>
+                    <label className="text-[10px] text-text-muted uppercase font-bold">Std Dev</label>
                     <input 
                       type="number" step="0.05"
                       value={assumptions.exit_multiple_std}
                       onChange={(e) => setAssumptions({...assumptions, exit_multiple_std: e.target.value})}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                      className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                     />
                   </div>
                 </div>
@@ -50,32 +50,32 @@ export default function MonteCarloTab({ deal, onRun, isLoading, results }) {
                 <p className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">Revenue Growth (Normal Dist)</p>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/30 uppercase font-bold">Mean (%)</label>
+                    <label className="text-[10px] text-text-muted uppercase font-bold">Mean (%)</label>
                     <input 
                       type="number" step="0.01"
                       value={assumptions.growth_mean}
                       onChange={(e) => setAssumptions({...assumptions, growth_mean: e.target.value})}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                      className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/30 uppercase font-bold">Std Dev</label>
+                    <label className="text-[10px] text-text-muted uppercase font-bold">Std Dev</label>
                     <input 
                       type="number" step="0.01"
                       value={assumptions.growth_std}
                       onChange={(e) => setAssumptions({...assumptions, growth_std: e.target.value})}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                      className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                     />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] text-white/30 uppercase font-bold">Iterations</label>
+                <label className="text-[10px] text-text-muted uppercase font-bold">Iterations</label>
                 <select 
                   value={assumptions.num_simulations}
                   onChange={(e) => setAssumptions({...assumptions, num_simulations: e.target.value})}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                  className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                 >
                   <option value={1000}>1,000</option>
                   <option value={5000}>5,000</option>
@@ -87,7 +87,7 @@ export default function MonteCarloTab({ deal, onRun, isLoading, results }) {
               <button 
                 onClick={() => onRun({ num_simulations: assumptions.num_simulations, assumptions })}
                 disabled={isLoading}
-                className="w-full bg-[#F59F01] text-black font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
+                className="w-full bg-[#F59F01] text-ls-primary font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
               >
                 {isLoading ? <Loader2 className="animate-spin mx-auto" size={16} /> : 'Run Risk Simulation'}
               </button>
@@ -101,39 +101,40 @@ export default function MonteCarloTab({ deal, onRun, isLoading, results }) {
             <>
               {/* Summary Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                  <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Expected MOIC</p>
-                  <p className="text-3xl font-black text-white tracking-tight">{results.statistics.expected_moic}x</p>
+                <div className="bg-card border border-border-theme rounded-2xl p-5 text-center theme-transition">
+                  <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Expected MOIC</p>
+                  <p className="text-3xl font-black text-ls-primary dark:text-white tracking-tight">{results.statistics.expected_moic}x</p>
                 </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5 text-center">
-                  <p className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-1">Expected IRR</p>
+                <div className="bg-card border border-border-theme rounded-2xl p-5 text-center theme-transition">
+                  <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">Expected IRR</p>
                   <p className="text-3xl font-black text-[#F59F01] tracking-tight">{results.statistics.expected_irr}%</p>
                 </div>
                 <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-5 text-center">
-                  <p className="text-[10px] font-black text-rose-400/60 uppercase tracking-widest mb-1">Probability of Loss</p>
+                  <p className="text-[10px] font-black text-rose-600 dark:text-rose-400/60 uppercase tracking-widest mb-1">Probability of Loss</p>
                   <div className="flex items-center justify-center gap-2">
-                    <AlertTriangle size={18} className="text-rose-500" />
-                    <p className="text-3xl font-black text-rose-500 tracking-tight">{results.statistics.prob_loss}%</p>
+                    <AlertTriangle size={18} className="text-rose-600 dark:text-rose-500" />
+                    <p className="text-3xl font-black text-rose-600 dark:text-rose-500 tracking-tight">{results.statistics.prob_loss}%</p>
                   </div>
                 </div>
               </div>
 
               {/* Histogram */}
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 shadow-xl">
-                 <h4 className="text-xs font-black text-white mb-8 uppercase tracking-widest">Distribution of MOIC Outcomes</h4>
+              <div className="bg-card border border-border-theme rounded-3xl p-8 shadow-xl theme-transition">
+                 <h4 className="text-xs font-black text-ls-primary dark:text-white mb-8 uppercase tracking-widest">Distribution of MOIC Outcomes</h4>
                  <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={results.histogram}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-ls-primary/5 dark:text-white/5" vertical={false} />
                         <XAxis 
                           dataKey="bin" 
-                          stroke="#ffffff30" 
+                          stroke="currentColor"
+                          className="text-ls-primary/30 dark:text-white/30"
                           fontSize={10} 
                           tickFormatter={(val) => `${val}x`}
                         />
-                        <YAxis stroke="#ffffff30" fontSize={10} hide />
+                        <YAxis stroke="currentColor" className="text-ls-primary/30 dark:text-white/30" fontSize={10} hide />
                         <Tooltip 
-                          contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                          contentStyle={{ backgroundColor: 'var(--background)', border: '1px solid var(--card-border)', borderRadius: '12px' }}
                           itemStyle={{ fontSize: '10px', fontWeight: '800' }}
                           labelStyle={{ fontSize: '10px', color: '#F59F01', fontWeight: '900' }}
                           labelFormatter={(val) => `Exit Multiple: ${val}x`}
@@ -153,13 +154,13 @@ export default function MonteCarloTab({ deal, onRun, isLoading, results }) {
               </div>
 
               {/* Percentiles */}
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
-                <h4 className="text-xs font-black text-white mb-6 uppercase tracking-widest">Confidence Intervals</h4>
+              <div className="bg-card border border-border-theme rounded-3xl p-8 theme-transition">
+                <h4 className="text-xs font-black text-ls-primary dark:text-white mb-6 uppercase tracking-widest">Confidence Intervals</h4>
                 <div className="grid grid-cols-5 gap-4">
                   {Object.entries(results.statistics.moic_percentiles).map(([p, val]) => (
                     <div key={p} className="text-center">
-                      <p className="text-[10px] font-black text-white/20 uppercase mb-1">{p.replace('p', 'P')}</p>
-                      <p className="text-sm font-bold text-white">{val}x</p>
+                      <p className="text-[10px] font-black text-text-muted uppercase mb-1">{p.replace('p', 'P')}</p>
+                      <p className="text-sm font-bold text-ls-primary dark:text-white">{val}x</p>
                     </div>
                   ))}
                 </div>
@@ -167,12 +168,12 @@ export default function MonteCarloTab({ deal, onRun, isLoading, results }) {
             </>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-20 space-y-4">
-               <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center text-white/10 border border-white/5">
+               <div className="w-16 h-16 rounded-3xl bg-ls-primary/5 dark:bg-white/5 flex items-center justify-center text-ls-primary/10 dark:text-white/10 border border-border-theme">
                  <Percent size={32} />
                </div>
                <div className="max-w-xs">
-                 <h4 className="text-white font-bold text-sm">No Simulation Data</h4>
-                 <p className="text-white/20 text-xs mt-1">Configure your assumptions and click 'Run Risk Simulation' to generate Monte Carlo results.</p>
+                 <h4 className="text-ls-primary dark:text-white font-bold text-sm">No Simulation Data</h4>
+                 <p className="text-text-muted text-xs mt-1">Configure your assumptions and click 'Run Risk Simulation' to generate Monte Carlo results.</p>
                </div>
             </div>
           )}

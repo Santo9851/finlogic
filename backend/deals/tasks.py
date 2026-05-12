@@ -1271,21 +1271,31 @@ def generate_ai_term_sheet(project_id, user_id=None):
 
     try:
         project = PEProject.objects.get(id=project_id)
+        project.refresh_from_db() # Get latest valuation metrics
+        
         user = User.objects.get(id=user_id) if user_id else None
         client = AIModelClient()
 
         # 1. Gather context
         dcf = project.valuations.filter(model_type='DCF').first()
         lbo = project.valuations.filter(model_type='LBO').first()
-        scoring = project.scoring_runs.first()
+        scoring = project.scoring_runs.order_by('-created_at').first()
         fund = project.fund
+        memo = project.memos.order_by('-version').first()
+
+        # 1. Update Progress
+        progress = project.analysis_progress or {}
+        progress['Term Sheet'] = 'processing'
+        project.analysis_progress = progress
+        project.save(update_fields=['analysis_progress'])
 
         context_data = {
             "project_name": project.legal_name,
             "sector": project.get_sector_display(),
-            "deal_type": project.get_deal_type_display(),
-            "dcf_equity_value": str(dcf.outputs.get("equity_value", "N/A")) if dcf else "N/A",
+            "business_description": project.business_description,
+            "investment_memo_summary": memo.content.get('executive_summary', 'N/A') if memo and memo.content else "N/A",
             "dcf_enterprise_value": str(dcf.outputs.get("enterprise_value", "N/A")) if dcf else "N/A",
+            "dcf_equity_value": str(dcf.outputs.get("equity_value", "N/A")) if dcf else "N/A",
             "lbo_irr": str(lbo.outputs.get("irr", "N/A")) if lbo else "N/A",
             "lbo_moic": str(lbo.outputs.get("moic", "N/A")) if lbo else "N/A",
             "scoring_total": str(scoring.total_deal_score) if scoring else "N/A",
@@ -1295,18 +1305,28 @@ def generate_ai_term_sheet(project_id, user_id=None):
             "investment_range_max": str(project.investment_range_max_npr or "N/A"),
             "nepal_context": "Nepal PE market. Currency: NPR. Standard PE terms for growth capital.",
         }
+        
+        logger.info(f"Generating AI Term Sheet for {project.legal_name} with context: {context_data}")
 
         # 2. Call AI
         raw_json = client.execute_task("term_sheet_draft", context_data, project=project)
 
         # 3. Parse
-        clean = raw_json
+        clean = raw_json or ""
         if "```json" in clean:
             clean = clean.split("```json")[1].split("```")[0].strip()
         elif "```" in clean:
-            clean = clean.split("```")[1].split("```")[0].strip()
-
-        data = json.loads(clean)
+            parts = clean.split("```")
+            if len(parts) > 2:
+                clean = parts[1].strip()
+            
+        try:
+            if not clean:
+                raise ValueError("AI returned an empty response.")
+            data = json.loads(clean)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse term sheet JSON. Raw response: {raw_json[:500]}...")
+            raise ValueError(f"AI returned malformed JSON. Raw: {raw_json[:500]}") from e
 
         # 4. Get version
         latest = project.term_sheets.order_by('-version').first()
@@ -1323,10 +1343,24 @@ def generate_ai_term_sheet(project_id, user_id=None):
         )
 
         logger.info(f"AI Term Sheet v{new_version} generated for {project.legal_name}")
+        
+        # Clear progress
+        progress = project.analysis_progress or {}
+        if 'Term Sheet' in progress:
+            del progress['Term Sheet']
+        project.analysis_progress = progress
+        project.save(update_fields=['analysis_progress'])
+        
         return {"term_sheet_id": str(term_sheet.id), "version": new_version}
 
     except Exception as e:
         logger.error(f"Error in generate_ai_term_sheet: {str(e)}")
+        # Clear progress on error
+        progress = project.analysis_progress or {}
+        if 'Term Sheet' in progress:
+            del progress['Term Sheet']
+        project.analysis_progress = progress
+        project.save(update_fields=['analysis_progress'])
         raise e
 
 
@@ -1391,9 +1425,23 @@ def generate_ai_spa_draft(project_id, user_id=None):
         )
 
         logger.info(f"AI SPA Draft v{new_version} generated for {project.legal_name}")
+        
+        # Clear progress
+        progress = project.analysis_progress or {}
+        if 'SPA Draft' in progress:
+            del progress['SPA Draft']
+        project.analysis_progress = progress
+        project.save(update_fields=['analysis_progress'])
+
         return {"spa_draft_id": str(spa.id), "version": new_version}
 
     except Exception as e:
         logger.error(f"Error in generate_ai_spa_draft: {str(e)}")
+        # Clear progress on error
+        progress = project.analysis_progress or {}
+        if 'SPA Draft' in progress:
+            del progress['SPA Draft']
+        project.analysis_progress = progress
+        project.save(update_fields=['analysis_progress'])
         raise e
 

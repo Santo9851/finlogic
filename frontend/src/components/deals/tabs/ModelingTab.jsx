@@ -17,29 +17,29 @@ export default function ModelingTab({ deal, onRunDCF, onRunLBO, isCalculating, o
   
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative theme-transition">
       {isProcessing && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
+        <div className="absolute inset-0 z-50 bg-ls-primary/60 dark:bg-black/60 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500">
            <div className="w-16 h-16 rounded-full border-4 border-[#F59F01]/20 border-t-[#F59F01] animate-spin" />
            <div className="text-center">
-              <p className="text-white font-black text-lg uppercase tracking-tight">AI is Synthesizing Model</p>
-              <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Generating DCF & LBO Assumptions...</p>
+              <p className="text-ls-white font-black text-lg uppercase tracking-tight">AI is Synthesizing Model</p>
+              <p className="text-ls-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Generating DCF & LBO Assumptions...</p>
            </div>
         </div>
       )}
 
       <div className="flex items-center justify-between">
-         <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+          <div className="flex bg-ls-primary/5 dark:bg-white/5 p-1 rounded-2xl border border-border-theme theme-transition">
             {['DCF', 'LBO'].map(t => (
               <button 
                 key={t}
                 onClick={() => setActiveSubTab(t)}
-                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === t ? 'bg-[#F59F01] text-black shadow-lg shadow-[#F59F01]/20' : 'text-white/40 hover:text-white'}`}
+                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === t ? 'bg-[#F59F01] text-ls-primary shadow-lg shadow-[#F59F01]/20' : 'text-ls-primary/40 dark:text-white/40 hover:text-ls-primary dark:hover:text-white'}`}
               >
                 {t} Analysis
               </button>
             ))}
-         </div>
+          </div>
          {onGenerateAI && (
            <button
              onClick={onGenerateAI}
@@ -90,8 +90,8 @@ function DCFModel({ model, onRun, isCalculating }) {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-       <div className="bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl space-y-6">
-          <h4 className="text-xs font-black text-white uppercase tracking-widest mb-8 border-b border-white/5 pb-4">Assumptions</h4>
+       <div className="bg-card border border-border-theme rounded-3xl p-8 shadow-2xl space-y-6 theme-transition">
+          <h4 className="text-xs font-black text-ls-primary dark:text-white uppercase tracking-widest mb-8 border-b border-border-theme pb-4">Assumptions</h4>
           <div className="grid grid-cols-1 gap-4">
              <ValInput label="Current Revenue (NPR)" value={inputs.current_revenue} onChange={v => setInputs({...inputs, current_revenue: parseFloat(v)})} />
              <ValInput label="Revenue Growth (%)" value={inputs.revenue_growth_rate * 100} onChange={v => setInputs({...inputs, revenue_growth_rate: v/100})} isPct />
@@ -105,7 +105,7 @@ function DCFModel({ model, onRun, isCalculating }) {
           <button 
             onClick={() => onRun(inputs)}
             disabled={isCalculating}
-            className="w-full mt-6 py-4 bg-[#F59F01] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
+            className="w-full mt-6 py-4 bg-[#F59F01] text-ls-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
           >
             {isCalculating ? 'Recalculating...' : 'Update DCF Model'}
           </button>
@@ -122,25 +122,25 @@ function DCFModel({ model, onRun, isCalculating }) {
                  <OutputCard label="Revenue CAGR" value={model.outputs.revenue_cagr * 100} isPct />
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="bg-card border border-border-theme rounded-3xl overflow-hidden shadow-2xl theme-transition">
                  <table className="w-full text-left">
                     <thead>
-                       <tr className="bg-white/5">
-                          <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">Year</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">Revenue</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">EBITDA</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">FCF</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">PV FCF</th>
+                       <tr className="bg-ls-primary/5 dark:bg-white/5">
+                          <th className="px-6 py-4 text-[10px] font-black text-ls-primary/30 dark:text-white/30 uppercase tracking-widest">Year</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-ls-primary/30 dark:text-white/30 uppercase tracking-widest text-right">Revenue</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-ls-primary/30 dark:text-white/30 uppercase tracking-widest text-right">EBITDA</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-ls-primary/30 dark:text-white/30 uppercase tracking-widest text-right">FCF</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-ls-primary/30 dark:text-white/30 uppercase tracking-widest text-right">PV FCF</th>
                        </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-ls-primary/5 dark:divide-white/5">
                        {model.outputs.projections.map(p => (
-                         <tr key={p.year} className="hover:bg-white/5 transition-colors">
-                            <td className="px-6 py-4 text-xs font-bold text-white/60">{p.year}</td>
-                            <td className="px-6 py-4 text-xs font-mono text-white/40 text-right">{p.revenue.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-xs font-mono text-white/40 text-right">{p.ebitda.toLocaleString()}</td>
+                         <tr key={p.year} className="hover:bg-ls-primary/5 dark:hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4 text-xs font-bold text-ls-primary/60 dark:text-white/60">{p.year}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-ls-primary/40 dark:text-white/40 text-right">{p.revenue.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-ls-primary/40 dark:text-white/40 text-right">{p.ebitda.toLocaleString()}</td>
                             <td className="px-6 py-4 text-xs font-mono text-[#10b981] text-right">{p.fcf.toLocaleString()}</td>
-                            <td className="px-6 py-4 text-xs font-mono text-white text-right">{p.pv_fcf.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-xs font-mono text-ls-primary dark:text-white text-right">{p.pv_fcf.toLocaleString()}</td>
                          </tr>
                        ))}
                     </tbody>
@@ -149,27 +149,27 @@ function DCFModel({ model, onRun, isCalculating }) {
 
               {/* AI Insights & Methodology */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="bg-[#F59F01]/5 border border-[#F59F01]/20 rounded-3xl p-6">
+                  <div className="bg-[#F59F01]/5 border border-[#F59F01]/20 rounded-3xl p-6">
                     <div className="flex items-center gap-2 mb-4">
                        <Zap className="w-4 h-4 text-[#F59F01]" />
                        <h5 className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">AI Rationale</h5>
                     </div>
-                    <p className="text-xs text-white/70 leading-relaxed italic">
+                    <p className="text-xs text-ls-primary/70 dark:text-white/70 leading-relaxed italic">
                        "{model.ai_rationale || 'AI assumptions generated based on historical growth patterns and Nepal market risk premiums.'}"
                     </p>
                  </div>
-                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
-                    <h5 className="text-[10px] font-black text-white/30 uppercase tracking-widest mb-4">Calculation Methodology</h5>
+                 <div className="bg-card border border-border-theme rounded-3xl p-6 theme-transition">
+                    <h5 className="text-[10px] font-black text-ls-primary/30 dark:text-white/30 uppercase tracking-widest mb-4">Calculation Methodology</h5>
                     <div className="space-y-3">
-                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                          <span className="text-[10px] text-white/40 font-bold uppercase">Terminal Value</span>
-                          <span className="text-[10px] font-mono text-white/60">Gordon Growth Model</span>
+                       <div className="flex justify-between items-center border-b border-border-theme pb-2">
+                          <span className="text-[10px] text-ls-primary/40 dark:text-white/40 font-bold uppercase">Terminal Value</span>
+                          <span className="text-[10px] font-mono text-ls-primary/60 dark:text-white/60">Gordon Growth Model</span>
                        </div>
-                       <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                          <span className="text-[10px] text-white/40 font-bold uppercase">Discounting</span>
-                          <span className="text-[10px] font-mono text-white/60">WACC (Present Value)</span>
+                       <div className="flex justify-between items-center border-b border-border-theme pb-2">
+                          <span className="text-[10px] text-ls-primary/40 dark:text-white/40 font-bold uppercase">Discounting</span>
+                          <span className="text-[10px] font-mono text-ls-primary/60 dark:text-white/60">WACC (Present Value)</span>
                        </div>
-                       <p className="text-[9px] text-white/20 leading-tight mt-2">
+                       <p className="text-[9px] text-text-muted leading-tight mt-2">
                           Enterprise Value = Sum(PV of FCFs) + PV(Terminal Value). Equity Value = EV - Net Debt.
                        </p>
                     </div>
@@ -253,7 +253,7 @@ function LBOModel({ model, onRun, isCalculating }) {
           <button 
             onClick={() => onRun(inputs)}
             disabled={isCalculating}
-            className="w-full mt-6 py-4 bg-[#F59F01] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
+            className="w-full mt-6 py-4 bg-[#F59F01] text-ls-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
           >
             {isCalculating ? 'Modeling Returns...' : 'Run LBO Analysis'}
           </button>
@@ -342,15 +342,15 @@ function LBOModel({ model, onRun, isCalculating }) {
 function ValInput({ label, value, onChange, isPct }) {
   return (
     <div className="space-y-1.5">
-       <label className="text-[10px] font-black text-white/30 uppercase tracking-widest ml-1">{label}</label>
+       <label className="text-[10px] font-black text-ls-primary/30 dark:text-white/30 uppercase tracking-widest ml-1">{label}</label>
        <div className="relative">
           <input 
             type="number" 
             value={value} 
             onChange={(e) => onChange(e.target.value)}
-            className="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-[#F59F01]/50 transition-all font-mono"
+            className="w-full bg-ls-primary/10 dark:bg-black/20 border border-border-theme rounded-xl p-3 text-sm text-ls-primary dark:text-white focus:outline-none focus:border-[#F59F01]/50 transition-all font-mono"
           />
-          {isPct && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 text-xs">%</span>}
+          {isPct && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted text-xs">%</span>}
        </div>
     </div>
   );
@@ -358,8 +358,8 @@ function ValInput({ label, value, onChange, isPct }) {
 
 function OutputCard({ label, value, isPct, isRaw, highlight }) {
   return (
-    <div className={`p-4 rounded-3xl border border-white/10 shadow-xl min-h-[90px] flex flex-col justify-center ${highlight ? 'bg-[#F59F01] text-black border-transparent' : 'bg-white/5 text-white'}`}>
-       <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${highlight ? 'text-black/40' : 'text-white/20'}`}>{label}</p>
+    <div className={`p-4 rounded-3xl border border-border-theme shadow-xl min-h-[90px] flex flex-col justify-center theme-transition ${highlight ? 'bg-[#F59F01] text-ls-primary border-transparent' : 'bg-card text-ls-primary dark:text-white'}`}>
+       <p className={`text-[9px] font-black uppercase tracking-[0.2em] mb-1 ${highlight ? 'text-ls-primary/40' : 'text-text-muted'}`}>{label}</p>
        <div className="text-xl font-black tabular-nums truncate">
           {isPct ? `${value.toFixed(1)}%` : (isRaw ? value.toFixed(2) : `NPR ${value >= 1000000 ? formatCompactNumber(value) : value.toLocaleString()}`)}
        </div>

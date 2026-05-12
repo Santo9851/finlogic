@@ -17,17 +17,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/services/api';
 import { toast } from 'sonner';
 import FileUploader from '@/components/portal/FileUploader';
+import { useTheme } from 'next-themes';
 
 export default function AuthMultiStepForm() {
   const { id: projectId } = useParams();
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState(null);
   const [template, setTemplate] = useState(null);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  // Local cache of step responses – updated immediately on successful save
-  // so going back to a previous step shows the saved data without a page refresh.
+  // Local cache of step responses
   const [localResponses, setLocalResponses] = useState({});
 
   useEffect(() => {
@@ -36,12 +38,10 @@ export default function AuthMultiStepForm() {
         const res = await api.get(`/entrepreneur/submissions/${projectId}/`);
         setProject(res.data);
         setTemplate(res.data.active_template);
-        // Redirect if already submitted
         if (res.data.submitted_at) {
            router.replace('/entrepreneur/dashboard');
            return;
         }
-        // Seed local response cache from server-persisted responses
         const seed = {};
         (res.data.form_responses || []).forEach(r => {
           seed[r.step_index] = r.response_data;
@@ -61,8 +61,6 @@ export default function AuthMultiStepForm() {
     init();
   }, [projectId]);
 
-  // Called by StepForm after a successful save so we can update the local
-  // cache and the form_step_completed counter without a full page reload.
   const onStepSaved = (stepIndex, data, newStepCompleted) => {
     setLocalResponses(prev => ({ ...prev, [stepIndex]: data }));
     if (newStepCompleted !== undefined) {
@@ -93,69 +91,66 @@ export default function AuthMultiStepForm() {
   if (!project || !template) return (
     <div className="min-h-[60vh] flex items-center justify-center p-6 text-center space-y-4">
       <div className="max-w-md w-full">
-        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-white">Project Not Found</h1>
-        <p className="text-white/40 text-sm">We couldn't find the application form for this project.</p>
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+        <h1 className="text-2xl font-black text-foreground uppercase tracking-tight">Project Not Found</h1>
+        <p className="text-text-muted text-sm font-medium">We couldn't find the application form for this project.</p>
       </div>
     </div>
   );
 
   const currentStep = template.steps[currentStepIndex];
-  // Use localResponses so step-stepper highlights update immediately
   const completedStepCount = project?.form_step_completed ?? 0;
   const progress = ((currentStepIndex + 1) / template.steps.length) * 100;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pb-20">
+    <div className="max-w-3xl mx-auto space-y-12 pb-20 theme-transition">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="inline-block px-3 py-1 rounded-full bg-[#F59F01]/10 border border-[#F59F01]/20 text-[#F59F01] text-[10px] uppercase tracking-widest font-bold mb-4">
-          Resuming Submission
+      <div className="text-center space-y-4">
+        <div className="inline-block px-4 py-1.5 rounded-full bg-[#F59F01]/10 border border-[#F59F01]/20 text-[#F59F01] text-[10px] uppercase tracking-[0.2em] font-black mb-2">
+          Institutional Submission
         </div>
-        <h1 className="text-3xl font-bold text-white">{project.legal_name}</h1>
+        <h1 className="text-4xl md:text-5xl font-black text-foreground uppercase tracking-tighter leading-none">{project.legal_name}</h1>
       </div>
 
       {/* Progress */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-center px-2 relative">
+      <div className="space-y-10">
+        <div className="flex justify-between items-center px-4 relative">
           {template.steps.map((s, idx) => (
-            <div key={idx} className="flex flex-col items-center gap-2 relative z-10">
+            <div key={idx} className="flex flex-col items-center gap-3 relative z-10">
               <button
                 onClick={() => {
-                  // Allow clicking already-completed steps (to review/edit)
-                  // and the current active step, but NOT future incomplete steps.
                   if (idx < completedStepCount || idx === currentStepIndex) {
                     setCurrentStepIndex(idx);
                   }
                 }}
                 disabled={idx >= completedStepCount && idx !== currentStepIndex}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold transition-all border ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-black transition-all border ${
                   idx === currentStepIndex 
-                    ? 'bg-[#F59F01] text-black border-[#F59F01] shadow-[0_0_15px_rgba(245,159,1,0.3)]' 
+                    ? 'bg-[#F59F01] text-ls-primary-fixed border-[#F59F01] shadow-2xl shadow-[#F59F01]/40 scale-110' 
                     : idx < completedStepCount 
-                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/30'
-                    : 'bg-white/5 text-white/20 border-white/10'
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                    : 'bg-foreground/5 text-text-muted/40 border-border-theme'
                 }`}
               >
-                {idx < completedStepCount ? <Check size={14} /> : idx + 1}
+                {idx < completedStepCount ? <Check size={16} strokeWidth={3} /> : idx + 1}
               </button>
-              <span className={`text-[9px] uppercase tracking-tighter font-bold ${idx === currentStepIndex ? 'text-white' : 'text-white/30'}`}>
+              <span className={`text-[9px] uppercase tracking-[0.1em] font-black ${idx === currentStepIndex ? 'text-foreground' : 'text-text-muted/40'}`}>
                 {s.title.split(' ')[0]}
               </span>
             </div>
           ))}
           {/* Connecting Line */}
-          <div className="absolute left-0 right-0 h-[1px] bg-white/5 -z-0 top-4 mx-10" />
+          <div className="absolute left-0 right-0 h-px bg-border-theme -z-0 top-5 mx-12 opacity-50" />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3 px-2">
           <div className="flex justify-between items-end">
-            <p className="text-xs text-white/40 uppercase tracking-widest font-medium">
+            <p className="text-[10px] text-text-muted uppercase tracking-[0.2em] font-black opacity-60">
               {currentStep.title}
             </p>
-            <p className="text-xs text-[#F59F01] font-bold">{Math.round(progress)}%</p>
+            <p className="text-xs text-[#F59F01] font-black">{Math.round(progress)}%</p>
           </div>
-          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+          <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden border border-border-theme/50 shadow-inner">
             <motion.div 
               className="h-full bg-[#F59F01]"
               initial={{ width: 0 }}
@@ -170,10 +165,10 @@ export default function AuthMultiStepForm() {
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep.step_name}
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="bg-white/5 border border-white/10 rounded-2xl p-6 sm:p-10 shadow-2xl backdrop-blur-xl"
+          exit={{ opacity: 0, y: -15 }}
+          className="bg-card border border-border-theme rounded-[3rem] p-8 sm:p-12 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.1)] theme-transition"
         >
           <StepForm 
             projectId={projectId} 
@@ -187,17 +182,17 @@ export default function AuthMultiStepForm() {
         </motion.div>
       </AnimatePresence>
 
-      <div className="flex justify-between items-center pt-4">
+      <div className="flex justify-between items-center pt-6 px-4">
         <button
           onClick={prevStep}
           disabled={currentStepIndex === 0}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-2 px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
             currentStepIndex === 0 
               ? 'opacity-0 pointer-events-none' 
-              : 'text-white/40 hover:text-white hover:bg-white/5'
+              : 'text-text-muted hover:text-foreground hover:bg-foreground/5 border border-transparent hover:border-border-theme'
           }`}
         >
-          <ChevronLeft size={18} /> Previous
+          <ChevronLeft size={18} /> Back
         </button>
       </div>
     </div>
@@ -229,7 +224,6 @@ function StepForm({ projectId, step, savedData, onSuccess, onStepSaved, isLast, 
     defaultValues: savedData || {} 
   });
 
-  // Update form if savedData changes (e.g. user navigates steps)
   useEffect(() => {
     if (savedData) {
       methods.reset(savedData);
@@ -272,7 +266,6 @@ const onSubmit = async (data) => {
           }
         }
       } else {
-        // Notify parent so it can update localResponses without a page refresh
         onStepSaved(step.step_index, data, stepRes.data.step_completed);
         toast.success(step.title + ' saved');
         onSuccess();
@@ -293,13 +286,13 @@ const onSubmit = async (data) => {
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold text-white">{step.title}</h2>
-          <p className="text-white/40 text-sm">{step.description}</p>
+      <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-10">
+        <div className="space-y-3">
+          <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">{step.title}</h2>
+          <p className="text-text-muted text-sm font-medium leading-relaxed">{step.description}</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-8">
           {step.fields.map(field => (
             <FormField key={field.name} field={field} projectId={projectId} stepName={step.step_name} />
           ))}
@@ -308,12 +301,12 @@ const onSubmit = async (data) => {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full flex items-center justify-center gap-2 bg-[#F59F01] text-black font-bold py-4 rounded-xl hover:bg-[#F59F01]/90 transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-3 bg-[#F59F01] text-ls-primary-fixed font-black uppercase tracking-[0.1em] py-5 rounded-2xl hover:scale-[1.02] transition-all disabled:opacity-50 shadow-2xl shadow-[#F59F01]/20"
         >
-          {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+          {submitting ? <Loader2 className="w-6 h-6 animate-spin" /> : (
             <>
-              {isLast ? 'Finalize Submission' : 'Continue'} 
-              {!isLast && <ChevronRight size={18} />}
+              {isLast ? 'Execute Final Submission' : 'Save & Continue'} 
+              {!isLast && <ChevronRight size={20} strokeWidth={3} />}
             </>
           )}
         </button>
@@ -326,28 +319,28 @@ function FormField({ field, projectId, stepName }) {
   const { register, formState: { errors }, setValue, watch, clearErrors, getValues } = useFormContext();
   const fieldValue = watch(field.name);
 
-  const commonCls = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-[#F59F01] transition-all";
+  const commonCls = "w-full bg-foreground/[0.03] border border-border-theme rounded-2xl px-6 py-4 text-foreground text-sm font-medium outline-none focus:border-[#F59F01]/50 focus:bg-foreground/[0.05] transition-all placeholder:text-text-muted/30";
 
   return (
-    <div className="space-y-2">
-      <label className="text-sm font-medium text-white/70">
-        {field.label} {field.required && <span className="text-[#F59F01]">*</span>}
+    <div className="space-y-3">
+      <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">
+        {field.label} {field.required && <span className="text-[#F59F01] ml-1">*</span>}
       </label>
 
       {field.type === 'textarea' ? (
-        <textarea {...register(field.name)} className={commonCls + " min-h-[100px]"} />
+        <textarea {...register(field.name)} className={commonCls + " min-h-[140px] resize-none"} />
       ) : field.type === 'select' ? (
-        <select {...register(field.name)} className={commonCls}>
-          <option value="" disabled className="bg-[#0a0014]">Select...</option>
-          {field.choices?.map(c => <option key={c.value} value={c.value} className="bg-[#0a0014]">{c.label}</option>)}
+        <select {...register(field.name)} className={commonCls + " appearance-none"}>
+          <option value="" disabled>Select option...</option>
+          {field.choices?.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       ) : field.type === 'checkbox' ? (
-        <label className="flex items-center gap-3 cursor-pointer">
-          <input type="checkbox" {...register(field.name)} className="w-4 h-4 rounded border-white/10 bg-white/5 text-[#F59F01]" />
-          <span className="text-sm text-white/50">{field.label}</span>
+        <label className="flex items-center gap-4 cursor-pointer group bg-foreground/[0.03] p-4 rounded-2xl border border-border-theme hover:bg-foreground/[0.05] transition-all">
+          <input type="checkbox" {...register(field.name)} className="w-5 h-5 rounded-lg border-border-theme bg-background text-[#F59F01] focus:ring-[#F59F01]/50" />
+          <span className="text-xs font-bold text-text-muted group-hover:text-foreground transition-colors uppercase tracking-widest">{field.label}</span>
         </label>
       ) : field.type === 'file_upload' ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <FileUploader 
             projectId={projectId}
             category={field.category || 'OTHER'} 
@@ -386,7 +379,6 @@ function FormField({ field, projectId, stepName }) {
             onSuccess={async (docId) => {
               setValue(field.name, docId, { shouldValidate: true });
               clearErrors(field.name);
-              // Auto-save in the background to prevent data loss if they log out
               try {
                 const currentData = getValues();
                 currentData[field.name] = docId;
@@ -400,7 +392,11 @@ function FormField({ field, projectId, stepName }) {
               clearErrors(field.name);
             }}
           />
-          {fieldValue && <div className="text-[10px] text-emerald-400 flex items-center gap-1"><CheckCircle2 size={12}/> Document Uploaded</div>}
+          {fieldValue && (
+            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-[0.2em] flex items-center gap-2 bg-emerald-500/5 w-fit px-4 py-2 rounded-lg border border-emerald-500/10 shadow-sm">
+              <CheckCircle2 size={14} /> Integrity Verified: Document Uploaded
+            </div>
+          )}
         </div>
       ) : (
         <input 
@@ -409,7 +405,7 @@ function FormField({ field, projectId, stepName }) {
           className={commonCls} 
         />
       )}
-      {errors[field.name] && <p className="text-xs text-red-400 mt-1">{errors[field.name].message}</p>}
+      {errors[field.name] && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mt-2 ml-1 flex items-center gap-2"><AlertCircle size={12}/> {errors[field.name].message}</p>}
     </div>
   );
 }

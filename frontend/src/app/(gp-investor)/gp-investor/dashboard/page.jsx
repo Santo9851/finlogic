@@ -42,8 +42,8 @@ export default function GPInvestorDashboard() {
     <div className="space-y-8 pb-20">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white">GP Investor Portal</h1>
-        <p className="text-white/40 text-sm mt-1">Management Company Shareholder Overview</p>
+        <h1 className="text-3xl font-bold text-foreground">GP Investor Portal</h1>
+        <p className="text-text-muted text-sm mt-1">Management Company Shareholder Overview</p>
       </div>
 
       {/* Shareholding Summary Metrics */}
@@ -78,9 +78,9 @@ export default function GPInvestorDashboard() {
         {/* Left Column: Fund Performance & Governance */}
         <div className="lg:col-span-2 space-y-8">
           {/* Fund Performance Table */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.01]">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-widest">
+          <div className="bg-card border border-border-theme rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-border-theme flex items-center justify-between bg-foreground/[0.01]">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-widest">
                 <BarChart3 size={16} className="text-[#F59F01]" /> Fund Performance Summary
               </h3>
             </div>
@@ -88,7 +88,7 @@ export default function GPInvestorDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="text-[10px] text-white/20 uppercase tracking-widest border-b border-white/5">
+                  <tr className="text-[10px] text-text-muted/40 uppercase tracking-widest border-b border-border-theme">
                     <th className="px-6 py-4 font-semibold">Fund Name</th>
                     <th className="px-6 py-4 font-semibold">Vintage</th>
                     <th className="px-6 py-4 font-semibold">Status</th>
@@ -96,21 +96,21 @@ export default function GPInvestorDashboard() {
                     <th className="px-6 py-4 font-semibold text-right">NAV Multiple</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-border-theme">
                   {dashboard?.funds?.map((fund) => (
-                    <tr key={fund.id} className="hover:bg-white/[0.02] transition-colors group">
+                    <tr key={fund.id} className="hover:bg-foreground/[0.02] transition-colors group">
                       <td className="px-6 py-5">
-                        <span className="text-white font-medium group-hover:text-[#F59F01] transition-colors">
+                        <span className="text-foreground font-medium group-hover:text-[#F59F01] transition-colors">
                           {fund.name}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-white/40">{fund.vintage_year}</td>
+                      <td className="px-6 py-5 text-text-muted/60">{fund.vintage_year}</td>
                       <td className="px-6 py-5">
-                        <span className="text-[10px] bg-white/5 px-2 py-1 rounded text-white/40 uppercase font-bold tracking-tighter">
+                        <span className="text-[10px] bg-foreground/5 px-2 py-1 rounded text-text-muted uppercase font-bold tracking-tighter">
                           {fund.status}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-white/40">NPR {(fund.committed_capital_npr / 1e7).toFixed(1)}Cr</td>
+                      <td className="px-6 py-5 text-text-muted/60">NPR {(fund.committed_capital_npr / 1e7).toFixed(1)}Cr</td>
                       <td className="px-6 py-5 text-right font-bold text-[#16c784]">1.25x</td>
                     </tr>
                   ))}
@@ -120,9 +120,9 @@ export default function GPInvestorDashboard() {
           </div>
 
           {/* Dividend History */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="p-6 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-widest">
+          <div className="bg-card border border-border-theme rounded-2xl overflow-hidden">
+            <div className="p-6 border-b border-border-theme">
+              <h3 className="text-sm font-bold text-foreground flex items-center gap-2 uppercase tracking-widest">
                 <TrendingUp size={16} className="text-[#16c784]" /> Dividend History
               </h3>
             </div>
@@ -130,19 +130,19 @@ export default function GPInvestorDashboard() {
               {dashboard?.shareholder?.dividend_history?.length > 0 ? (
                 <div className="space-y-4">
                   {dashboard?.shareholder?.dividend_history.map((div, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-white/2 rounded-xl border border-white/5">
+                    <div key={i} className="flex items-center justify-between p-3 bg-foreground/[0.02] rounded-xl border border-border-theme">
                       <div>
-                        <p className="text-sm font-bold text-white">NPR {div.amount_npr.toLocaleString()}</p>
-                        <p className="text-[10px] text-white/40 uppercase tracking-widest">{div.fiscal_year} • {div.payment_date}</p>
+                        <p className="text-sm font-bold text-foreground">NPR {div.amount_npr.toLocaleString()}</p>
+                        <p className="text-[10px] text-text-muted uppercase tracking-widest">{div.fiscal_year} • {div.payment_date}</p>
                       </div>
-                      <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="text-[9px] font-bold px-2 py-1 rounded-full bg-[#16c784]/10 text-[#16c784] border border-[#16c784]/20">
                         {div.status}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-white/30 italic">No dividend distributions recorded yet.</p>
+                <p className="text-sm text-text-muted italic">No dividend distributions recorded yet.</p>
               )}
             </div>
           </div>
@@ -151,33 +151,33 @@ export default function GPInvestorDashboard() {
         {/* Right Column: Internal IR Updates */}
         <div className="space-y-8">
           {/* Internal Documents */}
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-xs font-bold text-white flex items-center gap-2 uppercase tracking-widest border-b border-white/10 pb-4 mb-6">
+          <div className="bg-card border border-border-theme rounded-2xl p-6">
+            <h3 className="text-xs font-bold text-foreground flex items-center gap-2 uppercase tracking-widest border-b border-border-theme pb-4 mb-6">
               <FileCheck size={16} className="text-[#0B6EC3]" /> Internal Shareholder Data
             </h3>
             
             <div className="space-y-3">
               {dashboard?.internal_documents?.length > 0 ? (
                 dashboard.internal_documents.map((doc) => (
-                  <div key={doc.id} className="bg-white/2 hover:bg-white/5 border border-white/5 rounded-xl p-4 flex items-center justify-between group cursor-pointer transition-all">
+                  <div key={doc.id} className="bg-foreground/[0.02] hover:bg-foreground/[0.05] border border-border-theme rounded-xl p-4 flex items-center justify-between group cursor-pointer transition-all">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-white truncate">{doc.title}</p>
-                      <p className="text-[10px] text-white/20 uppercase tracking-tighter mt-0.5">{doc.document_type.replace('_', ' ')}</p>
+                      <p className="text-xs font-semibold text-foreground truncate">{doc.title}</p>
+                      <p className="text-[10px] text-text-muted uppercase tracking-tighter mt-0.5">{doc.document_type.replace('_', ' ')}</p>
                     </div>
-                    <ChevronRight size={14} className="text-white/20 group-hover:text-[#F59F01] transition-colors" />
+                    <ChevronRight size={14} className="text-text-muted/20 group-hover:text-[#F59F01] transition-colors" />
                   </div>
                 ))
               ) : (
-                <p className="text-[10px] text-white/30 uppercase tracking-widest text-center py-4">No internal documents</p>
+                <p className="text-[10px] text-text-muted/40 uppercase tracking-widest text-center py-4">No internal documents</p>
               )}
             </div>
           </div>
 
-          <div className="bg-[#8b5cf6]/5 border border-[#8b5cf6]/20 rounded-2xl p-6">
-            <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+          <div className="bg-[#8b5cf6]/5 border border-[#8b5cf6]/20 rounded-2xl p-6 theme-transition">
+            <h4 className="text-foreground font-bold text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
               <Gavel size={14} className="text-[#8b5cf6]" /> Voting Portal
             </h4>
-            <p className="text-[10px] text-white/40 leading-relaxed mb-4">
+            <p className="text-[10px] text-text-muted leading-relaxed mb-4">
               Access the electronic voting system for management company decisions.
             </p>
             <Link 

@@ -3,8 +3,8 @@ import { Clock, BookOpen, ChevronRight } from 'lucide-react';
 
 export default function CourseCard({ course }) {
   return (
-    <Link href={`/insights/courses/${course.slug}`} className="group relative flex flex-col h-full bg-ls-supporting/10 rounded-3xl overflow-hidden transition-all hover:-translate-y-1">
-      <div className="absolute inset-0 bg-gradient-to-t from-ls-primary via-transparent to-transparent z-10" />
+    <Link href={`/insights/courses/${course.slug}`} className="group relative flex flex-col h-full bg-ls-primary/5 dark:bg-ls-supporting/10 rounded-3xl overflow-hidden transition-all hover:-translate-y-1 theme-transition">
+      <div className="absolute inset-0 bg-gradient-to-t from-ls-white dark:from-ls-primary via-transparent to-transparent z-10" />
       
       <div className="relative aspect-square sm:aspect-[4/3] w-full">
          <img 
@@ -26,17 +26,17 @@ export default function CourseCard({ course }) {
           <span className="flex items-center"><Clock className="w-3 h-3 mr-1" /> {course.duration}</span>
         </div>
         
-        <h3 className="text-2xl font-bold mb-3 leading-tight group-hover:text-ls-compliment transition-colors">
+        <h3 className="text-2xl font-bold mb-3 leading-tight text-ls-primary dark:text-white group-hover:text-ls-compliment transition-colors">
           {course.title}
         </h3>
         
-        <p className="text-ls-white/70 text-sm mb-6 flex-grow line-clamp-2">
+        <p className="text-ls-primary/70 dark:text-ls-white/70 text-sm mb-6 flex-grow line-clamp-2">
           {course.description}
         </p>
 
-        <div className="mt-auto flex items-center justify-between text-sm font-bold text-ls-white group-hover:text-ls-compliment transition-colors">
+        <div className="mt-auto flex items-center justify-between text-sm font-bold text-ls-primary dark:text-ls-white group-hover:text-ls-compliment transition-colors">
           <span>View Course Details</span>
-          <div className="w-8 h-8 rounded-full bg-ls-white/10 flex items-center justify-center group-hover:bg-ls-compliment/20 transition-colors">
+          <div className="w-8 h-8 rounded-full bg-ls-primary/10 dark:bg-ls-white/10 flex items-center justify-center group-hover:bg-ls-compliment/20 transition-colors">
             <ChevronRight className="w-4 h-4" />
           </div>
         </div>

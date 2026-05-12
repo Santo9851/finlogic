@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 
 // --- Local UI Shims (Since shadcn isn't installed) ---
 const Progress = ({ value }) => (
-  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+  <div className="h-2 w-full bg-ls-primary/5 dark:bg-white/5 rounded-full overflow-hidden theme-transition">
     <div 
       className="h-full bg-[#F59F01] transition-all duration-300" 
       style={{ width: `${value}%` }} 
@@ -25,7 +25,7 @@ const Progress = ({ value }) => (
 
 const Alert = ({ children, variant = 'default' }) => {
   const bg = variant === 'destructive' ? 'bg-red-500/10 border-red-500/20' : 'bg-blue-500/10 border-blue-500/20';
-  const text = variant === 'destructive' ? 'text-red-400' : 'text-blue-400';
+  const text = variant === 'destructive' ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400';
   return (
     <div className={`p-4 rounded-lg border ${bg} ${text} flex gap-3 text-sm`}>
       {children}
@@ -227,27 +227,27 @@ export default function FileUploader({
   };
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="space-y-4 w-full theme-transition">
       {description && (
-        <p className="text-[10px] text-white/40 leading-relaxed italic ml-1">
+        <p className="text-[10px] text-text-muted leading-relaxed italic ml-1">
           {description}
         </p>
       )}
-      <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all ${
-        status === 'idle' ? 'border-white/10 bg-white/2' : 
-        status === 'success' ? 'border-green-500/30 bg-green-500/5' :
+      <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all theme-transition ${
+        status === 'idle' ? 'border-border-theme bg-card dark:bg-white/2' : 
+        status === 'success' ? 'border-emerald-500/30 bg-emerald-500/5' :
         status === 'error' ? 'border-red-500/30 bg-red-500/5' : 'border-[#F59F01]/30 bg-[#F59F01]/5'
       }`}>
         {status === 'idle' && (
           <div className="flex flex-col items-center justify-center text-center space-y-4">
             {!file ? (
               <>
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-white/40">
+                <div className="w-12 h-12 rounded-full bg-ls-primary/5 dark:bg-white/5 flex items-center justify-center text-ls-primary/40 dark:text-white/40">
                   <Upload size={24} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">{label}</p>
-                  <p className="text-xs text-white/30 mt-1">{formatText} (Max 3MB)</p>
+                  <p className="text-sm font-medium text-ls-primary dark:text-white">{label}</p>
+                  <p className="text-xs text-text-muted mt-1">{formatText} (Max 3MB)</p>
                 </div>
                 <input 
                   type="file" 
@@ -262,12 +262,12 @@ export default function FileUploader({
                 <div className="bg-[#F59F01]/10 px-4 py-3 rounded-xl flex items-center gap-3 border border-[#F59F01]/20 w-full max-w-sm">
                   <FileText size={20} className="text-[#F59F01] flex-shrink-0" />
                   <div className="flex-1 min-w-0 text-left">
-                    <p className="text-xs font-bold text-white truncate">{file.name}</p>
-                    <p className="text-[10px] text-white/40 uppercase">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                    <p className="text-xs font-bold text-ls-primary dark:text-white truncate">{file.name}</p>
+                    <p className="text-[10px] text-text-muted uppercase">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                   </div>
                   <button 
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); reset(); }} 
-                    className="p-1.5 hover:bg-white/10 rounded-lg text-white/40 hover:text-red-400 transition-colors"
+                    className="p-1.5 hover:bg-ls-primary/10 dark:hover:bg-white/10 rounded-lg text-ls-primary/40 dark:text-white/40 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   >
                     <X size={16} />
                   </button>
@@ -275,14 +275,14 @@ export default function FileUploader({
 
                 {!hideCategory && (
                   <div className="w-full max-w-sm space-y-1.5 text-left">
-                    <label className="text-[10px] uppercase tracking-widest text-white/40 font-bold ml-1">Document Category</label>
+                    <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold ml-1">Document Category</label>
                     <select 
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full bg-[#08001a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-[#F59F01]/40 transition-all appearance-none"
+                      className="w-full bg-background dark:bg-[#08001a] border border-border-theme rounded-lg px-3 py-2 text-xs text-ls-primary dark:text-white outline-none focus:border-[#F59F01]/40 transition-all appearance-none"
                     >
                       {CATEGORIES.map(cat => (
-                        <option key={cat.value} value={cat.value} className="bg-[#08001a] text-white">
+                        <option key={cat.value} value={cat.value} className="bg-background dark:bg-[#08001a] text-ls-primary dark:text-white">
                           {cat.label}
                         </option>
                       ))}
@@ -292,7 +292,7 @@ export default function FileUploader({
                 
                 <button 
                   onClick={(e) => { e.preventDefault(); uploadFile(); }}
-                  className="bg-[#F59F01] text-black text-xs font-bold px-8 py-2.5 rounded-lg hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20"
+                  className="bg-[#F59F01] text-ls-primary text-xs font-bold px-8 py-2.5 rounded-lg hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20"
                 >
                   Start Upload
                 </button>
@@ -304,7 +304,7 @@ export default function FileUploader({
         {(status === 'presigning' || status === 'uploading' || status === 'confirming') && (
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-white/60 flex items-center gap-2">
+              <span className="text-ls-primary/60 dark:text-white/60 flex items-center gap-2">
                 <Loader2 size={14} className="animate-spin text-[#F59F01]" />
                 {status === 'presigning' && 'Preparing upload...'}
                 {status === 'uploading' && `Uploading: ${progress}%`}
@@ -317,9 +317,9 @@ export default function FileUploader({
 
         {status === 'success' && (
           <div className="flex flex-col items-center justify-center text-center space-y-2 py-4">
-            <CheckCircle2 size={32} className="text-green-500" />
-            <p className="text-sm font-medium text-white">Upload Complete</p>
-            <button type="button" onClick={(e) => { e.preventDefault(); reset(); }} className="mt-2 px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs text-white transition-colors">Change File</button>
+            <CheckCircle2 size={32} className="text-emerald-500" />
+            <p className="text-sm font-medium text-ls-primary dark:text-white">Upload Complete</p>
+            <button type="button" onClick={(e) => { e.preventDefault(); reset(); }} className="mt-2 px-4 py-1.5 bg-ls-primary/5 dark:bg-white/5 hover:bg-ls-primary/10 dark:hover:bg-white/10 border border-border-theme rounded-lg text-xs text-ls-primary dark:text-white transition-colors">Change File</button>
           </div>
         )}
 
@@ -334,7 +334,7 @@ export default function FileUploader({
             </Alert>
             <button 
               onClick={reset}
-              className="w-full py-2 bg-white/5 hover:bg-white/10 text-white text-xs rounded-lg transition-colors"
+              className="w-full py-2 bg-ls-primary/5 dark:bg-white/5 hover:bg-ls-primary/10 dark:hover:bg-white/10 text-ls-primary dark:text-white text-xs rounded-lg transition-colors"
             >
               Try Again
             </button>

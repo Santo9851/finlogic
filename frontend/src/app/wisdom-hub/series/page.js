@@ -35,11 +35,11 @@ export default function WisdomHubSeriesPage() {
   }, []);
 
   if (loading) return (
-    <div className="bg-[#100226] min-h-screen pt-32 px-4 flex justify-center">
+    <div className="bg-background min-h-screen pt-32 px-4 flex justify-center theme-transition">
       <div className="w-full max-w-4xl space-y-4 animate-pulse">
-        <div className="h-10 w-48 bg-white/5 rounded-full" />
-        <div className="h-64 bg-white/5 rounded-[3rem]" />
-        <div className="h-64 bg-white/5 rounded-[3rem]" />
+        <div className="h-10 w-48 bg-foreground/5 rounded-full" />
+        <div className="h-64 bg-foreground/5 rounded-[3rem]" />
+        <div className="h-64 bg-foreground/5 rounded-[3rem]" />
       </div>
     </div>
   );
@@ -49,9 +49,6 @@ export default function WisdomHubSeriesPage() {
     const inProgress = dashboardData?.in_progress_series.find(ips => ips.slug === s.slug);
     if (inProgress) return inProgress;
     
-    // Check if fully completed (not in in_progress but user might have completed all)
-    // For now, if not in in_progress and not started, progress is 0.
-    // In a real app, I'd check completion count properly.
     return {
       ...s,
       completed_count: 0,
@@ -61,10 +58,10 @@ export default function WisdomHubSeriesPage() {
   });
 
   return (
-    <div className="bg-[#100226] text-white min-h-screen pb-24">
+    <div className="bg-background text-foreground min-h-screen pb-24 theme-transition">
       <div className="container mx-auto px-4 pt-32 max-w-5xl">
         
-        <Link href="/wisdom-hub" className="inline-flex items-center gap-2 text-white/40 hover:text-[#F59F01] text-sm transition-colors mb-10">
+        <Link href="/wisdom-hub" className="inline-flex items-center gap-2 text-text-muted hover:text-[#F59F01] text-sm transition-colors mb-10 font-bold uppercase tracking-widest">
           <ArrowLeft size={15} /> Back to Library
         </Link>
 
@@ -72,8 +69,8 @@ export default function WisdomHubSeriesPage() {
           <div className="flex items-center gap-3 mb-4 text-[#F59F01] text-[10px] font-black uppercase tracking-[0.2em]">
             <BookOpen size={14} /> Knowledge Hub
           </div>
-          <h1 className="text-4xl md:text-5xl font-black mb-6">Series Directory</h1>
-          <p className="text-white/40 max-w-2xl leading-relaxed">
+          <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">Series Directory</h1>
+          <p className="text-text-muted max-w-2xl leading-relaxed text-lg font-medium">
             Browse our curated series on venture capital, growth equity, and private market dynamics.
           </p>
         </header>
@@ -94,33 +91,33 @@ export default function WisdomHubSeriesPage() {
               >
                 <Link 
                   href={`/insights/series/${series.slug}`}
-                  className="group block p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 hover:border-[#F59F01]/30 hover:bg-[#F59F01]/5 transition-all h-full flex flex-col"
+                  className="group block p-8 rounded-[2.5rem] bg-background border border-border-theme hover:border-[#F59F01]/30 transition-all h-full flex flex-col shadow-xl hover:shadow-2xl theme-transition"
                 >
                   <div className="flex items-center justify-between mb-6">
-                    <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full"
-                          style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}>
+                    <span className="text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border shadow-sm"
+                          style={{ background: `${color}10`, color, borderColor: `${color}30` }}>
                       {series.pillar}
                     </span>
-                    <LayoutGrid size={18} className="text-white/10 group-hover:text-[#F59F01] transition-colors" />
+                    <LayoutGrid size={18} className="text-text-muted/20 group-hover:text-[#F59F01] transition-colors" />
                   </div>
 
-                  <h3 className="text-2xl font-black text-white mb-4 group-hover:text-white transition-colors">
+                  <h3 className="text-2xl font-black text-foreground mb-4 group-hover:text-[#F59F01] transition-colors">
                     {series.title}
                   </h3>
-                  <p className="text-sm text-white/40 leading-relaxed mb-10 flex-grow line-clamp-2">
+                  <p className="text-sm text-text-muted leading-relaxed mb-10 flex-grow line-clamp-2 font-medium">
                     {series.description}
                   </p>
 
                   <div className="space-y-4">
                     <div className="flex justify-between items-end">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-white/30">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-text-muted/40">
                         {isFinished ? "Completed" : isStarted ? "In Progress" : "Not Started"}
                       </div>
                       <div className="text-sm font-black text-[#F59F01]">
                         {series.progress_percent}%
                       </div>
                     </div>
-                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden border border-border-theme/50">
                       <motion.div 
                         initial={{ width: 0 }}
                         whileInView={{ width: `${series.progress_percent}%` }}
@@ -128,7 +125,7 @@ export default function WisdomHubSeriesPage() {
                       />
                     </div>
                     <div className="flex items-center justify-between pt-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/20">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-text-muted/60">
                         {series.total_count} Modules
                       </span>
                       <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#F59F01] group-hover:gap-2 transition-all">

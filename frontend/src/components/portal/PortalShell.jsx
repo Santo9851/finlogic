@@ -11,7 +11,7 @@ import Link from 'next/link';
 
 export function PortalLoader() {
   return (
-    <div className="min-h-screen bg-[#0a0014] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center theme-transition">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 rounded-full border-4 border-[#F59F01]/20 border-t-[#F59F01] animate-spin" />
         <p className="text-[#F59F01]/60 text-sm tracking-widest uppercase">Loading portal…</p>
@@ -40,19 +40,19 @@ export function PortalGuard({ children, allowedRoles }) {
 /** Metric card used in dashboards */
 export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', trend, href }) {
   const content = (
-    <div className={`rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm p-5 flex flex-col gap-3 hover:border-white/20 transition-all ${href ? 'cursor-pointer hover:bg-white/10' : ''}`}>
+    <div className={`rounded-xl border border-border-theme bg-card backdrop-blur-sm p-5 flex flex-col gap-3 hover:border-[#F59F01]/20 transition-all theme-transition ${href ? 'cursor-pointer hover:bg-foreground/5' : ''}`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs text-white/40 uppercase tracking-widest">{label}</span>
+        <span className="text-xs text-text-muted uppercase tracking-widest">{label}</span>
         {Icon && (
           <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}18` }}>
             <Icon size={16} style={{ color }} />
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="text-xs text-white/40">{sub}</p>}
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      {sub && <p className="text-xs text-text-muted">{sub}</p>}
       {trend !== undefined && (
-        <p className={`text-xs font-medium ${trend >= 0 ? 'text-[#16c784]' : 'text-[#ea3943]'}`}>
+        <p className={`text-xs font-medium ${trend >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
           {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
         </p>
       )}
@@ -69,23 +69,23 @@ export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', t
 /** Status badge */
 export function StatusBadge({ status }) {
   const map = {
-    PENDING_SUBMISSION: { label: 'Pending Submission', cls: 'bg-white/20 text-white/80' },
-    SUBMITTED: { label: 'Submitted', cls: 'bg-blue-500/20 text-blue-300' },
-    SCREENING: { label: 'Screening', cls: 'bg-yellow-500/20 text-yellow-300' },
-    IC_REVIEW: { label: 'IC Review', cls: 'bg-orange-500/20 text-orange-300' },
-    TERM_SHEET: { label: 'Term Sheet', cls: 'bg-amber-500/20 text-amber-300' },
-    LOI_ISSUED: { label: 'LOI Issued', cls: 'bg-[#F59F01]/20 text-[#F59F01]' },
-    CONTRACT_SIGNED: { label: 'Contract Signed', cls: 'bg-[#10b981]/20 text-[#10b981]' },
-    CAPITAL_CALLED: { label: 'Capital Called', cls: 'bg-purple-500/20 text-purple-300' },
-    CLOSED: { label: 'Closed', cls: 'bg-emerald-500/20 text-emerald-300' },
-    DECLINED: { label: 'Declined', cls: 'bg-red-500/20 text-red-300' },
-    RAISING: { label: 'Raising', cls: 'bg-blue-500/20 text-blue-300' },
-    INVESTING: { label: 'Investing', cls: 'bg-green-500/20 text-green-300' },
-    HARVESTING: { label: 'Harvesting', cls: 'bg-amber-500/20 text-amber-300' },
+    PENDING_SUBMISSION: { label: 'Pending Submission', cls: 'bg-foreground/5 text-text-muted' },
+    SUBMITTED: { label: 'Submitted', cls: 'bg-blue-500/10 text-blue-700 dark:text-blue-300' },
+    SCREENING: { label: 'Screening', cls: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300' },
+    IC_REVIEW: { label: 'IC Review', cls: 'bg-orange-500/10 text-orange-700 dark:text-orange-300' },
+    TERM_SHEET: { label: 'Term Sheet', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-300' },
+    LOI_ISSUED: { label: 'LOI Issued', cls: 'bg-[#F59F01]/10 text-[#F59F01]' },
+    CONTRACT_SIGNED: { label: 'Contract Signed', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+    CAPITAL_CALLED: { label: 'Capital Called', cls: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+    CLOSED: { label: 'Closed', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+    DECLINED: { label: 'Declined', cls: 'bg-red-500/10 text-red-600 dark:text-red-400' },
+    RAISING: { label: 'Raising', cls: 'bg-blue-500/10 text-blue-700 dark:text-blue-300' },
+    INVESTING: { label: 'Investing', cls: 'bg-green-500/10 text-green-700 dark:text-green-300' },
+    HARVESTING: { label: 'Harvesting', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-300' },
   };
-  const cfg = map[status] || { label: status, cls: 'bg-white/10 text-white/60' };
+  const cfg = map[status] || { label: status, cls: 'bg-foreground/5 text-text-muted' };
   return (
-    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${cfg.cls}`}>
+    <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold ${cfg.cls} theme-transition`}>
       {cfg.label}
     </span>
   );

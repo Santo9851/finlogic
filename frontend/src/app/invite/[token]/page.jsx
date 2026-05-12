@@ -329,6 +329,8 @@ function FormFieldContent({ field, token, stepName }) {
           <FileUploader 
             token={token} 
             category={field.category || 'OTHER'} 
+            isLocal={true}
+            uploadUrl={`/deals/projects/invite/${token}/upload-local/`}
             label={`Upload ${field.label}`}
             allowedExtensions={
               {
@@ -371,7 +373,6 @@ function FormFieldContent({ field, token, stepName }) {
             }}
             onRemove={() => {
               setValue(field.name, "", { shouldValidate: true });
-              clearErrors(field.name);
             }}
           />
           {fieldValue && (

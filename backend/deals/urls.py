@@ -24,6 +24,7 @@ from .views import (
     EntrepreneurInviteDetailView,
     EntrepreneurSubmitStepView,
     EntrepreneurGetUploadURLView,
+    EntrepreneurInviteUploadLocalView,
     GPGetUploadURLView,
     DocumentConfirmView,
     EntrepreneurFinalizeView,
@@ -437,6 +438,11 @@ urlpatterns = [
         'deals/projects/invite/<uuid:token>/get-upload-url/',
         EntrepreneurGetUploadURLView.as_view(),
         name='entrepreneur-get-upload-url',
+    ),
+    path(
+        'deals/projects/invite/<uuid:token>/upload-local/',
+        EntrepreneurInviteUploadLocalView.as_view(),
+        name='entrepreneur-invite-upload-local',
     ),
     path(
         'deals/projects/invite/<uuid:token>/documents/<uuid:doc_id>/confirm/',

@@ -1,11 +1,18 @@
 'use client'
 
+/**
+ * CapitalCallWizard.jsx
+ * Institutional Capital Drawdown Protocol for Superadmins.
+ */
 import React, { useState } from 'react';
-import { X, CircleDollarSign, Calendar, Calculator, Loader2, Info } from 'lucide-react';
+import { X, CircleDollarSign, Calendar, Calculator, Loader2, Info, Landmark } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 
 export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     total_amount_npr: deal.term_sheets?.[0]?.terms?.investment_amount_npr || '',
@@ -28,86 +35,92 @@ export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-[#0d0124] border border-[#F59F01]/20 w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-background/90 backdrop-blur-3xl animate-in fade-in duration-500 theme-transition">
+      <div className="bg-card border border-border-theme w-full max-w-xl rounded-[3rem] shadow-[0_48px_96px_-24px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col theme-transition relative">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 blur-[80px] rounded-full -mr-24 -mt-24 pointer-events-none" />
         
-        <div className="p-8 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#F59F01]/10 flex items-center justify-center text-[#F59F01]">
-              <CircleDollarSign size={24} />
+        {/* Header */}
+        <div className="p-10 border-b border-border-theme flex items-center justify-between bg-foreground/[0.01] theme-transition relative z-10">
+          <div className="flex items-center gap-6">
+            <div className="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 shadow-inner">
+              <Landmark size={28} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-white tracking-tight uppercase">Issue Capital Call</h2>
-              <p className="text-white/40 text-xs">LP Drawdown for {deal.legal_name}</p>
+              <h2 className="text-2xl font-black text-foreground tracking-tight uppercase leading-tight">Capital Drawdown</h2>
+              <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-1">LP Pro-Rata Protocol for {deal.legal_name}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-white/40 hover:text-white transition-all">
-            <X size={20} />
+          <button onClick={onClose} className="p-3 bg-foreground/5 rounded-2xl text-text-muted hover:text-foreground transition-all active:scale-95">
+            <X size={24} />
           </button>
         </div>
 
-        <div className="p-10 space-y-8">
-          <div className="bg-[#F59F01]/5 border border-[#F59F01]/10 rounded-2xl p-4 flex items-start gap-3">
-            <Info className="text-[#F59F01] shrink-0" size={18} />
-            <p className="text-[10px] text-white/60 leading-relaxed uppercase font-bold tracking-tight">
-              This will create pro-rata capital calls for all LPs committed to <span className="text-[#F59F01]">{deal.fund_detail?.name}</span>. 
-              The system will automatically calculate each LP's share based on their commitment percentage.
+        {/* Content */}
+        <div className="p-12 space-y-10 relative z-10">
+          <div className="bg-purple-500/5 border border-purple-500/10 rounded-[2rem] p-6 flex items-start gap-5 shadow-inner">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
+              <Info size={20} />
+            </div>
+            <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em] leading-relaxed opacity-80">
+              This will execute pro-rata capital calls for all LPs committed to <span className="text-purple-500">{deal.fund_detail?.name || 'Institutional Vehicle'}</span>. 
+              The system will automatically compute allocations based on the commitment matrix.
             </p>
           </div>
 
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
-                <Calculator size={12} /> Total Drawdown Amount (NPR)
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <label className="text-[10px] text-text-muted font-black uppercase tracking-[0.3em] ml-1 flex items-center gap-2">
+                <Calculator size={14} className="text-purple-500" /> Total Drawdown Quantum (NPR)
               </label>
               <input 
                 type="number" 
                 value={formData.total_amount_npr}
                 onChange={(e) => setFormData({...formData, total_amount_npr: e.target.value})}
                 placeholder="e.g. 50,000,000"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white font-mono text-xl focus:border-[#F59F01] outline-none transition-all"
+                className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl p-6 text-foreground font-mono text-2xl focus:border-purple-500/40 outline-none transition-all shadow-inner tracking-tighter"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] text-white/40 uppercase font-black tracking-widest flex items-center gap-2">
-                <Calendar size={12} /> Payment Due Date
+            <div className="space-y-3">
+              <label className="text-[10px] text-text-muted font-black uppercase tracking-[0.3em] ml-1 flex items-center gap-2">
+                <Calendar size={14} className="text-purple-500" /> Settlement Maturity Date
               </label>
               <input 
                 type="date" 
                 value={formData.due_date}
                 onChange={(e) => setFormData({...formData, due_date: e.target.value})}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:border-[#F59F01] outline-none transition-all"
+                className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl p-6 text-foreground font-black uppercase tracking-widest text-xs focus:border-purple-500/40 outline-none transition-all shadow-inner"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] text-white/40 uppercase font-black tracking-widest">Administrative Notes</label>
+            <div className="space-y-3">
+              <label className="text-[10px] text-text-muted font-black uppercase tracking-[0.3em] ml-1">Administrative Protocols</label>
               <textarea 
                 value={formData.notes}
                 onChange={(e) => setFormData({...formData, notes: e.target.value})}
                 rows={3}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm focus:border-[#F59F01] outline-none transition-all"
-                placeholder="Internal notes for this capital call..."
+                className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl p-6 text-foreground text-sm font-medium focus:border-purple-500/40 outline-none transition-all shadow-inner leading-relaxed"
+                placeholder="Internal notes for this capital call cycle..."
               />
             </div>
           </div>
         </div>
 
-        <div className="p-8 border-t border-white/5 bg-white/[0.02] flex gap-4">
+        {/* Footer */}
+        <div className="p-10 border-t border-border-theme bg-foreground/[0.01] flex gap-6 theme-transition relative z-10">
           <button 
             onClick={onClose}
-            className="flex-1 px-8 py-4 bg-white/5 text-white/40 rounded-2xl text-xs font-black uppercase tracking-widest hover:text-white transition-all"
+            className="flex-1 px-8 py-4 bg-foreground/5 text-text-muted rounded-2xl text-[10px] font-black uppercase tracking-widest hover:text-foreground hover:bg-foreground/10 transition-all active:scale-95"
           >
-            Cancel
+            Discard
           </button>
           <button 
             onClick={handleIssue}
             disabled={isSubmitting || !formData.total_amount_npr || !formData.due_date}
-            className="flex-[2] bg-[#F59F01] hover:bg-[#F59F01]/90 text-black font-black uppercase tracking-widest px-8 py-4 rounded-2xl flex items-center justify-center gap-3 transition-all disabled:opacity-50 shadow-xl shadow-[#F59F01]/10"
+            className={`flex-[2] bg-purple-600 hover:bg-purple-700 text-white font-black uppercase tracking-[0.2em] text-[10px] px-8 py-4 rounded-2xl flex items-center justify-center gap-4 transition-all disabled:opacity-50 shadow-2xl shadow-purple-500/30 active:scale-95`}
           >
-            {isSubmitting ? <Loader2 className="animate-spin" /> : <CircleDollarSign size={20} />}
-            Issue Pro-Rata Calls
+            {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : <CircleDollarSign size={20} />}
+            Execute Drawdown
           </button>
         </div>
 

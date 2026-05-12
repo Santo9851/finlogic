@@ -66,14 +66,14 @@ export default function PortfolioOverview() {
   ];
 
   return (
-    <div className="space-y-10 max-w-7xl mx-auto pb-20 animate-in fade-in duration-1000">
+    <div className="space-y-10 max-w-7xl mx-auto pb-20 animate-in fade-in duration-1000 theme-transition">
       <div>
         <div className="flex items-center gap-2 text-[#F59F01] mb-2">
           <PieChartIcon size={16} />
           <span className="text-[10px] font-black uppercase tracking-[0.3em]">Phase 3 Integrated</span>
         </div>
-        <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Portfolio Control</h1>
-        <p className="text-white/40 text-sm mt-2 max-w-lg">
+        <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase">Portfolio Control</h1>
+        <p className="text-text-muted text-sm mt-2 max-w-lg">
           Welcome to the central command for fund performance. Manage your investments from acquisition through harvest with institutional-grade tools.
         </p>
       </div>
@@ -83,34 +83,34 @@ export default function PortfolioOverview() {
           <Link 
             key={section.title} 
             href={section.href}
-            className="group relative bg-white/5 border border-white/10 rounded-[2.5rem] p-8 hover:bg-white/[0.08] transition-all overflow-hidden"
+            className="group relative bg-card border border-border-theme rounded-[2.5rem] p-8 hover:bg-foreground/[0.04] transition-all overflow-hidden theme-transition"
           >
-            <div className={`w-14 h-14 rounded-2xl ${section.color} flex items-center justify-center mb-6 transition-transform group-hover:scale-110`}>
+            <div className={`w-14 h-14 rounded-2xl ${section.color.includes('text-blue-400') ? section.color.replace('text-blue-400', 'text-blue-600 dark:text-blue-400') : section.color.includes('text-emerald-400') ? section.color.replace('text-emerald-400', 'text-emerald-600 dark:text-emerald-400') : section.color.includes('text-amber-400') ? section.color.replace('text-amber-400', 'text-amber-600 dark:text-amber-400') : section.color.includes('text-purple-400') ? section.color.replace('text-purple-400', 'text-purple-600 dark:text-purple-400') : section.color.replace('text-rose-400', 'text-rose-600 dark:text-rose-400')} flex items-center justify-center mb-6 transition-transform group-hover:scale-110`}>
               <section.icon size={28} />
             </div>
             
-            <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{section.title}</h3>
-            <p className="text-white/40 text-sm mb-8 leading-relaxed max-w-xs">{section.description}</p>
+            <h3 className="text-2xl font-black text-foreground mb-2 uppercase tracking-tight">{section.title}</h3>
+            <p className="text-text-muted text-sm mb-8 leading-relaxed max-w-xs">{section.description}</p>
             
             <div className="flex items-center justify-between mt-auto">
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{section.stats}</span>
+              <span className="text-[10px] font-black text-text-muted/20 uppercase tracking-widest">{section.stats}</span>
               <div className="flex items-center gap-2 text-[#F59F01] font-bold text-xs">
                 Enter Hub <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
               </div>
             </div>
 
             {/* Decorative element */}
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/[0.02] rounded-full blur-3xl group-hover:bg-white/[0.05] transition-all" />
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-foreground/[0.01] rounded-full blur-3xl group-hover:bg-foreground/[0.03] transition-all" />
           </Link>
         ))}
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-8 justify-between shadow-2xl">
+      <div className="bg-card border border-border-theme rounded-[2.5rem] p-10 flex flex-col md:flex-row items-center gap-8 justify-between shadow-2xl theme-transition">
         <div className="flex-1">
-          <h3 className="text-white font-bold mb-1">Need a Consolidated LP Report?</h3>
-          <p className="text-white/40 text-sm">Generate quarterly statements for all LPs across the active portfolio in one click.</p>
+          <h3 className="text-foreground font-bold mb-1">Need a Consolidated LP Report?</h3>
+          <p className="text-text-muted text-sm font-medium">Generate quarterly statements for all LPs across the active portfolio in one click.</p>
         </div>
-        <button className="px-8 py-4 bg-white text-black rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-white/10">
+        <button className="px-8 py-4 bg-foreground text-background rounded-full font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-foreground/10">
           Global Report Generator
         </button>
       </div>

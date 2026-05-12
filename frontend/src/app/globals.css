@@ -1,36 +1,84 @@
 @import "tailwindcss";
 @import "../styles/article-callouts.css";
 
+/* Enables class-based dark mode in Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fdf6ff; /* ls-white */
+  --foreground: #100226; /* ls-primary */
+  --text-primary: #100226;
+  --card-bg: #ffffff; /* solid white for cards */
+  --card-border: rgba(16, 2, 38, 0.1);
+  --text-muted: rgba(16, 2, 38, 0.6);
+}
+
+.dark {
+  --background: #100226; /* ls-primary */
+  --foreground: #fdf6ff; /* ls-white */
+  --text-primary: #fdf6ff;
+  --card-bg: rgba(255, 255, 255, 0.05); /* keep transparent for dark mode as it looks premium */
+  --card-border: rgba(255, 255, 255, 0.1);
+  --text-muted: rgba(255, 255, 255, 0.6);
+}
+
+.dark .bg-card {
+  background-color: #1a0a33; /* slightly lighter than background for dark cards */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card-bg);
+  --color-border-theme: var(--card-border);
+  --color-text-muted: var(--text-muted);
+  --color-text-primary: var(--text-primary);
+  
+  /* Fixed Brand Colors */
   --color-ls-primary: #100226;
+  --color-ls-primary-fixed: #100226;
   --color-ls-supporting: #3A3153;
   --color-ls-compliment: #F59F01;
   --color-ls-secondary: #0B6EC3;
   --color-ls-white: #FDF6FF;
   --color-ls-up: #16c784;
   --color-ls-down: #ea3943;
+  
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @layer utilities {
+  .theme-transition {
+    transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   .bg-abstract-gradient {
     background: radial-gradient(circle at top left, var(--color-ls-supporting), transparent),
-                radial-gradient(circle at bottom right, var(--color-ls-primary), transparent);
+                radial-gradient(circle at bottom right, var(--color-ls-primary-fixed), transparent),
+                var(--background);
+  }
+
+  .dark .bg-abstract-gradient {
+    background: radial-gradient(circle at top left, var(--color-ls-supporting), transparent),
+                radial-gradient(circle at bottom right, var(--color-ls-primary-fixed), transparent),
+                var(--background);
+  }
+  
+  /* Light mode version for abstract gradient override */
+  :root:not(.dark) .bg-abstract-gradient {
+    background: radial-gradient(circle at top left, rgba(58, 49, 83, 0.05), transparent),
+                radial-gradient(circle at bottom right, rgba(245, 159, 1, 0.05), transparent),
+                var(--background);
   }
   
   .glass-card {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--card-bg);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--card-border);
   }
 
   .text-reveal {
@@ -39,11 +87,11 @@
     mask-position: 100% 0;
   }
 
-  .blend-screen {
+  .dark .blend-screen {
     mix-blend-mode: screen;
   }
 
-  .blend-dodge {
+  .dark .blend-dodge {
     mix-blend-mode: color-dodge;
   }
 
@@ -63,41 +111,49 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
-/* Custom scrollbar for dark theme */
+::selection {
+  background-color: var(--color-ls-compliment);
+  color: var(--color-ls-primary-fixed);
+}
+
+.dark ::selection {
+  background-color: var(--color-ls-compliment);
+  color: var(--color-ls-primary-fixed);
+}
+
+:root:not(.dark) ::selection {
+  background-color: var(--color-ls-secondary);
+  color: #ffffff;
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--card-border);
   border-radius: 10px;
   transition: all 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--text-muted);
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.05) transparent;
+  scrollbar-color: var(--card-border) transparent;
 }

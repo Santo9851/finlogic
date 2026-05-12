@@ -49,16 +49,16 @@ export default function ArticleTOC({ headings, accentColor = "#F59F01" }) {
   if (!headings.length) return null;
 
   return (
-    <div className="rounded-2xl border border-white/8 bg-white/[0.03] overflow-hidden">
+    <div className="rounded-2xl border border-border-theme bg-card overflow-hidden">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/5 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-foreground/5 transition-colors"
       >
-        <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/50">
+        <span className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted">
           <BookOpen size={12} style={{ color: accentColor }} /> In This Article
         </span>
         <motion.div animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronRight size={14} className="text-white/30" />
+          <ChevronRight size={14} className="text-text-muted/60" />
         </motion.div>
       </button>
 
@@ -80,17 +80,17 @@ export default function ArticleTOC({ headings, accentColor = "#F59F01" }) {
                     onClick={() => scrollTo(h.id)}
                     className={`w-full text-left py-1.5 px-3 rounded-lg text-xs leading-snug transition-all flex items-start gap-2 group
                       ${h.level === 2 ? "font-bold" : "pl-6 font-normal"}
-                      ${isActive ? "text-white bg-white/5" : "text-white/40 hover:text-white/70 hover:bg-white/3"}`}
+                      ${isActive ? "text-foreground bg-foreground/5" : "text-text-muted hover:text-foreground hover:bg-foreground/5"}`}
                     style={isActive ? { color: accentColor } : {}}
                   >
                     {h.level === 2 && (
                       <span className="w-1 h-1 rounded-full mt-1.5 flex-shrink-0 transition-all"
-                        style={{ background: isActive ? accentColor : "rgba(255,255,255,0.2)" }}
+                        style={{ background: isActive ? accentColor : "currentColor", opacity: isActive ? 1 : 0.2 }}
                       />
                     )}
                     {h.level >= 3 && (
                       <span className="w-px h-3 mt-0.5 flex-shrink-0 transition-all"
-                        style={{ background: isActive ? accentColor : "rgba(255,255,255,0.1)" }}
+                        style={{ background: isActive ? accentColor : "currentColor", opacity: isActive ? 1 : 0.1 }}
                       />
                     )}
                     <span className="flex-1">{h.text}</span>

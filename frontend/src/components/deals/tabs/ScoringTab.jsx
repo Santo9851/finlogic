@@ -9,6 +9,42 @@ import FileUploader from '@/components/portal/FileUploader';
 import UBOFormTemplate from '@/components/compliance/UBOFormTemplate';
 import { Printer } from 'lucide-react';
 
+const GATE_METADATA = {
+  AML_KYC: {
+    title: "AML/KYC Clearance",
+    info: "Institutional anti-money laundering protocol requiring identification of ultimate beneficial owners and source of funds.",
+    subtasks: [
+      { 
+        id: 'ubo', 
+        label: 'UBO Declaration', 
+        help: 'Identify all individual shareholders with >5% equity. Mandatory for PMLA compliance.', 
+        isMandatory: true,
+        templateName: 'UBO_FORM'
+      }
+    ]
+  },
+  FITTA: {
+    title: "FITTA Approval",
+    info: "Verification of approval from the Department of Industry (DoI) or Investment Board Nepal (IBN) under the Foreign Investment and Technology Transfer Act.",
+    subtasks: []
+  },
+  FINANCIAL_AUDIT: {
+    title: "Financial Audit Verification",
+    info: "Validation of historical financial statements, tax clearance certificates, and independent audit integrity.",
+    subtasks: []
+  },
+  LEGAL_STRUCTURE: {
+    title: "Legal Structure Validity",
+    info: "Assessment of incorporation documents, MOA/AOA, and shareholding structure validity.",
+    subtasks: []
+  },
+  SEBON_MAPPING: {
+    title: "SEBON Mapping & Compliance",
+    info: "Ensuring the deal structure aligns with the Specialized Investment Fund (SIF) Regulations 2019 and SEBON directives.",
+    subtasks: []
+  }
+};
+
 export default function ScoringTab({ 
   deal, 
   onTrigger, 
@@ -23,13 +59,11 @@ export default function ScoringTab({
   const [summary, setSummary] = useState('');
   const [showUBOModal, setShowUBOModal] = useState(false);
   
-  // Local state for scores to allow immediate recalculation on override
   const [localScores, setLocalScores] = useState(scoring?.criteria_scores || []);
   
   const showResults = !!scoring;
   const isProcessing = isTriggering || deal.analysis_progress?.Scoring === 'processing';
 
-  // Recalculate total score based on weights
   const calculateTotal = () => {
     const pillarWeights = { F: 0.20, I: 0.25, N: 0.20, L: 0.20, O: 0.15 };
     let total = 0;
@@ -50,33 +84,35 @@ export default function ScoringTab({
     if (score >= 8.5) return { label: 'Strong Conviction', color: 'bg-emerald-500', desc: 'Superior fundamentals and moat.' };
     if (score >= 7.0) return { label: 'Growth Standard', color: 'bg-[#F59F01]', desc: 'Strong deal with manageable risks.' };
     if (score >= 5.0) return { label: 'Speculative', color: 'bg-orange-500', desc: 'Requires significant risk mitigation.' };
-    return { label: 'High Risk / Reject', color: 'bg-red-500', desc: 'Critical structural or team failures.' };
+    return { label: 'High Risk / Reject', color: 'bg-rose-500', desc: 'Critical structural or team failures.' };
   };
 
   const rec = getRecommendation(parseFloat(currentTotal));
 
   if (!showResults) {
     return (
-      <div className="py-20 text-center bg-white/5 border border-white/10 rounded-3xl space-y-6">
-        <div className={`w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center mx-auto border border-white/5 ${isProcessing ? 'text-[#F59F01] animate-pulse' : 'text-[#F59F01]/20'}`}>
-          <Star size={40} />
+      <div className="py-24 text-center bg-card border border-border-theme border-dashed rounded-[3rem] space-y-8 theme-transition shadow-inner">
+        <div className={`w-24 h-24 rounded-[2rem] bg-foreground/5 flex items-center justify-center mx-auto border border-border-theme shadow-inner ${isProcessing ? 'text-[#F59F01] animate-pulse' : 'text-text-muted/20'}`}>
+          <Star size={48} />
         </div>
-        <div className="max-w-md mx-auto px-6">
-           <h3 className="text-white font-bold text-lg mb-2">
+        <div className="max-w-md mx-auto px-8 space-y-4">
+           <h3 className="text-foreground font-black text-2xl uppercase tracking-tight">
              {isProcessing ? 'Scoring in Progress' : 'Initialize FINLO Scoring'}
            </h3>
-           <p className="text-white/40 text-sm mb-8 leading-relaxed">
+           <p className="text-text-muted text-sm leading-relaxed font-medium">
              {isProcessing 
                ? 'Our 5-pillar engine is currently synthesizing financials, legal scans, and operational audits. This typically takes 15-30 seconds.' 
-               : 'Start the proprietary scoring engine to evaluate this project across 20 criteria in 5 pillars.'}
+               : 'Start the proprietary scoring engine to evaluate this project across 20 criteria in 5 key pillars.'}
            </p>
-           <button 
-             onClick={onTrigger}
-             disabled={isProcessing}
-             className="px-8 py-3 bg-[#F59F01] text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
-           >
-             {isProcessing ? 'Executing Engine...' : 'Run FINLO Engine'}
-           </button>
+           <div className="pt-6">
+             <button 
+               onClick={onTrigger}
+               disabled={isProcessing}
+               className="px-10 py-4 bg-[#F59F01] text-ls-primary-fixed rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-2xl shadow-[#F59F01]/20 disabled:opacity-50 active:scale-95"
+             >
+               {isProcessing ? 'Executing Engine...' : 'Run FINLO Engine'}
+             </button>
+           </div>
         </div>
       </div>
     );
@@ -106,17 +142,13 @@ export default function ScoringTab({
     const printWindow = window.open('', '_blank', 'width=900,height=1200');
     if (!printWindow) return;
 
-    // Inline SVG logo matching FinlogicLogo.js exactly:
-    // violet top-rail + left-rail L-shape, gold square bottom-left, wordmark stacked
     const logoSVG = `
       <div style="display:flex;align-items:center;gap:10px;">
-        <!-- Icon mark -->
         <svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="8" y="8" width="84" height="14" rx="3" fill="#5B2FD4"/>
           <rect x="8" y="8" width="14" height="84" rx="3" fill="#5B2FD4"/>
           <rect x="26" y="60" width="28" height="28" rx="5" fill="#F59F01"/>
         </svg>
-        <!-- Wordmark -->
         <svg height="36" viewBox="0 0 220 84" fill="none" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">
           <text x="0" y="30" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="31" letter-spacing="0.5" fill="#3A138A">FINLOGIC</text>
           <text x="0" y="58" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="31" letter-spacing="0.5" fill="#3A138A">CAPITAL</text>
@@ -134,19 +166,16 @@ export default function ScoringTab({
     body { font-family: Georgia, 'Times New Roman', serif; background: white; color: #111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     @page { size: A4 portrait; margin: 15mm; }
     .page { padding: 8mm; max-width: 210mm; margin: 0 auto; }
-
     .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #5B2FD4; padding-bottom: 18px; margin-bottom: 20px; }
     .dept { font-family: Arial, sans-serif; font-size: 8px; color: #9ca3af; text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-top: 8px; }
     .doc-title { font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #3A138A; text-transform: uppercase; letter-spacing: -1px; text-align: right; }
     .doc-version { font-family: Arial, sans-serif; font-size: 8px; color: #9ca3af; font-weight: 700; text-transform: uppercase; text-align: right; margin-top: 4px; }
-
     .intro { font-size: 11px; line-height: 1.8; color: #374151; margin-bottom: 16px; }
     .info-box { background: #f9fafb; padding: 14px; border-left: 4px solid #F59F01; margin-bottom: 18px; }
     .info-box h2 { font-family: Arial, sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; color: #9ca3af; margin-bottom: 10px; }
     .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .field label { font-family: Arial, sans-serif; display: block; font-size: 7px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
     .field p { font-family: Arial, sans-serif; font-size: 10px; font-weight: 700; color: #111; }
-
     .sec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .sec-title { font-family: Arial, sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; color: #3A138A; }
     .mandatory { font-family: Arial, sans-serif; font-size: 7px; font-weight: 900; text-transform: uppercase; color: #F59F01; }
@@ -154,10 +183,8 @@ export default function ScoringTab({
     th { background: #f9fafb; font-family: Arial, sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; color: #6b7280; padding: 7px 10px; border: 1px solid #e5e7eb; text-align: left; }
     td { border: 1px solid #e5e7eb; padding: 8px; height: 28px; }
     .note { font-size: 8px; color: #9ca3af; font-style: italic; margin-top: 3px; }
-
     .decl h2 { font-family: Arial, sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 3px; color: #3A138A; margin: 18px 0 8px; }
     .decl p { font-size: 10px; line-height: 1.8; font-style: italic; color: #4b5563; text-align: justify; margin-bottom: 8px; }
-
     .sig-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; border-top: 1px solid #f3f4f6; padding-top: 20px; margin-top: 14px; }
     .sig-line { height: 55px; border-bottom: 1px solid #d1d5db; margin-bottom: 8px; }
     .sig-label { font-family: Arial, sans-serif; font-size: 8px; font-weight: 900; text-transform: uppercase; }
@@ -165,30 +192,18 @@ export default function ScoringTab({
     .seal-box { height: 55px; border-bottom: 1px solid #d1d5db; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
     .seal-circle { width: 60px; height: 60px; border: 2px dashed #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: Arial, sans-serif; font-size: 6px; color: #d1d5db; text-transform: uppercase; font-weight: 900; text-align: center; }
     .tr { text-align: right; }
-
     .doc-footer { display: flex; justify-content: space-between; border-top: 1px solid #f3f4f6; padding-top: 12px; margin-top: 30px; }
     .doc-footer p { font-family: Arial, sans-serif; font-size: 6px; color: #d1d5db; text-transform: uppercase; font-weight: 700; margin-bottom: 2px; }
   </style>
 </head>
 <body>
-  <script>
-    window.addEventListener('afterprint', function() { window.close(); });
-  </script>
+  <script>window.addEventListener('afterprint', function() { window.close(); });</script>
   <div class="page">
-
     <div class="header">
-      <div>
-        ${logoSVG}
-        <div class="dept">Regulatory Compliance Dept.</div>
-      </div>
-      <div>
-        <div class="doc-title">UBO Declaration</div>
-        <div class="doc-version">Form Version: 2024.1.v</div>
-      </div>
+      <div>${logoSVG}<div class="dept">Regulatory Compliance Dept.</div></div>
+      <div><div class="doc-title">UBO Declaration</div><div class="doc-version">Form Version: 2024.1.v</div></div>
     </div>
-
     <p class="intro">Pursuant to the <strong>Prevention of Money Laundering Act (PMLA)</strong> and relevant <strong>SEBON</strong> regulations, this declaration is required to identify the <strong>Ultimate Beneficial Owners (UBO)</strong> of the entity seeking investment or partnership with Finlogic Capital Limited.</p>
-
     <div class="info-box">
       <h2>Declarant Information</h2>
       <div class="info-grid">
@@ -198,48 +213,21 @@ export default function ScoringTab({
         <div class="field"><label>Date of Declaration</label><p>${dateStr}</p></div>
       </div>
     </div>
-
-    <div class="sec-header">
-      <div class="sec-title">Beneficial Ownership &amp; Shareholding</div>
-      <div class="mandatory">Mandatory: All Shareholders &gt; 5%</div>
-    </div>
+    <div class="sec-header"><div class="sec-title">Beneficial Ownership &amp; Shareholding</div><div class="mandatory">Mandatory: All Shareholders &gt; 5%</div></div>
     <table>
-      <thead><tr>
-        <th>Full Name of Shareholder / UBO</th>
-        <th>Citizenship / Passport #</th>
-        <th>Nationality</th>
-        <th style="text-align:center;">Ownership %</th>
-      </tr></thead>
+      <thead><tr><th>Full Name of Shareholder / UBO</th><th>Citizenship / Passport #</th><th>Nationality</th><th style="text-align:center;">Ownership %</th></tr></thead>
       <tbody>${Array.from({length: 8}, () => '<tr><td></td><td></td><td></td><td></td></tr>').join('')}</tbody>
     </table>
     <p class="note">* <strong>Important:</strong> Please list all individual shareholders holding more than <strong>5% equity</strong> in the entity.</p>
-    <p class="note" style="margin-top:3px;">* Ultimate Beneficial Owner (UBO) = any individual who ultimately owns or controls 25%+ of shares or voting rights.</p>
-
     <div class="decl">
       <h2>Legal Declaration</h2>
-      <p>I, the undersigned, acting in my capacity as an authorized representative of the aforementioned entity, hereby declare that the information provided herein is true, accurate, and complete to the best of my knowledge. I acknowledge that Finlogic Capital Limited relies on this information for its compliance obligations under the laws of Nepal and international AML standards.</p>
-      <p>I further agree to notify Finlogic Capital Limited immediately of any changes to the beneficial ownership structure as declared above. I understand that any false declaration may result in the termination of the engagement and may be reportable to regulatory authorities.</p>
+      <p>I, the undersigned, acting in my capacity as an authorized representative of the aforementioned entity, hereby declare that the information provided herein is true, accurate, and complete to the best of my knowledge.</p>
     </div>
-
     <div class="sig-grid">
-      <div>
-        <div class="sig-line"></div>
-        <div class="sig-label">Authorized Signature</div>
-        <div class="sig-sub">Name: __________________________</div>
-        <div class="sig-sub" style="margin-top:3px;">Title: __________________________</div>
-      </div>
-      <div>
-        <div class="seal-box"><div class="seal-circle">Company Seal</div></div>
-        <div class="sig-label tr">Official Stamp</div>
-        <div class="sig-sub tr" style="margin-top:3px;">Date: ____ / ____ / 20____</div>
-      </div>
+      <div><div class="sig-line"></div><div class="sig-label">Authorized Signature</div><div class="sig-sub">Name: __________________________</div></div>
+      <div><div class="seal-box"><div class="seal-circle">Company Seal</div></div><div class="sig-label tr">Official Stamp</div></div>
     </div>
-
-    <div class="doc-footer">
-      <div><p>&copy; Finlogic Capital Limited</p><p>Institutional Integrity &amp; Governance Unit</p></div>
-      <p>Confidential Document | Internal Use Only</p>
-    </div>
-
+    <div class="doc-footer"><div><p>&copy; Finlogic Capital Limited</p></div><p>Confidential Document | Internal Use Only</p></div>
   </div>
 </body></html>`);
 
@@ -249,82 +237,84 @@ export default function ScoringTab({
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700 theme-transition">
        {/* UBO Form Template Modal */}
        {showUBOModal && (
-         <div id="ubo-printable-container" className="fixed inset-0 z-[10000] bg-black/95 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto">
-            <div className="max-w-[210mm] w-full flex justify-between items-center mb-6 sticky top-0 bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-white/5 z-10">
-               <div className="flex items-center gap-4">
+         <div id="ubo-printable-container" className="fixed inset-0 z-[10000] bg-background/95 backdrop-blur-2xl flex flex-col items-center p-8 overflow-y-auto theme-transition">
+            <div className="max-w-[210mm] w-full flex flex-col md:flex-row justify-between items-center gap-6 sticky top-0 bg-card/80 backdrop-blur-xl p-6 rounded-[2rem] border border-border-theme z-10 shadow-2xl">
+               <div className="flex items-center gap-6">
                   <button 
                     onClick={() => setShowUBOModal(false)}
-                    className="p-3 bg-white/5 border border-white/10 rounded-xl text-white/40 hover:text-white transition-all"
+                    className="p-4 bg-foreground/5 border border-border-theme rounded-2xl text-text-muted hover:text-foreground hover:bg-foreground/10 transition-all shadow-lg active:scale-95"
                   >
-                     <X size={20} />
+                     <X size={24} />
                   </button>
                   <div>
-                     <h2 className="text-white font-black text-lg uppercase tracking-tight">Official UBO Declaration Template</h2>
-                     <p className="text-white/40 text-[10px] uppercase font-bold tracking-widest">Ready for Printing & Signature</p>
+                     <h2 className="text-foreground font-black text-xl uppercase tracking-tight">Official UBO Template</h2>
+                     <p className="text-text-muted/40 text-[10px] uppercase font-black tracking-widest mt-1">Institutional Compliance Framework</p>
                   </div>
                </div>
                
                <button 
                  onClick={printUBOForm}
-                 className="flex items-center gap-2 px-6 py-3 bg-[#F59F01] text-black rounded-xl text-xs font-black uppercase tracking-widest shadow-xl shadow-[#F59F01]/20 hover:scale-[1.05] transition-all"
+                 className="flex items-center gap-3 px-8 py-4 bg-[#F59F01] text-ls-primary-fixed rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-[#F59F01]/30 hover:scale-[1.05] transition-all active:scale-95"
                >
-                  <Printer size={16} />
-                  Print Declaration Form
+                  <Printer size={18} />
+                  Print Official Form
                </button>
             </div>
 
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 mt-10">
                <UBOFormTemplate deal={deal} />
             </div>
             
-            <div className="mt-8 text-white/20 text-[10px] font-black uppercase tracking-[0.3em] pb-12">
-               Finlogic Capital Compliance Infrastructure
+            <div className="mt-12 text-text-muted/20 text-[10px] font-black uppercase tracking-[0.4em] pb-12">
+               Finlogic Capital Limited &bull; Operational Integrity
             </div>
          </div>
        )}
 
        {/* Warning Banner */}
-      <div className="bg-[#F59F01]/10 border border-[#F59F01]/30 p-6 rounded-2xl flex gap-4 items-start">
-         <AlertTriangle className="text-[#F59F01] shrink-0" size={24} />
-         <p className="text-[#F59F01] text-[10px] font-bold leading-relaxed uppercase tracking-wider">
+      <div className="bg-[#F59F01]/5 border border-[#F59F01]/20 p-8 rounded-[2rem] flex gap-6 items-center shadow-xl">
+         <div className="w-12 h-12 rounded-2xl bg-[#F59F01]/10 flex items-center justify-center text-[#F59F01] shadow-inner">
+            <AlertTriangle size={28} className="animate-pulse" />
+         </div>
+         <p className="text-[#F59F01] text-[10px] font-black leading-relaxed uppercase tracking-[0.15em] flex-1">
            AI PRELIMINARY ANALYSIS — NOT INVESTMENT ADVICE. All scores are AI-generated suggestions. 
-           You are responsible for reviewing, overriding, and validating each score.
+           Review, override, and validate each criterion before final IC submission.
          </p>
       </div>
 
       {/* Header Info */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 px-2">
-         <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10 px-2 theme-transition">
+         <div className="space-y-6">
             <div>
-               <h3 className="text-4xl font-black text-white tracking-tighter uppercase leading-none">FINLO Score</h3>
-               <p className="text-white/40 text-sm mt-2 font-medium">Holistic Investment Thesis Evaluation</p>
+               <h3 className="text-5xl md:text-6xl font-black text-foreground tracking-tighter uppercase leading-none">FINLO Score</h3>
+               <p className="text-text-muted text-lg mt-3 font-medium">Holistic Investment Thesis Evaluation Engine</p>
             </div>
             
-            <div className="flex items-center gap-3">
-               <div className={`${rec.color} px-4 py-1.5 rounded-full text-[10px] font-black text-black uppercase tracking-widest shadow-lg shadow-white/5`}>
+            <div className="flex items-center gap-4">
+               <div className={`${rec.color} px-6 py-2 rounded-full text-[10px] font-black text-ls-primary-fixed uppercase tracking-widest shadow-2xl shadow-current/20`}>
                  {rec.label}
                </div>
-               <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">{rec.desc}</p>
+               <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60">{rec.desc}</p>
             </div>
          </div>
 
          <div className="flex gap-4">
-            <div className="bg-white/5 border border-white/10 px-10 py-6 rounded-[32px] text-center shadow-2xl relative overflow-hidden group">
-               <div className="absolute inset-0 bg-[#F59F01]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-               <p className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-1 relative z-10">Total Grade</p>
-               <div className="flex items-baseline justify-center gap-1 relative z-10">
-                  <span className="text-6xl font-black text-[#F59F01] tabular-nums tracking-tighter">{currentTotal}</span>
-                  <span className="text-xl font-bold text-white/20">/ 10</span>
+            <div className="bg-card border border-border-theme px-14 py-10 rounded-[3rem] text-center shadow-2xl relative overflow-hidden group theme-transition">
+               <div className="absolute inset-0 bg-gradient-to-br from-[#F59F01]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+               <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em] mb-3 relative z-10 opacity-40">Weighted Grade</p>
+               <div className="flex items-baseline justify-center gap-2 relative z-10">
+                  <span className="text-7xl md:text-8xl font-black text-[#F59F01] tabular-nums tracking-tighter drop-shadow-2xl">{currentTotal}</span>
+                  <span className="text-2xl font-black text-text-muted/20">/ 10</span>
                </div>
             </div>
          </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 space-y-6">
            {pillars.map(p => (
              <ScoringPillar 
                key={p.code} 
@@ -335,10 +325,10 @@ export default function ScoringTab({
            ))}
         </div>
 
-        <div className="space-y-8">
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-               <h4 className="text-xs font-black text-white uppercase tracking-widest mb-8 border-b border-white/5 pb-4">Compliance Gates</h4>
-               <div className="space-y-6">
+        <div className="space-y-8 theme-transition">
+            <div className="bg-card border border-border-theme rounded-[2.5rem] p-10 shadow-2xl theme-transition">
+               <h4 className="text-[10px] font-black text-foreground uppercase tracking-[0.3em] mb-10 border-b border-border-theme pb-6 opacity-60">Compliance Gates</h4>
+               <div className="space-y-8">
                   {scoring.compliance_gates.map(gate => (
                     <ComplianceGateRow 
                       key={gate.id} 
@@ -352,27 +342,27 @@ export default function ScoringTab({
                </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-               <h4 className="text-xs font-black text-white uppercase tracking-widest mb-6 border-b border-white/5 pb-4">Final Assessment</h4>
-               <div className="space-y-4">
+            <div className="bg-card border border-border-theme rounded-[2.5rem] p-10 shadow-2xl theme-transition">
+               <h4 className="text-[10px] font-black text-foreground uppercase tracking-[0.3em] mb-8 border-b border-border-theme pb-6 opacity-60">Final Assessment</h4>
+               <div className="space-y-6">
                   <textarea 
                      value={summary}
                      onChange={(e) => setSummary(e.target.value)}
                      placeholder="Enter final investment recommendation summary (min 100 words)..."
-                     className="w-full h-48 bg-black/40 border border-white/5 rounded-2xl p-4 text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-[#F59F01]/50 transition-all font-serif"
+                     className="w-full h-56 bg-foreground/[0.03] border border-border-theme rounded-[1.5rem] p-6 text-sm text-foreground/80 placeholder:text-text-muted/20 focus:outline-none focus:border-[#F59F01]/50 transition-all font-serif leading-relaxed shadow-inner"
                   />
-                  <div className="flex items-center justify-between px-1">
-                     <span className={`text-[10px] font-bold ${wordCount >= 100 ? 'text-[#10b981]' : 'text-white/20'}`}>
+                  <div className="flex items-center justify-between px-2">
+                     <span className={`text-[10px] font-black uppercase tracking-widest ${wordCount >= 100 ? 'text-emerald-500' : 'text-text-muted/40'}`}>
                         {wordCount} / 100 words
                      </span>
-                     {wordCount >= 100 && <CheckCircle2 size={14} className="text-[#10b981]" />}
+                     {wordCount >= 100 && <CheckCircle2 size={16} className="text-emerald-500" />}
                   </div>
                </div>
 
                <button 
                  onClick={() => onApprove({ assessment_summary: summary })}
                  disabled={isApproving || wordCount < 100 || isApproved}
-                 className="w-full mt-8 py-4 bg-[#F59F01] text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-30 disabled:hover:scale-100"
+                 className="w-full mt-10 py-5 bg-[#F59F01] text-ls-primary-fixed rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] hover:scale-105 transition-all shadow-2xl shadow-[#F59F01]/30 disabled:opacity-30 disabled:hover:scale-100 active:scale-95"
                >
                  {isApproved ? 'Deal Approved' : (isApproving ? 'Approving...' : 'Approve for IC Review')}
                </button>
@@ -388,31 +378,31 @@ function ScoringPillar({ pillar, scores, onOverride }) {
   const avgScore = scores.reduce((acc, s) => acc + (s.gp_score || s.ai_score), 0) / (scores.length || 1);
 
   return (
-    <div className={`bg-white/5 border border-white/10 rounded-3xl overflow-hidden transition-all ${isOpen ? 'ring-1 ring-[#F59F01]/30' : ''}`}>
+    <div className={`bg-card border border-border-theme rounded-[2.5rem] overflow-hidden transition-all theme-transition shadow-xl hover:shadow-2xl ${isOpen ? 'ring-2 ring-[#F59F01]/30' : ''}`}>
        <button 
          onClick={() => setIsOpen(!isOpen)}
-         className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors"
+         className="w-full p-8 flex items-center justify-between hover:bg-foreground/[0.02] transition-all"
        >
-          <div className="flex items-center gap-4">
-             <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-[#F59F01]">
+          <div className="flex items-center gap-6">
+             <div className="w-14 h-14 rounded-2xl bg-foreground/5 border border-border-theme flex items-center justify-center text-[#F59F01] shadow-inner">
                 {pillar.icon}
              </div>
-             <div className="text-left">
-                <h4 className="text-white font-black text-lg tracking-tight uppercase">{pillar.name}</h4>
-                <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">Weight: {pillar.weight}</p>
+             <div className="text-left space-y-1">
+                <h4 className="text-foreground font-black text-xl tracking-tight uppercase">{pillar.name}</h4>
+                <p className="text-text-muted/40 text-[10px] font-black uppercase tracking-[0.2em]">Pillar Weight: {pillar.weight}</p>
              </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-8">
              <div className="text-right">
-                <p className="text-[10px] text-white/20 uppercase font-black mb-1">Average</p>
-                <span className="text-2xl font-black text-white tabular-nums">{avgScore.toFixed(1)}</span>
+                <p className="text-[10px] text-text-muted uppercase font-black tracking-widest mb-1 opacity-40">Avg Score</p>
+                <span className="text-3xl font-black text-foreground tabular-nums tracking-tighter">{avgScore.toFixed(1)}</span>
              </div>
-             <ChevronRight size={20} className={`text-white/20 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+             <ChevronRight size={24} className={`text-text-muted/40 transition-transform duration-500 ${isOpen ? 'rotate-90 text-[#F59F01]' : ''}`} />
           </div>
        </button>
 
        {isOpen && (
-         <div className="p-6 pt-0 space-y-4 border-t border-white/5 mt-4">
+         <div className="p-8 pt-2 space-y-6 border-t border-border-theme/50 animate-in slide-in-from-top-4 duration-500">
             {scores.map(s => (
               <CriterionRow key={s.id} score={s} onOverride={onOverride} />
             ))}
@@ -428,62 +418,62 @@ function CriterionRow({ score, onOverride }) {
   const [showEvidence, setShowEvidence] = useState(false);
 
   const getScoreColor = (v) => {
-    if (v >= 8) return 'bg-[#10b981]';
-    if (v >= 6) return 'bg-yellow-500';
-    if (v >= 4) return 'bg-[#F59F01]';
-    return 'bg-red-500';
+    if (v >= 8) return 'bg-emerald-500 shadow-emerald-500/30';
+    if (v >= 6) return 'bg-[#F59F01] shadow-[#F59F01]/30';
+    if (v >= 4) return 'bg-orange-500 shadow-orange-500/30';
+    return 'bg-rose-500 shadow-rose-500/30';
   };
 
   return (
-    <div className="bg-black/20 border border-white/5 rounded-2xl p-6 transition-all hover:border-white/10">
-       <div className="flex items-start justify-between gap-8">
-          <div className="flex-1 space-y-2">
-             <h5 className="text-white font-bold text-sm capitalize">{score.criterion_id.replace(/_/g, ' ')}</h5>
-             <p className="text-white/50 text-xs leading-relaxed italic line-clamp-2">{score.ai_rationale}</p>
-             <div className="flex items-center gap-4 mt-4">
+    <div className="bg-foreground/[0.02] border border-border-theme rounded-[2rem] p-8 transition-all hover:bg-foreground/[0.04] shadow-sm">
+       <div className="flex flex-col md:flex-row md:items-start justify-between gap-8">
+          <div className="flex-1 space-y-3">
+             <h5 className="text-foreground font-black text-base uppercase tracking-tight">{score.criterion_id.replace(/_/g, ' ')}</h5>
+             <p className="text-text-muted/70 text-sm leading-relaxed italic font-medium">"{score.ai_rationale}"</p>
+             <div className="flex items-center gap-6 mt-6">
                 <button 
                   onClick={() => setShowEvidence(!showEvidence)}
-                  className="text-[9px] font-black text-[#F59F01] uppercase tracking-widest flex items-center gap-1 hover:opacity-70 transition-opacity"
+                  className="text-[10px] font-black text-[#F59F01] uppercase tracking-[0.2em] flex items-center gap-2 hover:underline transition-all"
                 >
-                  <Search size={12} /> {showEvidence ? 'Hide Evidence' : 'View AI Evidence'}
+                  <Search size={14} /> {showEvidence ? 'Hide Evidence' : 'View AI Evidence'}
                 </button>
-                <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest border border-white/5 px-2 py-0.5 rounded">
+                <span className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em] border border-border-theme px-3 py-1 rounded-full bg-background/50">
                   Confidence: {(score.ai_confidence * 100).toFixed(0)}%
                 </span>
              </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6 shrink-0">
              {isEditing ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3 bg-card p-2 rounded-2xl border border-[#F59F01]/50 shadow-2xl">
                    <input 
                      type="number" 
                      min="1" 
                      max="10" 
                      value={val}
                      onChange={(e) => setVal(parseInt(e.target.value))}
-                     className="w-16 bg-white/5 border border-[#F59F01]/50 rounded-lg p-2 text-white font-black text-center"
+                     className="w-16 bg-foreground/5 border-none rounded-xl p-3 text-foreground font-black text-xl text-center focus:ring-0"
                    />
                    <button 
                      onClick={() => {
                        onOverride({ scoreId: score.id, gp_score: val });
                        setIsEditing(false);
                      }}
-                     className="p-2 bg-[#F59F01] text-black rounded-lg hover:scale-105 transition-all"
+                     className="p-3 bg-[#F59F01] text-ls-primary-fixed rounded-xl hover:scale-110 transition-all shadow-lg active:scale-95"
                    >
-                     <Check size={16} />
+                     <Check size={20} strokeWidth={3} />
                    </button>
                 </div>
              ) : (
-                <div className="flex items-center gap-3">
-                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg ${getScoreColor(val)}`}>
+                <div className="flex items-center gap-4">
+                   <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-ls-primary-fixed font-black text-2xl shadow-2xl transition-all hover:scale-105 ${getScoreColor(val)}`}>
                      {val}
                    </div>
                    <button 
                      onClick={() => setIsEditing(true)}
-                     className="p-2 text-white/20 hover:text-white transition-colors"
+                     className="p-3 text-text-muted/20 hover:text-[#F59F01] hover:bg-[#F59F01]/5 rounded-xl transition-all border border-transparent hover:border-[#F59F01]/20"
                    >
-                     <Edit3 size={18} />
+                     <Edit3 size={20} />
                    </button>
                 </div>
              )}
@@ -491,9 +481,9 @@ function CriterionRow({ score, onOverride }) {
        </div>
 
        {showEvidence && (
-         <div className="mt-6 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+         <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
             {(score.evidence_quotes || []).map((q, i) => (
-              <div key={i} className="p-3 bg-white/5 border-l-2 border-[#F59F01]/50 rounded-r-xl text-[11px] text-white/60 leading-relaxed font-mono">
+              <div key={i} className="p-5 bg-card border-l-4 border-[#F59F01] rounded-r-2xl text-xs text-text-muted font-mono leading-relaxed shadow-sm italic">
                 "{q}"
               </div>
             ))}
@@ -503,63 +493,13 @@ function CriterionRow({ score, onOverride }) {
   );
 }
 
-const GATE_METADATA = {
-  'FITTA': {
-    title: 'FITTA / FDI Approval',
-    info: 'Required for foreign investment under the Foreign Investment and Technology Transfer Act. Mandatory for all foreign LPs.',
-    subtasks: [
-      { id: 'approval', label: 'FITTA Approval Obtained', help: 'The formal approval letter from DOI or FITTA branch.' },
-      { id: 'automatic', label: 'Automatic Route Eligibility', help: 'Confirmation if the project qualifies for the NRB automatic approval route.' },
-      { id: 'doi', label: 'DOI Intimation Letter', help: 'Acknowledgment letter from the Department of Industry regarding the FDI intimation.' }
-    ]
-  },
-  'AML_KYC': {
-    title: 'AML / KYC Verification',
-    info: 'Prevention of Money Laundering Act (PMLA) compliance. Verification of Ultimate Beneficial Owners (UBO) is strictly mandatory.',
-    subtasks: [
-      { 
-        id: 'ubo', 
-        label: 'Signed UBO Declaration Form', 
-        help: 'Signed UBO declaration form with citizenship/passport copies. This is a mandatory requirement for all deals.',
-        isMandatory: true,
-        templateName: 'UBO_Declaration_Form.pdf'
-      }
-    ]
-  },
-  'FINANCIAL_AUDIT': {
-    title: 'Financial Due Diligence',
-    info: 'Audit of historical financials and tax clearance. Verification of local accounting standards compliance.',
-    subtasks: [
-      { id: 'tax', label: '3-Year Tax Clearance Certificate', help: 'Valid tax clearance certificates for the last three fiscal years.' },
-      { id: 'audit', label: 'Certified Audit Report', help: 'Audited financial statements from a licensed ICAN chartered accountant.' }
-    ]
-  },
-  'LEGAL_STRUCTURE': {
-    title: 'Legal Structure Validity',
-    info: 'Review of Share Lagat, Article of Association, and corporate governance framework.',
-    subtasks: [
-      { id: 'ocr', label: 'OCR Share Lagat Updated', help: 'Current certified Share Lagat from the Office of Company Registrar.' },
-      { id: 'aoa', label: 'AOA/MOA Amendments Verified', help: 'Verification of latest Memorandum and Articles of Association.' }
-    ]
-  },
-  'SEBON_MAPPING': {
-    title: 'SEBON Compliance & Mapping',
-    info: 'Verification of SEBON private placement compliance and sector-specific mapping requirements.',
-    subtasks: [
-      { id: 'sebon_filing', label: 'SEBON Filing Completed', help: 'Evidence of submission to the Securities Board of Nepal.' },
-      { id: 'sector_mapping', label: 'Sector Mapping Verified', help: 'Verification of business categories against SEBON approved lists.' }
-    ]
-  }
-};
-
 function SubTaskItem({ task, projectId, onChange, onViewTemplate }) {
-  const [status, setStatus] = useState('PENDING'); // PENDING, FULFILLED, NOT_NEEDED
+  const [status, setStatus] = useState('PENDING');
   const [notes, setNotes] = useState('');
   const [docId, setDocId] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    // For mandatory tasks, we only consider it "done" if status is FULFILLED AND docId is present
     const isDone = task.isMandatory 
       ? (status === 'FULFILLED' && !!docId)
       : (status === 'FULFILLED' || status === 'NOT_NEEDED');
@@ -578,84 +518,86 @@ function SubTaskItem({ task, projectId, onChange, onViewTemplate }) {
   };
 
   return (
-    <div className={`border rounded-[32px] p-6 transition-all ${
-      status === 'FULFILLED' ? 'bg-[#10b981]/5 border-[#10b981]/20' : 
-      status === 'NOT_NEEDED' ? 'bg-white/5 border-white/10 opacity-60' : 'bg-black/40 border-white/5 hover:border-white/20'
+    <div className={`border-[2px] rounded-[2.5rem] p-8 transition-all duration-500 theme-transition ${
+      status === 'FULFILLED' ? 'bg-emerald-500/5 border-emerald-500/30 shadow-xl' : 
+      status === 'NOT_NEEDED' ? 'bg-foreground/5 border-border-theme opacity-40 grayscale shadow-inner' : 'bg-foreground/[0.02] border-border-theme hover:border-foreground/10 shadow-lg'
     }`}>
-       <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
-             <div className="flex items-center gap-2">
-                <p className={`text-sm font-black uppercase tracking-tight ${status === 'FULFILLED' ? 'text-[#10b981]' : 'text-white'}`}>
+       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+          <div className="space-y-3">
+             <div className="flex items-center gap-3">
+                <p className={`text-base font-black uppercase tracking-tight ${status === 'FULFILLED' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
                   {task.label}
                 </p>
                 {task.isMandatory && (
-                  <span className="px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black uppercase rounded-full">Mandatory</span>
+                  <span className="px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase tracking-widest rounded-full border border-rose-500/20">Mandatory</span>
                 )}
              </div>
-             <p className="text-[10px] text-white/40 leading-relaxed max-w-sm">{task.help}</p>
+             <p className="text-[11px] text-text-muted leading-relaxed max-w-md font-medium">{task.help}</p>
              
              {task.templateName && (
                <button 
                  onClick={onViewTemplate}
-                 className="flex items-center gap-2 px-3 py-1.5 bg-[#F59F01]/10 border border-[#F59F01]/20 rounded-xl text-[#F59F01] text-[9px] font-black uppercase tracking-widest hover:bg-[#F59F01] hover:text-black transition-all"
+                 className="flex items-center gap-2 px-5 py-2.5 bg-[#F59F01]/10 border border-[#F59F01]/30 rounded-xl text-[#F59F01] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#F59F01] hover:text-ls-primary-fixed transition-all shadow-xl shadow-[#F59F01]/10 mt-4 active:scale-95"
                >
-                  <FileText size={12} />
-                  View & Print Official Template
+                  <FileText size={16} />
+                  View & Print Template
                </button>
              )}
           </div>
           
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-3 shrink-0 self-end sm:self-start">
              {!task.isMandatory && (
                <button 
                  onClick={() => toggleStatus('NOT_NEEDED')}
-                 className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
-                   status === 'NOT_NEEDED' ? 'bg-white/20 text-white' : 'bg-white/5 text-white/20 hover:text-white'
+                 className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${
+                   status === 'NOT_NEEDED' ? 'bg-foreground text-background' : 'bg-foreground/5 text-text-muted/40 hover:text-foreground'
                  }`}
                >
-                 Not Needed
+                 Exempt
                </button>
              )}
              <button 
                onClick={() => toggleStatus('FULFILLED')}
-               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                 status === 'FULFILLED' ? 'bg-[#10b981] text-black' : 'bg-white/5 text-white/20 hover:text-[#10b981]'
+               className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-2xl ${
+                 status === 'FULFILLED' ? 'bg-emerald-500 text-white' : 'bg-foreground/5 text-text-muted/20 hover:text-emerald-500 hover:bg-emerald-500/10'
                }`}
              >
-                <Check size={16} strokeWidth={4} />
+                <Check size={24} strokeWidth={4} />
              </button>
           </div>
        </div>
 
        {showForm && (
-         <div className="mt-6 pt-6 border-t border-white/5 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="space-y-2">
-               <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">
-                 {status === 'FULFILLED' ? 'Verification Notes' : 'Reason for Exemption'}
+         <div className="mt-8 pt-8 border-t border-border-theme space-y-6 animate-in fade-in slide-in-from-top-6 duration-700">
+            <div className="space-y-3">
+               <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em] ml-1">
+                  Verification Audit Log
                </label>
                <textarea 
                  value={notes}
                  onChange={(e) => setNotes(e.target.value)}
-                 placeholder={status === 'FULFILLED' ? "Enter reference numbers, approval dates..." : "Explain why this is not required..."}
-                 className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs text-white focus:outline-none focus:border-[#F59F01]/40 transition-all min-h-[80px]"
+                 placeholder={status === 'FULFILLED' ? "Reference numbers, approval dates, key person names..." : "Explain precisely why this requirement is being waived..."}
+                 className="w-full bg-background border border-border-theme rounded-2xl p-6 text-sm text-foreground focus:outline-none focus:border-[#F59F01] transition-all min-h-[120px] shadow-inner font-medium"
                />
             </div>
 
             {status === 'FULFILLED' && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between ml-1">
-                   <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em]">Evidence Document</label>
-                   {task.isMandatory && !docId && <span className="text-[8px] text-red-400 font-bold animate-pulse italic">* Required to clear gate</span>}
+                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">Evidence Bundle</label>
+                   {task.isMandatory && !docId && <span className="text-[9px] text-rose-500 font-black animate-pulse uppercase tracking-widest bg-rose-500/10 px-3 py-1 rounded-full">* Evidence Required</span>}
                 </div>
-                <FileUploader 
-                  projectId={projectId}
-                  category="COMPLIANCE"
-                  isLocal={true}
-                  uploadUrl={`deals/projects/${projectId}/upload-local/`}
-                  onSuccess={(id) => setDocId(id)}
-                  label="Upload Signed Document"
-                  description="Upload the signed & scanned template with ID copies"
-                />
+                <div className="bg-background p-6 rounded-[2rem] border border-border-theme shadow-inner">
+                  <FileUploader 
+                    projectId={projectId}
+                    category="COMPLIANCE"
+                    isLocal={true}
+                    uploadUrl={`deals/projects/${projectId}/upload-local/`}
+                    onSuccess={(id) => setDocId(id)}
+                    label="Upload Executed Document"
+                    description="Upload the scanned declaration with necessary ID attachments (PDF/JPG)"
+                  />
+                </div>
               </div>
             )}
          </div>
@@ -682,13 +624,12 @@ function ComplianceGateRow({ gate, deal, onClear, onReset, onViewUBO }) {
   });
 
   const handleClear = () => {
-    // Consolidate notes and documents
     const subtaskSummary = meta.subtasks.map(t => {
       const s = subtaskStates[t.id];
       return `[${t.label}]: ${s.status === 'FULFILLED' ? 'VERIFIED' : 'EXEMPT'} - ${s.notes}`;
     }).join('\n\n');
 
-    const consolidatedNotes = `${notes}\n\n--- SUB-TASK BREAKDOWN ---\n${subtaskSummary}`;
+    const consolidatedNotes = `${notes}\n\n--- COMPLIANCE SUB-TASK AUDIT ---\n${subtaskSummary}`;
     const consolidatedDocIds = meta.subtasks
       .map(t => subtaskStates[t.id]?.docId)
       .filter(id => !!id);
@@ -704,65 +645,68 @@ function ComplianceGateRow({ gate, deal, onClear, onReset, onViewUBO }) {
   };
 
   return (
-    <div className="flex items-center justify-between group">
-       <div className="space-y-1">
-          <p className="text-white font-bold text-xs">{meta.title}</p>
-          <span className={`text-[9px] font-black uppercase tracking-tighter ${isCleared ? 'text-[#10b981]' : 'text-white/20'}`}>
-            {gate.status}
-          </span>
+    <div className="flex items-center justify-between group py-2">
+       <div className="space-y-2">
+          <p className="text-foreground font-black text-sm uppercase tracking-tight">{meta.title}</p>
+          <div className="flex items-center gap-2">
+            <div className={`w-1.5 h-1.5 rounded-full ${isCleared ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-text-muted/20'}`} />
+            <span className={`text-[10px] font-black uppercase tracking-widest ${isCleared ? 'text-emerald-500' : 'text-text-muted/40'}`}>
+              {gate.status}
+            </span>
+          </div>
        </div>
        <button 
          onClick={() => setShowModal(true)}
-         className={`px-4 py-1.5 border rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+         className={`px-6 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg active:scale-95 ${
            isCleared 
-             ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-black' 
-             : 'bg-white/5 border-white/10 text-white opacity-0 group-hover:opacity-100 hover:bg-[#F59F01] hover:text-black hover:border-[#F59F01]'
+             ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white' 
+             : 'bg-foreground/5 border-border-theme text-foreground opacity-40 group-hover:opacity-100 hover:bg-[#F59F01] hover:text-ls-primary-fixed hover:border-[#F59F01]'
          }`}
        >
-         {isCleared ? 'View Details' : 'Review & Clear'}
+         {isCleared ? 'View Audit' : 'Clear Gate'}
        </button>
 
        {showModal && (
-         <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-12 bg-black/90 backdrop-blur-md overflow-y-auto">
-            <div className="bg-[#111111] border border-white/10 p-10 rounded-[40px] max-w-2xl w-full shadow-2xl space-y-8 relative animate-in fade-in zoom-in duration-300 mb-12">
-               <button onClick={() => setShowModal(false)} className="absolute top-8 right-8 text-white/20 hover:text-white">
-                  <X size={24} />
+         <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-12 bg-background/90 backdrop-blur-3xl overflow-y-auto theme-transition">
+            <div className="bg-card border border-border-theme p-12 rounded-[4rem] max-w-3xl w-full shadow-2xl space-y-10 relative animate-in fade-in zoom-in duration-500 mb-20 theme-transition">
+               <button onClick={() => setShowModal(false)} className="absolute top-12 right-12 text-text-muted/20 hover:text-foreground transition-all p-3 hover:bg-foreground/5 rounded-2xl border border-border-theme/50">
+                  <X size={28} />
                </button>
 
-               <div className="space-y-2">
-                  <h3 className="text-white font-black text-3xl tracking-tight uppercase leading-none">{meta.title}</h3>
-                  <div className="flex items-center gap-2 text-[#F59F01]">
-                     {isCleared ? <CheckCircle2 size={12} className="text-[#10b981]" /> : <Star size={12} />}
-                     <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${isCleared ? 'text-[#10b981]' : ''}`}>
-                       {isCleared ? 'Compliance Cleared' : 'Mandatory Gate'}
+               <div className="space-y-4">
+                  <div className="flex items-center gap-4 text-[#F59F01]">
+                     {isCleared ? <CheckCircle2 size={20} className="text-emerald-500" /> : <Star size={20} />}
+                     <span className={`text-[11px] font-black uppercase tracking-[0.3em] ${isCleared ? 'text-emerald-500' : ''}`}>
+                       {isCleared ? 'Verification Successful' : 'Compliance Requirement'}
                      </span>
                   </div>
+                  <h3 className="text-foreground font-black text-4xl md:text-5xl tracking-tight uppercase leading-none">{meta.title}</h3>
                </div>
 
-               <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                  <p className="text-white/60 text-xs leading-relaxed italic">"{meta.info}"</p>
+               <div className="bg-foreground/[0.02] p-8 rounded-[2rem] border border-border-theme shadow-inner">
+                  <p className="text-text-muted font-medium text-sm leading-relaxed italic">"{meta.info}"</p>
                </div>
 
                {isCleared && (
-                 <div className="p-6 bg-[#10b981]/5 border border-[#10b981]/20 rounded-3xl space-y-4">
-                    <div className="flex items-center justify-between">
-                       <p className="text-[10px] font-black text-[#10b981] uppercase tracking-widest">Verification Record</p>
-                       <span className="text-[10px] text-[#10b981]/60 font-medium">
+                 <div className="p-8 bg-emerald-500/5 border border-emerald-500/20 rounded-[2.5rem] space-y-6 shadow-xl">
+                    <div className="flex items-center justify-between border-b border-emerald-500/10 pb-4">
+                       <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.3em]">Institutional Verification Log</p>
+                       <span className="text-[10px] text-emerald-600/40 font-black uppercase tracking-widest">
                           {gate.cleared_at ? new Date(gate.cleared_at).toLocaleString() : 'N/A'}
                        </span>
                     </div>
-                    <pre className="text-xs text-white/80 leading-relaxed font-sans whitespace-pre-wrap">
+                    <pre className="text-sm text-foreground/80 leading-relaxed font-sans whitespace-pre-wrap font-medium">
                       {gate.notes}
                     </pre>
                  </div>
                )}
 
                {!isCleared && (
-                 <>
+                 <div className="space-y-10">
                    {meta.subtasks.length > 0 && (
-                     <div className="space-y-6">
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Granular Sub-Verifications</p>
-                        <div className="space-y-4">
+                     <div className="space-y-8">
+                        <p className="text-[10px] font-black text-text-muted/40 uppercase tracking-[0.4em] text-center">Structural Due Diligence Checklist</p>
+                        <div className="space-y-6">
                            {meta.subtasks.map(task => (
                              <SubTaskItem 
                                key={task.id} 
@@ -777,57 +721,59 @@ function ComplianceGateRow({ gate, deal, onClear, onReset, onViewUBO }) {
                    )}
 
                    {meta.subtasks.length === 0 && (
-                     <div className="space-y-6 pt-6 border-t border-white/5">
-                        <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Aggregate Verification Summary</p>
-                        <div className="space-y-4">
-                          <textarea 
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Enter final summary or aggregate compliance notes..."
-                            className="w-full h-32 bg-black/60 border border-white/5 rounded-3xl p-6 text-sm text-white focus:outline-none focus:border-[#F59F01] transition-all placeholder:text-white/10"
-                          />
-                          
-                          <div className="space-y-2">
-                             <label className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">Additional General Evidence (Optional)</label>
-                             <FileUploader 
-                               projectId={deal.id}
-                               category="COMPLIANCE"
-                               isLocal={true}
-                               uploadUrl={`deals/projects/${deal.id}/upload-local/`}
-                               onSuccess={(id) => setDocId(id)}
-                               label="Upload Final Compliance Bundle"
-                             />
-                          </div>
+                     <div className="space-y-8 pt-10 border-t border-border-theme">
+                        <p className="text-[10px] font-black text-text-muted/40 uppercase tracking-[0.4em] text-center">Aggregate Verification Bundle</p>
+                        <div className="space-y-6">
+                           <textarea 
+                             value={notes}
+                             onChange={(e) => setNotes(e.target.value)}
+                             placeholder="Enter comprehensive compliance findings or aggregate notes here..."
+                             className="w-full h-48 bg-foreground/[0.02] border border-border-theme rounded-[2.5rem] p-8 text-sm text-foreground focus:outline-none focus:border-[#F59F01] transition-all placeholder:text-text-muted/30 shadow-inner font-medium"
+                           />
+                           
+                           <div className="space-y-4">
+                              <label className="text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em] ml-1">Consolidated Evidence (Optional)</label>
+                              <div className="bg-background p-6 rounded-[2.5rem] border border-border-theme shadow-inner">
+                                <FileUploader 
+                                  projectId={deal.id}
+                                  category="COMPLIANCE"
+                                  isLocal={true}
+                                  uploadUrl={`deals/projects/${deal.id}/upload-local/`}
+                                  onSuccess={(id) => setDocId(id)}
+                                  label="Upload Compliance Package"
+                                />
+                              </div>
+                           </div>
                         </div>
                      </div>
                    )}
-                 </>
+                 </div>
                )}
 
-               <div className="flex gap-4 pt-4">
+               <div className="flex flex-col sm:flex-row gap-4 pt-6">
                   {isCleared ? (
                     <button 
                       onClick={() => {
-                        if (confirm(`Are you sure you want to RESET the ${meta.title} gate? All verification records and linked documents for this gate will be disconnected.`)) {
+                        if (confirm(`CRITICAL: Are you sure you want to RESET the ${meta.title} gate? This will disconnect all verified records and evidence.`)) {
                           onReset({ gateId: gate.gate_id });
                           setShowModal(false);
                         }
                       }}
-                      className="flex-1 py-4 bg-white/5 border border-white/10 text-white/40 hover:text-red-500 hover:border-red-500/20 rounded-2xl text-xs font-black uppercase tracking-widest transition-all"
+                      className="flex-1 py-5 bg-rose-500/5 border border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95"
                     >
-                      Reset Compliance Gate
+                      Reset Compliance Status
                     </button>
                   ) : (
                     <button 
                       onClick={handleClear}
                       disabled={!isAllTasksDone}
-                      className={`flex-1 py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl transition-all ${
+                      className={`flex-1 py-6 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.3em] shadow-[0_32px_64px_-16px_rgba(245,159,1,0.2)] transition-all active:scale-95 ${
                         isAllTasksDone 
-                          ? 'bg-[#F59F01] text-black shadow-[#F59F01]/20 hover:scale-[1.02]' 
-                          : 'bg-white/5 text-white/10 cursor-not-allowed border border-white/5'
+                          ? 'bg-[#F59F01] text-ls-primary-fixed hover:scale-[1.02]' 
+                          : 'bg-foreground/5 text-text-muted/20 cursor-not-allowed border border-border-theme'
                       }`}
                     >
-                      {isAllTasksDone ? 'Clear Compliance Gate' : 'Pending Sub-Verifications'}
+                      {isAllTasksDone ? 'Finalize & Clear Gate' : 'Awaiting Documentation'}
                     </button>
                   )}
                </div>

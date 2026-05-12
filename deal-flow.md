@@ -190,7 +190,7 @@ GP Staff advances status to `TERM_SHEET`.
 - **Actor:** GP Staff clicks "Generate Term Sheet"
 - **Backend:** `POST /api/deals/projects/{id}/generate-term-sheet/` → Celery task
 - **AI Model:** Gemini (`gemini-flash-latest`)
-- **Context sent to AI:** Valuation models (DCF equity value, LBO IRR/MOIC), scoring results, deal type, sector, fund economics
+- **Context sent to AI:** Valuation models (DCF equity value, LBO IRR/MOIC), ic memo,scoring results, deal type, sector, fund economics
 - **AI Output:** Structured JSON with key commercial terms:
   - `investment_amount_npr`, `pre_money_valuation_npr`, `ownership_pct`
   - `board_seats`, `observer_rights`
@@ -221,7 +221,7 @@ GP Staff issues LOI via `InvestmentWizard` (see Phase 5).
 - **Actor:** GP Staff clicks "Close Deal" button (visible only at `TERM_SHEET` or later)
 - **Frontend:** `InvestmentWizard` — 3-step modal:
   1. Investment Terms (pre-filled from `TermSheet`)
-  2. LOI Detail customization (HTML content)
+  2. LOI Detail customization (Operational Provisions & Strategic Nuances)
   3. Confirmation & Issue
 - **Backend:** `IssueLOIView` (POST `/api/deals/projects/{id}/issue-loi/`)
 - **Action:** Generates LOI PDF (stored locally in `media/pe_projects/documents/`), creates `PEProjectDocument` with `category='LOI'`, updates status → `LOI_ISSUED`

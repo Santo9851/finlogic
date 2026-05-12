@@ -167,6 +167,8 @@ def get_deal_for_user(request, **kwargs):
         return project
     if project.created_by == request.user:
         return project
+    if project.entrepreneur_user == request.user:
+        return project
     if hasattr(project, 'collaborators') and project.collaborators.filter(id=request.user.id).exists():
         return project
     raise PermissionDenied("You do not have permission to access the details of this deal.")
@@ -730,6 +732,47 @@ class EntrepreneurGetUploadURLView(APIView):
             'file_key': presign['file_key'],
             'document_id': doc.id,
             'content_type': presign['content_type'],
+        }, status=status.HTTP_201_CREATED)
+
+
+class EntrepreneurInviteUploadLocalView(APIView):
+    """
+    POST /api/deals/projects/invite/{token}/upload-local/
+    Direct multipart upload to local storage for public invite flow.
+    """
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def post(self, request, token):
+        project = get_object_or_404(PEProject, invitation_token=token)
+        if not project.is_invitation_valid:
+            return Response({'detail': 'Invitation expired.'}, status=status.HTTP_410_GONE)
+            
+        file_obj = request.FILES.get('file')
+        category = request.data.get('document_type', 'OTHER')
+
+        if not file_obj:
+            return Response({'detail': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if file_obj.size > 3 * 1024 * 1024:
+            return Response({'detail': 'File size exceeds 3MB limit.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        doc = PEProjectDocument.objects.create(
+            project=project,
+            category=category,
+            filename=file_obj.name,
+            file_key=f"local/{project.id}/{file_obj.name}",
+            mime_type=file_obj.content_type,
+            file_size=file_obj.size,
+            local_file=file_obj,
+            uploaded_by=project.entrepreneur_user,
+            is_confirmed=True,
+        )
+
+        return Response({
+            'document_id': doc.id,
+            'filename': doc.filename,
+            'url': doc.local_file.url
         }, status=status.HTTP_201_CREATED)
 
 
@@ -3196,13 +3239,19 @@ class GPTermSheetListView(APIView):
 
     def get(self, request, pk):
         project = get_deal_for_user(self.request, pk=pk)
-        term_sheets = project.term_sheets.all()
+        term_sheets = project.term_sheets.all().order_by('-version', '-created_at')
         return Response(TermSheetSerializer(term_sheets, many=True).data)
 
     def post(self, request, pk):
         project = get_deal_for_user(self.request, pk=pk)
         if project.status not in [PEProject.Status.IC_REVIEW, PEProject.Status.TERM_SHEET]:
             return Response({"detail": "Term sheet generation requires IC_REVIEW or TERM_SHEET status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Set progress to processing immediately to avoid race condition in polling
+        progress = project.analysis_progress or {}
+        progress['Term Sheet'] = 'processing'
+        project.analysis_progress = progress
+        project.save(update_fields=['analysis_progress'])
 
         from .tasks import generate_ai_term_sheet
         generate_ai_term_sheet.delay(str(project.id), str(request.user.id))
@@ -3268,13 +3317,19 @@ class GPSPADraftListView(APIView):
 
     def get(self, request, pk):
         project = get_deal_for_user(self.request, pk=pk)
-        spa_drafts = project.spa_drafts.all()
+        spa_drafts = project.spa_drafts.all().order_by('-version', '-created_at')
         return Response(SPADraftSerializer(spa_drafts, many=True).data)
 
     def post(self, request, pk):
         project = get_deal_for_user(self.request, pk=pk)
         if project.status not in [PEProject.Status.TERM_SHEET, PEProject.Status.LOI_ISSUED, PEProject.Status.CONTRACT_SIGNED]:
             return Response({"detail": "SPA draft generation requires TERM_SHEET, LOI_ISSUED or CONTRACT_SIGNED status."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Set progress to processing immediately
+        progress = project.analysis_progress or {}
+        progress['SPA Draft'] = 'processing'
+        project.analysis_progress = progress
+        project.save(update_fields=['analysis_progress'])
 
         from .tasks import generate_ai_spa_draft
         generate_ai_spa_draft.delay(str(project.id), str(request.user.id))

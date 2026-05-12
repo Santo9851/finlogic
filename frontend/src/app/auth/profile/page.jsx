@@ -33,10 +33,10 @@ export default function ProfileRedirect() {
   }, [user, authLoading, router]);
 
   return (
-    <div className="min-h-screen bg-[#0a0014] flex items-center justify-center">
+    <div className="min-h-screen bg-background flex items-center justify-center theme-transition">
       <div className="flex flex-col items-center gap-4">
-        <Loader2 size={32} className="text-[#0B6EC3] animate-spin" />
-        <p className="text-white/40 text-xs uppercase tracking-widest">Redirecting to profile…</p>
+        <Loader2 size={32} className="text-ls-secondary animate-spin" />
+        <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Redirecting to institutional registry…</p>
       </div>
     </div>
   );

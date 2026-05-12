@@ -5,7 +5,7 @@
  * AI-generated term sheet with GP manual override capability.
  * Each field override is logged to the immutable audit ledger.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { 
   BrainCircuit, FileText, Edit3, Save, RotateCcw, 
@@ -37,6 +37,7 @@ export default function TermSheetTab({ deal }) {
   const [editingField, setEditingField] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [editRemarks, setEditRemarks] = useState('');
+  const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
 
   // Fetch term sheets
   const { data: termSheets = [], isLoading } = useQuery({
@@ -52,16 +53,50 @@ export default function TermSheetTab({ deal }) {
   // Generate mutation
   const generateMutation = useMutation({
     mutationFn: async () => {
+      setIsGeneratingLocal(true);
       const res = await api.post(`/deals/projects/${projectId}/term-sheets/`);
       return res.data;
     },
     onSuccess: () => {
-      toast.success('AI term sheet generation started.');
+      toast.success('AI term sheet generation started in background.');
       queryClient.invalidateQueries(['deals', projectId, 'term-sheets']);
       queryClient.invalidateQueries(['deals', 'project', projectId]);
     },
-    onError: (err) => toast.error(err.response?.data?.detail || 'Failed to generate term sheet.')
+    onError: (err) => {
+      setIsGeneratingLocal(false);
+      toast.error(err.response?.data?.detail || 'Failed to start generation.');
+    }
   });
+
+  // Sync local generating state with backend progress
+  const isProcessing = isGeneratingLocal || deal?.analysis_progress?.['Term Sheet'] === 'processing';
+  const [wasProcessing, setWasProcessing] = useState(false);
+
+  // Sync wasProcessing state
+  useEffect(() => {
+    const backendProcessing = deal?.analysis_progress?.['Term Sheet'] === 'processing';
+    
+    // If the backend has picked up the task, or if the task is clearly not in progress anymore
+    if (backendProcessing && isGeneratingLocal) {
+      setIsGeneratingLocal(false);
+    }
+
+    // Safety: If we are in local generating state but backend progress is empty, 
+    // it means the task failed fast or finished before we even saw it.
+    if (isGeneratingLocal && deal?.analysis_progress && !backendProcessing) {
+      setIsGeneratingLocal(false);
+    }
+
+    if (isProcessing) {
+      setWasProcessing(true);
+    } else if (wasProcessing) {
+      // Transitioned from processing to not processing
+      setWasProcessing(false);
+      setIsGeneratingLocal(false); // Safety
+      queryClient.invalidateQueries(['deals', projectId, 'term-sheets']);
+      toast.success('Term sheet generation cycle complete.');
+    }
+  }, [isProcessing, wasProcessing, deal?.analysis_progress, queryClient, projectId, isGeneratingLocal]);
 
   // Override mutation
   const overrideMutation = useMutation({
@@ -110,43 +145,44 @@ export default function TermSheetTab({ deal }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-[#F59F01] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#F59F01] animate-spin" size={32} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-8 theme-transition">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-xl font-bold text-ls-primary dark:text-white flex items-center gap-2">
             <FileText className="text-[#F59F01]" size={22} />
             Term Sheet
           </h2>
-          <p className="text-white/40 text-sm mt-1">
+          <p className="text-text-muted text-sm mt-1">
             {latest ? `v${latest.version} — ${latest.status}` : 'No term sheet generated yet'}
           </p>
         </div>
         <button
           onClick={() => generateMutation.mutate()}
-          disabled={generateMutation.isLoading}
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F59F01] to-[#E88B00] text-black rounded-lg text-sm font-bold hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/10 disabled:opacity-50"
+          disabled={generateMutation.isPending || isProcessing || (latest && latest.status !== 'DRAFT')}
+          className={`flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F59F01] to-[#E88B00] text-ls-primary rounded-lg text-sm font-bold transition-all shadow-lg shadow-[#F59F01]/10 disabled:opacity-50 ${isProcessing ? 'animate-pulse' : (latest && latest.status !== 'DRAFT') ? '' : 'hover:scale-105'}`}
         >
-          {generateMutation.isLoading ? (
+          {generateMutation.isPending || isProcessing ? (
             <Loader2 className="animate-spin" size={16} />
           ) : (
             <Sparkles size={16} />
           )}
-          {latest ? 'Regenerate' : 'Generate'} AI Term Sheet
+          {isProcessing 
+            ? 'AI Drafting Terms...' 
+            : (latest ? 'Regenerate AI Term Sheet' : 'Generate AI Term Sheet')}
         </button>
       </div>
 
       {!latest ? (
-        <div className="border border-dashed border-white/10 rounded-xl p-12 text-center">
-          <BrainCircuit className="mx-auto text-white/20 mb-4" size={48} />
-          <p className="text-white/40 text-lg font-medium">No term sheet yet</p>
-          <p className="text-white/30 text-sm mt-2">
+        <div className="border border-dashed border-border-theme rounded-xl p-12 text-center theme-transition">
+          <BrainCircuit className="mx-auto text-ls-primary/20 dark:text-white/20 mb-4" size={48} />
+          <p className="text-ls-primary/40 dark:text-white/40 text-lg font-medium">No term sheet yet</p>
+          <p className="text-text-muted text-sm mt-2">
             Click "Generate AI Term Sheet" to let Gemini draft commercial terms based on your valuation models.
           </p>
         </div>
@@ -160,8 +196,8 @@ export default function TermSheetTab({ deal }) {
                 onClick={() => statusMutation.mutate({ tsId: latest.id, status: s })}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
                   latest.status === s 
-                    ? 'bg-[#F59F01] text-black' 
-                    : 'bg-white/5 text-white/40 hover:bg-white/10 border border-white/5'
+                    ? 'bg-[#F59F01] text-ls-primary' 
+                    : 'bg-ls-primary/5 dark:bg-white/5 text-ls-primary/40 dark:text-white/40 hover:bg-ls-primary/10 dark:hover:bg-white/10 border border-border-theme'
                 }`}
               >
                 {s === 'DRAFT' ? 'Draft' : s === 'NEGOTIATING' ? 'Under Negotiation' : 'Terms Agreed'}
@@ -179,16 +215,16 @@ export default function TermSheetTab({ deal }) {
               return (
                 <div
                   key={key}
-                  className={`rounded-xl border p-4 transition-all ${
+                  className={`rounded-xl border p-4 transition-all theme-transition ${
                     isEditing 
                       ? 'border-[#F59F01]/50 bg-[#F59F01]/5' 
                       : wasOverridden 
                         ? 'border-amber-500/30 bg-amber-500/5' 
-                        : 'border-white/10 bg-white/[0.02]'
+                        : 'border-border-theme bg-card dark:bg-white/[0.02]'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-white/40 uppercase tracking-wider font-medium">
+                    <span className="text-xs text-text-muted uppercase tracking-wider font-medium">
                       {TERM_LABELS[key] || key.replace(/_/g, ' ')}
                     </span>
                     <div className="flex items-center gap-2">
@@ -200,7 +236,7 @@ export default function TermSheetTab({ deal }) {
                       {!isEditing && (
                         <button
                           onClick={() => startEdit(key, value)}
-                          className="text-white/20 hover:text-[#F59F01] transition-colors"
+                          className="text-ls-primary/20 dark:text-white/20 hover:text-[#F59F01] transition-colors"
                         >
                           <Edit3 size={14} />
                         </button>
@@ -214,36 +250,36 @@ export default function TermSheetTab({ deal }) {
                         value={editValue}
                         onChange={e => setEditValue(e.target.value)}
                         rows={2}
-                        className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-sm text-white outline-none focus:border-[#F59F01]/40"
+                        className="w-full bg-ls-primary/5 dark:bg-black/50 border border-border-theme rounded-lg p-2 text-sm text-ls-primary dark:text-white outline-none focus:border-[#F59F01]/40"
                       />
                       <input
                         value={editRemarks}
                         onChange={e => setEditRemarks(e.target.value)}
                         placeholder="Override remarks (logged to audit)..."
-                        className="w-full bg-black/50 border border-white/10 rounded-lg p-2 text-xs text-white/60 outline-none focus:border-[#F59F01]/40"
+                        className="w-full bg-ls-primary/5 dark:bg-black/50 border border-border-theme rounded-lg p-2 text-xs text-ls-primary/60 dark:text-white/60 outline-none focus:border-[#F59F01]/40"
                       />
                       <div className="flex gap-2">
                         <button
                           onClick={() => saveEdit(latest.id, key)}
-                          disabled={overrideMutation.isLoading}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-[#F59F01] text-black rounded-lg text-xs font-bold"
+                          disabled={overrideMutation.isPending}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-[#F59F01] text-ls-primary rounded-lg text-xs font-bold"
                         >
-                          {overrideMutation.isLoading ? <Loader2 className="animate-spin" size={12} /> : <Save size={12} />}
+                          {overrideMutation.isPending ? <Loader2 className="animate-spin" size={12} /> : <Save size={12} />}
                           Save Override
                         </button>
                         <button
                           onClick={() => setEditingField(null)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-white/5 text-white/60 rounded-lg text-xs"
+                          className="flex items-center gap-1 px-3 py-1.5 bg-ls-primary/5 dark:bg-white/5 text-ls-primary/60 dark:text-white/60 rounded-lg text-xs hover:bg-ls-primary/10 dark:hover:bg-white/10"
                         >
                           <RotateCcw size={12} /> Cancel
                         </button>
                       </div>
                     </div>
-                  ) : (
-                    <p className="text-sm text-white font-medium break-words">
-                      {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
-                    </p>
-                  )}
+                    ) : (
+                      <p className="text-sm text-ls-primary dark:text-white font-medium break-words">
+                        {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                      </p>
+                    )}
                 </div>
               );
             })}
@@ -251,12 +287,12 @@ export default function TermSheetTab({ deal }) {
 
           {/* AI Comparison */}
           {latest.ai_generated_terms && Object.keys(latest.ai_generated_terms).length > 0 && (
-            <details className="border border-white/5 rounded-xl overflow-hidden">
-              <summary className="p-4 text-sm text-white/40 cursor-pointer hover:bg-white/5 transition-colors flex items-center gap-2">
+            <details className="border border-border-theme rounded-xl overflow-hidden theme-transition">
+              <summary className="p-4 text-sm text-ls-primary/40 dark:text-white/40 cursor-pointer hover:bg-ls-primary/5 dark:hover:bg-white/5 transition-colors flex items-center gap-2">
                 <BrainCircuit size={14} /> View Original AI-Generated Terms
               </summary>
-              <div className="p-4 bg-white/[0.01] border-t border-white/5">
-                <pre className="text-xs text-white/50 whitespace-pre-wrap font-mono">
+              <div className="p-4 bg-ls-primary/5 dark:bg-white/[0.01] border-t border-border-theme">
+                <pre className="text-xs text-ls-primary/50 dark:text-white/50 whitespace-pre-wrap font-mono">
                   {JSON.stringify(latest.ai_generated_terms, null, 2)}
                 </pre>
               </div>

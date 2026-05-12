@@ -148,30 +148,30 @@ export default function GPDealsKanbanPage() {
   );
 
   return (
-    <div className="h-full flex flex-col space-y-6">
+    <div className="h-full flex flex-col space-y-6 theme-transition">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Deal Pipeline</h1>
-          <p className="text-white/40 text-sm">Managing {projects.length} active opportunities</p>
+          <h1 className="text-2xl font-bold text-foreground">Deal Pipeline</h1>
+          <p className="text-text-muted text-sm font-medium">Managing {projects.length} active opportunities</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={16} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/30" size={16} />
             <input 
               type="text" 
               placeholder="Search deals..."
-              className="bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm text-white outline-none focus:border-[#F59F01]/40 transition-all"
+              className="bg-foreground/5 border border-border-theme rounded-lg pl-9 pr-4 py-2 text-sm text-foreground outline-none focus:border-[#F59F01]/40 transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Link href="/gp/deals/new" className="bg-[#F59F01] text-black text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#F59F01]/90 transition-colors shadow-lg shadow-[#F59F01]/10">
+          <Link href="/gp/deals/new" className="bg-[#F59F01] text-ls-primary-fixed text-sm font-black px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-[#F59F01]/90 transition-colors shadow-lg shadow-[#F59F01]/10">
             <Plus size={18} /> New Deal
           </Link>
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+      <div className="flex-1 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-foreground/10 scrollbar-track-transparent">
         <DndContext 
           sensors={sensors}
           collisionDetection={closestCorners}
@@ -209,15 +209,15 @@ function KanbanColumn({ column, items }) {
   return (
     <div 
       ref={setNodeRef}
-      className={`w-72 flex flex-col bg-white/[0.02] border border-white/5 rounded-xl h-full transition-all duration-200 ${
-        isOver ? 'bg-white/5 border-white/20' : ''
+      className={`w-72 flex flex-col bg-foreground/[0.02] border border-border-theme rounded-xl h-full transition-all duration-200 theme-transition ${
+        isOver ? 'bg-foreground/5 border-foreground/20' : ''
       }`}
     >
-      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+      <div className="p-4 border-b border-border-theme flex items-center justify-between bg-foreground/[0.01]">
         <div className="flex items-center gap-3">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: column.color }} />
-          <h3 className="text-xs font-bold text-white/70 uppercase tracking-widest">{column.title}</h3>
-          <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded-full text-white/40 font-bold border border-white/5">
+          <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">{column.title}</h3>
+          <span className="text-[10px] bg-foreground/5 px-2 py-0.5 rounded-full text-text-muted font-bold border border-border-theme">
             {items.length}
           </span>
         </div>
@@ -271,23 +271,23 @@ function KanbanCard({ deal, isOverlay = false }) {
       {...(deal.can_access ? attributes : {})}
       {...(deal.can_access ? listeners : {})}
       onClick={handleCardClick}
-      className={`group bg-[#0A0014] border rounded-xl p-4 shadow-xl hover:border-white/20 transition-all ${deal.can_access ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed opacity-75'} ${
-        isICReview ? 'border-[#f59e0b]/60 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : 'border-white/10'
+      className={`group bg-card border rounded-xl p-4 shadow-xl hover:border-foreground/20 transition-all theme-transition ${deal.can_access ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed opacity-75'} ${
+        isICReview ? 'border-[#f59e0b]/60 shadow-[0_0_20px_rgba(245,158,11,0.05)]' : 'border-border-theme'
       } ${isOverlay ? 'shadow-2xl z-50 scale-105 rotate-2' : ''} ${isDragging ? 'opacity-0' : ''}`}
     >
       <div className="space-y-4">
         <div className="flex justify-between items-start gap-4">
-          <h4 className="text-sm font-semibold text-white group-hover:text-[#F59F01] transition-colors line-clamp-2 leading-relaxed">
-            {!deal.can_access && <Lock size={14} className="inline-block mr-2 text-white/40" />}
+          <h4 className="text-sm font-semibold text-foreground group-hover:text-[#F59F01] transition-colors line-clamp-2 leading-relaxed">
+            {!deal.can_access && <Lock size={14} className="inline-block mr-2 text-text-muted/40" />}
             {deal.legal_name}
           </h4>
-          <div className="text-white/10 group-hover:text-white transition-colors">
+          <div className="text-text-muted/10 group-hover:text-text-muted transition-colors">
             <MoreVertical size={16} />
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <span className="text-[10px] bg-white/5 text-white/60 px-2 py-1 rounded-md border border-white/5 font-medium">
+          <span className="text-[10px] bg-foreground/5 text-text-muted px-2 py-1 rounded-md border border-border-theme font-medium">
             {deal.sector}
           </span>
           <span className="text-[10px] bg-[#0B6EC3]/10 text-[#0B6EC3] px-2 py-1 rounded-md border border-[#0B6EC3]/20 font-bold">
@@ -295,9 +295,9 @@ function KanbanCard({ deal, isOverlay = false }) {
           </span>
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-white/5">
+        <div className="flex items-center justify-between pt-4 border-t border-border-theme">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 text-[10px] text-white/40">
+            <div className="flex items-center gap-1.5 text-[10px] text-text-muted/40">
               <Clock size={12} className={daysInStage > 7 ? 'text-red-400' : ''} />
               <span>{daysInStage}d</span>
             </div>
@@ -309,7 +309,7 @@ function KanbanCard({ deal, isOverlay = false }) {
             )}
           </div>
           
-          <div className="flex items-center gap-1.5 text-[10px] text-white/50 font-bold bg-white/5 px-2 py-1 rounded-full border border-white/5">
+          <div className="flex items-center gap-1.5 text-[10px] text-text-muted/50 font-bold bg-foreground/5 px-2 py-1 rounded-full border border-border-theme">
             <CheckSquare size={12} className="text-[#10b981]" />
             <span>{deal.compliance_stats?.cleared ?? 0}/{deal.compliance_stats?.total ?? 5}</span>
           </div>

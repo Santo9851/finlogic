@@ -235,6 +235,17 @@ class PEProject(models.Model):
         return int(len(uploaded & required) / len(required) * 100)
 
     @property
+    def business_description(self) -> str:
+        """ Fetches business description from form responses (step 2). """
+        try:
+            resp = self.form_responses.filter(step_name='deal_overview').first()
+            if resp and 'business_description' in resp.response_data:
+                return resp.response_data['business_description']
+        except:
+            pass
+        return "N/A"
+
+    @property
     def is_invitation_valid(self) -> bool:
         if not self.invitation_token:
             return False

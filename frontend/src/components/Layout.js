@@ -16,11 +16,11 @@ export default function Layout({ children }) {
                    pathname.startsWith('/superadmin');
 
   if (isPortal) {
-    return <div className="min-h-screen bg-[#100226] text-white selection:bg-[#F59F01]/30">{children}</div>;
+    return <div className="min-h-screen bg-background text-foreground selection:bg-[#F59F01]/30 theme-transition">{children}</div>;
   }
 
   return (
-    <div className="flex min-h-screen flex-col font-sans">
+    <div className="flex min-h-screen flex-col font-sans bg-background text-foreground theme-transition">
       <Header />
       <main className="flex-grow">
         {children}

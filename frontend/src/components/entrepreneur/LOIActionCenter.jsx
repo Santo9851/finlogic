@@ -1,14 +1,18 @@
 import React from 'react';
 import { FileText, Download, Upload, CheckCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function LOIActionCenter({ deal, onUploadContract }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
+  
   const loiDoc = deal.documents?.find(d => d.category === 'LOI');
   const signedContract = deal.documents?.find(d => d.category === 'SIGNED_CONTRACT' || d.category === 'LOI_SIGNED');
 
   if (!loiDoc && deal.status !== 'LOI_ISSUED' && deal.status !== 'CONTRACT_SIGNED') return null;
 
   return (
-    <div className="bg-[#F59F01]/5 border border-[#F59F01]/20 rounded-[40px] p-10 mb-12 relative overflow-hidden group">
+    <div className="bg-[#F59F01]/5 border border-[#F59F01]/20 rounded-[40px] p-10 mb-12 relative overflow-hidden group theme-transition">
       {/* Background Decorative Element */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-[#F59F01]/10 blur-[100px] rounded-full -mr-32 -mt-32 group-hover:bg-[#F59F01]/20 transition-all duration-1000" />
       
@@ -19,11 +23,11 @@ export default function LOIActionCenter({ deal, onUploadContract }) {
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#F59F01]">New Offer Received</span>
           </div>
           
-          <h2 className="text-4xl font-black text-white leading-tight">
+          <h2 className="text-4xl font-black text-foreground leading-tight uppercase tracking-tighter">
             Review your Letter of Intent & <br/> Finalize Partnership
           </h2>
           
-          <p className="text-white/40 max-w-xl text-lg leading-relaxed">
+          <p className="text-text-muted max-w-xl text-lg leading-relaxed font-medium">
             Finlogic Capital has issued a formal Letter of Intent. Please review the terms, download the LOI, and upload your signed contract to move to the final closing stage.
           </p>
 
@@ -33,7 +37,7 @@ export default function LOIActionCenter({ deal, onUploadContract }) {
                 href={loiDoc.url} 
                 target="_blank" 
                 rel="noreferrer"
-                className="px-8 py-4 bg-white text-black rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-white/10"
+                className="px-8 py-4 bg-foreground text-background rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-foreground/10"
               >
                 <FileText size={18} />
                 View LOI PDF
@@ -41,14 +45,14 @@ export default function LOIActionCenter({ deal, onUploadContract }) {
             )}
             
             {signedContract ? (
-              <div className="px-8 py-4 bg-[#10b981]/20 text-[#10b981] rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 border border-[#10b981]/30">
+              <div className="px-8 py-4 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-500/30">
                 <CheckCircle size={18} />
                 {deal.documents?.find(d => d.category === 'LOI_SIGNED') ? 'LOI Uploaded' : 'Contract Uploaded'}
               </div>
             ) : (
               <button 
                 onClick={onUploadContract}
-                className="px-8 py-4 bg-transparent border border-white/20 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-white/5 transition-all"
+                className="px-8 py-4 bg-transparent border border-border-theme text-foreground rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-3 hover:bg-foreground/5 transition-all"
               >
                 <Upload size={18} />
                 {deal.status === 'LOI_ISSUED' ? 'Upload Signed LOI' : 'Upload Signed Contract'}
@@ -58,21 +62,21 @@ export default function LOIActionCenter({ deal, onUploadContract }) {
         </div>
 
         {/* Visual Card */}
-        <div className="w-full md:w-80 h-96 bg-white/[0.03] border border-white/10 rounded-[32px] p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+        <div className="w-full md:w-80 h-96 bg-card border border-border-theme rounded-[32px] p-8 flex flex-col justify-between shadow-2xl relative overflow-hidden theme-transition">
           <div className="absolute inset-0 bg-gradient-to-br from-[#F59F01]/5 to-transparent opacity-50" />
           <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-[#F59F01] flex items-center justify-center text-black mb-6 shadow-lg shadow-[#F59F01]/20">
-              <FileText size={32} />
+            <div className="w-16 h-16 rounded-2xl bg-[#F59F01] flex items-center justify-center text-ls-primary-fixed mb-6 shadow-lg shadow-[#F59F01]/20">
+              <FileText size={32} strokeWidth={2.5} />
             </div>
-            <h3 className="text-white font-bold text-xl mb-2">Deal Terms</h3>
+            <h3 className="text-foreground font-black uppercase tracking-tight text-xl mb-2">Deal Terms</h3>
             <div className="space-y-4 mt-6">
-              <div className="pb-4 border-b border-white/5">
-                <p className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-1">Status</p>
-                <p className="text-white font-bold">{deal.status_display}</p>
+              <div className="pb-4 border-b border-border-theme">
+                <p className="text-[10px] text-text-muted/60 uppercase font-black tracking-widest mb-1">Status</p>
+                <p className="text-foreground font-bold">{deal.status_display}</p>
               </div>
               <div>
-                <p className="text-[10px] text-white/20 uppercase font-black tracking-widest mb-1">Documents Needed</p>
-                <p className="text-white/60 text-xs">Signed Share Subscription Agreement & Shareholders' Agreement</p>
+                <p className="text-[10px] text-text-muted/60 uppercase font-black tracking-widest mb-1">Documents Needed</p>
+                <p className="text-text-muted text-xs font-medium">Signed Share Subscription Agreement & Shareholders' Agreement</p>
               </div>
             </div>
           </div>
@@ -86,3 +90,4 @@ export default function LOIActionCenter({ deal, onUploadContract }) {
     </div>
   );
 }
+

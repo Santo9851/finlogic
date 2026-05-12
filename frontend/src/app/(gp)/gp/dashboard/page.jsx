@@ -2,26 +2,35 @@
 
 /**
  * (gp)/dashboard/page.jsx
- * GP Staff Dashboard — metric cards + priority deal queue.
+ * GP Staff Dashboard — Institutional Command Center with high-fidelity metrics.
  */
 import { useQuery } from '@tanstack/react-query';
 import {
   Briefcase, Users, TrendingUp, Clock, ChevronRight,
-  AlertTriangle, CheckCircle, Eye,
+  AlertTriangle, CheckCircle, Eye, FileText,
+  Building2,
+  PieChart,
+  ArrowUpRight,
+  Loader2,
+  ShieldCheck
 } from 'lucide-react';
 import { MetricCard, StatusBadge } from '@/components/portal/PortalShell';
 import api from '@/services/api';
 import Link from 'next/link';
 import PriorityQueue from '@/components/portal/PriorityQueue';
+import { useTheme } from 'next-themes';
 
 export default function GPDashboardPage() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   const { data: projects = [], isLoading: loadingProjects } = useQuery({
     queryKey: ['deals', 'projects'],
     queryFn: async () => {
       const res = await api.get('/deals/projects/?page_size=100');
       return res.data?.results ?? res.data ?? [];
     },
-    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   const { data: funds = [], isLoading: loadingFunds } = useQuery({
@@ -42,11 +51,8 @@ export default function GPDashboardPage() {
 
   const count = (s) => projects.filter((d) => d.status === s).length;
 
-  // "Submitted" in user's mind likely means anything that has moved past the draft/pending state
-  const submittedCount = projects.filter(d => d.status !== 'PENDING_SUBMISSION').length;
-
   const metrics = [
-    { label: 'Total Pipeline', value: projects.length, icon: Briefcase, color: '#F59F01', href: '/gp/deals' },
+    { label: 'Total Pipeline', value: projects.length, icon: Briefcase, color: isDark ? '#F59F01' : '#0B6EC3', href: '/gp/deals' },
     { label: 'New Submissions', value: count('SUBMITTED'), icon: Clock, color: '#0B6EC3', href: '/gp/deals?status=SUBMITTED' },
     { label: 'In Diligence', value: count('SCREENING'), icon: TrendingUp, color: '#16c784', href: '/gp/deals?status=SCREENING' },
     { label: 'IC Review', value: count('IC_REVIEW'), icon: AlertTriangle, color: '#ea3943', href: '/gp/deals?status=IC_REVIEW' },
@@ -75,24 +81,31 @@ export default function GPDashboardPage() {
 
   const isLoading = loadingProjects || loadingFunds;
 
+  if (isLoading) return (
+    <div className="h-[60vh] flex flex-col items-center justify-center gap-6 theme-transition">
+      <Loader2 className="w-10 h-10 text-ls-compliment animate-spin" />
+      <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Syncing Global Intelligence...</p>
+    </div>
+  );
+
   return (
-    <div className="space-y-12 animate-in fade-in duration-700">
+    <div className="space-y-12 theme-transition animate-in fade-in duration-700">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tight uppercase">GP Control Center</h1>
-          <p className="text-white/40 text-sm mt-1 font-medium">Real-time Private Equity Pipeline & Portfolio Intelligence</p>
+          <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">GP Control Center</h1>
+          <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-2">Real-time Private Equity Pipeline & Institutional Deployment</p>
         </div>
-        <div className="hidden md:flex items-center gap-6">
+        <div className="flex items-center gap-8 bg-card border border-border-theme p-6 rounded-[2rem] shadow-xl">
           <div className="text-right">
-            <p className="text-[10px] text-white/20 uppercase tracking-[0.2em] font-black">Active Capital</p>
-            <p className="text-lg font-bold text-white tabular-nums">{formattedCapital}</p>
+            <p className="text-[9px] text-text-muted/40 uppercase tracking-[0.3em] font-black mb-1">Active Commitment</p>
+            <p className="text-xl font-black text-foreground tabular-nums tracking-tighter">{formattedCapital}</p>
           </div>
-          <div className="h-10 w-px bg-white/10" />
+          <div className="h-10 w-px bg-border-theme opacity-50" />
           <div className="text-right">
-            <p className="text-[10px] text-white/20 uppercase tracking-[0.2em] font-black">Network Status</p>
-            <div className="flex items-center justify-end gap-2 text-[#16c784] text-xs font-black mt-1 uppercase">
-              <div className="w-2 h-2 rounded-full bg-[#16c784] animate-pulse" />
+            <p className="text-[9px] text-text-muted/40 uppercase tracking-[0.3em] font-black mb-1">Node Status</p>
+            <div className="flex items-center justify-end gap-2 text-emerald-500 text-[10px] font-black mt-1 uppercase tracking-widest">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
               Operational
             </div>
           </div>
@@ -100,46 +113,49 @@ export default function GPDashboardPage() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {metrics.map((m) => (
           <MetricCard key={m.label} {...m} />
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         {/* Main Content: Priority Queue */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-10">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-black text-white uppercase tracking-tight">Priority Deal Queue</h2>
-              <p className="text-xs text-white/30 font-medium">Deals requiring institutional screening or GP review</p>
+              <h2 className="text-2xl font-black text-foreground uppercase tracking-tight">Priority Protocol Queue</h2>
+              <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em] opacity-40 mt-1">Assets requiring immediate institutional screening</p>
             </div>
             <Link
               href="/gp/deals"
-              className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-full text-[#F59F01] text-[10px] font-black uppercase tracking-widest transition-all border border-white/5 flex items-center gap-2"
+              className={`px-6 py-2.5 bg-foreground/5 hover:bg-foreground/10 rounded-xl ${isDark ? 'text-ls-compliment' : 'text-ls-secondary'} text-[10px] font-black uppercase tracking-widest transition-all border border-border-theme flex items-center gap-3 active:scale-95`}
             >
-              Full Pipeline <Eye size={14} />
+              Master Pipeline <Eye size={14} />
             </Link>
           </div>
 
-          <PriorityQueue />
+          <div className="bg-card border border-border-theme rounded-[3rem] p-4 shadow-2xl theme-transition">
+            <PriorityQueue />
+          </div>
 
           {/* New Section: Sector Concentration */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
-              <h3 className="text-xs font-black text-white mb-6 uppercase tracking-widest flex items-center gap-2">
-                <TrendingUp size={14} className="text-[#F59F01]" /> Sector Concentration
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="bg-card border border-border-theme rounded-[2.5rem] p-10 shadow-xl relative overflow-hidden theme-transition group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-ls-compliment/5 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
+              <h3 className="text-[10px] font-black text-text-muted/40 mb-8 uppercase tracking-[0.3em] flex items-center gap-3">
+                <PieChart size={16} className="text-ls-compliment" /> Sector Concentration
               </h3>
-              <div className="space-y-5">
+              <div className="space-y-6">
                 {sortedSectors.map(([name, count]) => (
-                  <div key={name} className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold">
-                      <span className="text-white/60">{name}</span>
-                      <span className="text-white">{count} Deals</span>
+                  <div key={name} className="space-y-3">
+                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-text-muted/60">{name}</span>
+                      <span className="text-foreground">{count} Protocol Entries</span>
                     </div>
-                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className="bg-[#F59F01] h-full rounded-full transition-all duration-1000" 
+                    <div className="w-full bg-foreground/[0.03] h-2 rounded-full overflow-hidden shadow-inner border border-border-theme/20">
+                      <div
+                        className={`h-full rounded-full transition-all duration-1000 ${isDark ? 'bg-ls-compliment shadow-[0_0_12px_rgba(245,159,1,0.3)]' : 'bg-ls-secondary shadow-[0_0_12px_rgba(11,110,195,0.3)]'}`}
                         style={{ width: `${(count / projects.length) * 100}%` }}
                       />
                     </div>
@@ -148,24 +164,25 @@ export default function GPDashboardPage() {
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8">
-              <h3 className="text-xs font-black text-white mb-6 uppercase tracking-widest flex items-center gap-2">
-                <Briefcase size={14} className="text-[#16c784]" /> Fund Deployment
+            <div className="bg-card border border-border-theme rounded-[2.5rem] p-10 shadow-xl relative overflow-hidden theme-transition group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
+              <h3 className="text-[10px] font-black text-text-muted/40 mb-8 uppercase tracking-[0.3em] flex items-center gap-3">
+                <ArrowUpRight size={16} className="text-emerald-500" /> Capital Deployment
               </h3>
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {fundDeployment.map(f => (
-                  <div key={f.name} className="flex items-center gap-4">
-                    <div className="relative w-12 h-12 flex-shrink-0">
+                  <div key={f.name} className="flex items-center gap-6 group/item cursor-pointer">
+                    <div className="relative w-14 h-14 flex-shrink-0">
                       <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-white/5" />
-                        <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-[#16c784]" strokeDasharray={126} strokeDashoffset={126 - (126 * f.percent) / 100} strokeLinecap="round" />
+                        <circle cx="28" cy="28" r="24" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-foreground/5" />
+                        <circle cx="28" cy="28" r="24" stroke="currentColor" strokeWidth="4" fill="transparent" className="text-emerald-500 shadow-lg" strokeDasharray={151} strokeDashoffset={151 - (151 * f.percent) / 100} strokeLinecap="round" />
                       </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-[8px] font-black text-white/40">{Math.round(f.percent)}%</span>
+                      <span className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-foreground">{Math.round(f.percent)}%</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-white truncate">{f.name}</p>
-                      <p className="text-[10px] text-white/30 uppercase tracking-widest font-black">
-                        {(f.committed / 1000000).toFixed(1)}M / {(f.committed / (f.percent/100) / 1000000).toFixed(1)}M NPR
+                      <p className="text-xs font-black text-foreground uppercase tracking-tight truncate group-hover/item:text-emerald-500 transition-colors">{f.name}</p>
+                      <p className="text-[9px] text-text-muted/40 uppercase tracking-[0.2em] font-black mt-1">
+                        {(f.committed / 1000000).toFixed(1)}M / {(f.committed / (f.percent / 100) / 1000000).toFixed(1)}M NPR
                       </p>
                     </div>
                   </div>
@@ -176,24 +193,24 @@ export default function GPDashboardPage() {
         </div>
 
         {/* Sidebar: Activity & Actions */}
-        <div className="space-y-10">
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 -mr-10 -mt-10 w-32 h-32 bg-[#F59F01] rounded-full blur-[80px] opacity-10 group-hover:opacity-20 transition-opacity" />
+        <div className="space-y-12">
+          <div className="bg-card border border-border-theme rounded-[3rem] p-10 shadow-2xl relative overflow-hidden group theme-transition">
+            <div className="absolute top-0 right-0 -mr-10 -mt-10 w-48 h-48 bg-ls-compliment blur-[100px] opacity-[0.03] group-hover:opacity-[0.08] transition-opacity" />
 
-            <h3 className="text-xs font-black text-white mb-6 uppercase tracking-widest border-b border-white/5 pb-4">Recent Submissions</h3>
-            <div className="space-y-6">
-              {projects.slice(0, 3).map(p => (
-                <div key={p.id} className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                    <CheckCircle size={18} className="text-white/20" />
+            <h3 className="text-[10px] font-black text-text-muted/40 mb-8 uppercase tracking-[0.3em] border-b border-border-theme pb-6">Temporal Activity Feed</h3>
+            <div className="space-y-8">
+              {projects.slice(0, 4).map(p => (
+                <div key={p.id} className="flex items-start gap-5 group/activity cursor-pointer">
+                  <div className="w-12 h-12 rounded-2xl bg-foreground/5 border border-border-theme flex items-center justify-center shrink-0 shadow-inner group-hover/activity:scale-110 transition-transform">
+                    <CheckCircle size={20} className="text-text-muted/10 group-hover/activity:text-ls-compliment transition-colors" />
                   </div>
-                  <div>
-                    <Link href={`/gp/deals/${p.id}`} className="text-sm font-bold text-white hover:text-[#F59F01] transition-colors line-clamp-1">
+                  <div className="min-w-0">
+                    <Link href={`/gp/deals/${p.id}`} className="text-sm font-black text-foreground uppercase tracking-tight hover:text-ls-compliment transition-colors line-clamp-1 leading-tight">
                       {p.legal_name || p.company_name}
                     </Link>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-4 mt-2">
                       <StatusBadge status={p.status} />
-                      <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">
+                      <span className="text-[9px] text-text-muted/40 font-black uppercase tracking-[0.2em] font-mono">
                         {new Date(p.created_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -201,26 +218,36 @@ export default function GPDashboardPage() {
                 </div>
               ))}
               {projects.length === 0 && (
-                <p className="text-white/20 text-xs italic">No recent activity found.</p>
+                <div className="py-12 text-center space-y-4">
+                  <Clock size={32} className="text-text-muted/10 mx-auto" />
+                  <p className="text-text-muted/20 text-[10px] font-black uppercase tracking-widest italic">Protocol Silent</p>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-xs font-black text-white uppercase tracking-widest px-2">Quick Commands</h3>
-            <div className="grid grid-cols-1 gap-3">
-              <Link href="/gp/deals/invite" className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group">
-                <span className="text-xs font-bold text-white/80 group-hover:text-white">Invite New Entrepreneur</span>
-                <ChevronRight size={16} className="text-white/20 group-hover:text-[#F59F01]" />
-              </Link>
-              <Link href="/gp/governance" className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group">
-                <span className="text-xs font-bold text-white/80 group-hover:text-white">Launch Voting Ballot</span>
-                <ChevronRight size={16} className="text-white/20 group-hover:text-[#F59F01]" />
-              </Link>
-              <Link href="/gp/fund-admin/documents" className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-all group">
-                <span className="text-xs font-bold text-white/80 group-hover:text-white">Upload Fund Reports</span>
-                <ChevronRight size={16} className="text-white/20 group-hover:text-[#F59F01]" />
-              </Link>
+          <div className="space-y-6">
+            <h3 className="text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em] px-4">Institutional Commands</h3>
+            <div className="grid grid-cols-1 gap-4">
+              {[
+                { label: 'Authorize New Entrepreneur', href: '/gp/deals/invite', icon: Users },
+                { label: 'Launch Governance Ballot', href: '/gp/governance', icon: ShieldCheck },
+                { label: 'Publish Institutional Reports', href: '/gp/fund-admin/documents', icon: FileText },
+              ].map((cmd, i) => (
+                <Link
+                  key={i}
+                  href={cmd.href}
+                  className="flex items-center justify-between p-6 bg-card border border-border-theme rounded-[1.5rem] hover:bg-foreground/[0.02] hover:border-ls-compliment/30 transition-all group shadow-sm hover:shadow-xl active:scale-95"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center text-text-muted/20 group-hover:text-ls-compliment transition-colors shadow-inner">
+                      <cmd.icon size={18} />
+                    </div>
+                    <span className="text-[10px] font-black text-foreground/80 uppercase tracking-widest group-hover:text-foreground">{cmd.label}</span>
+                  </div>
+                  <ChevronRight size={18} className="text-text-muted/10 group-hover:text-ls-compliment group-hover:translate-x-1 transition-all" />
+                </Link>
+              ))}
             </div>
           </div>
         </div>

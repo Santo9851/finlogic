@@ -63,7 +63,7 @@ const TABS_CONFIG = [
   { id: 'Modelling', label: 'Modelling', minStatus: 'IC_REVIEW' },
   { id: 'Memo', label: 'Memo', minStatus: 'IC_REVIEW' },
   { id: 'Term Sheet', label: 'Term Sheet', minStatus: 'TERM_SHEET' },
-  { id: 'SPA Draft', label: 'SPA Draft', minStatus: 'TERM_SHEET' },
+  { id: 'SPA Draft', label: 'SPA Draft', minStatus: 'LOI_ISSUED' },
   { id: 'Valuations', label: 'Valuations', minStatus: 'CLOSED' },
   { id: 'Exit Planning', label: 'Exit Planning', minStatus: 'CLOSED' },
   { id: 'Monte Carlo', label: 'Monte Carlo', minStatus: 'CLOSED' },
@@ -97,6 +97,23 @@ export default function GPDealDetailPage() {
 
   const visibleTabs = TABS_CONFIG.filter(tab => {
     if (!deal) return false;
+
+    // Special Visibility Rule for SPA Draft:
+    // 1. Must not show in TERM_SHEET stage or earlier.
+    // 2. In LOI_ISSUED stage, only show IF the signed LOI has been uploaded.
+    // 3. Show in CONTRACT_SIGNED or later stages regardless.
+    if (tab.id === 'SPA Draft') {
+      const currentIdx = STATUS_ORDER.indexOf(deal.status);
+      const loiIssuedIdx = STATUS_ORDER.indexOf('LOI_ISSUED');
+      const contractSignedIdx = STATUS_ORDER.indexOf('CONTRACT_SIGNED');
+      
+      if (currentIdx < loiIssuedIdx) return false;
+      if (currentIdx === loiIssuedIdx) {
+        return deal.documents?.some(d => d.category === 'LOI_SIGNED');
+      }
+      return currentIdx >= contractSignedIdx;
+    }
+
     const currentIdx = STATUS_ORDER.indexOf(deal.status);
     const minIdx = STATUS_ORDER.indexOf(tab.minStatus);
     return currentIdx >= minIdx;
@@ -592,25 +609,25 @@ export default function GPDealDetailPage() {
 
 
   if (isLoading) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+    <div className="h-[60vh] flex flex-col items-center justify-center gap-4 theme-transition">
       <Loader2 className="w-8 h-8 text-[#F59F01] animate-spin" />
-      <p className="text-white/40 text-sm animate-pulse">Loading detailed deal flow...</p>
+      <p className="text-text-muted text-sm animate-pulse font-bold uppercase tracking-widest">Loading detailed deal flow...</p>
     </div>
   );
 
   if (isError && error?.response?.status === 403) {
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-6 animate-in fade-in duration-500">
-        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-6 animate-in fade-in duration-500 theme-transition">
+        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20 shadow-xl">
           <X className="w-8 h-8 text-red-500" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-white tracking-tight">Access Restricted</h2>
-          <p className="text-white/40 max-w-sm mx-auto text-sm leading-relaxed">
+          <h2 className="text-2xl font-black text-foreground tracking-tight uppercase">Access Restricted</h2>
+          <p className="text-text-muted max-w-sm mx-auto text-sm leading-relaxed font-medium">
             You do not have permission to view the details of this deal. If you need access, please contact your Superadmin to be added as a collaborator.
           </p>
         </div>
-        <Link href="/gp/deals" className="px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white/70 hover:text-white transition-all text-sm font-semibold mt-4">
+        <Link href="/gp/deals" className="px-6 py-2.5 bg-card border border-border-theme hover:bg-foreground/5 rounded-xl text-text-muted hover:text-foreground transition-all text-xs font-black uppercase tracking-widest mt-4">
           Return to Pipeline
         </Link>
       </div>
@@ -618,17 +635,17 @@ export default function GPDealDetailPage() {
   }
 
   if (isError || !deal) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500">
+    <div className="h-[60vh] flex flex-col items-center justify-center gap-4 theme-transition">
+      <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20 shadow-xl">
         <Building2 className="w-8 h-8" />
       </div>
-      <h2 className="text-white font-bold text-xl">Deal Not Found</h2>
-      <Link href="/gp/deals" className="text-[#F59F01] hover:underline text-sm">Return to Pipeline</Link>
+      <h2 className="text-foreground font-black text-xl uppercase tracking-widest">Deal Not Found</h2>
+      <Link href="/gp/deals" className="text-[#F59F01] hover:underline text-xs font-black uppercase tracking-widest">Return to Pipeline</Link>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-8 lg:p-12 font-sans selection:bg-[#F59F01] selection:text-black">
+    <div className="min-h-screen bg-background text-foreground p-8 lg:p-12 font-sans theme-transition">
 
       
       {/* Split View Overlay */}
@@ -692,14 +709,14 @@ export default function GPDealDetailPage() {
       
       {/* Breadcrumb & Quick Actions */}
       <div className="flex items-center justify-between gap-4">
-        <Link href="/gp/deals" className="flex items-center gap-1.5 text-white/40 hover:text-[#F59F01] text-xs font-bold uppercase tracking-widest transition-colors">
+        <Link href="/gp/deals" className="flex items-center gap-1.5 text-text-muted hover:text-[#F59F01] text-xs font-bold uppercase tracking-widest transition-colors">
           <ChevronLeft size={16} /> Back to Pipeline
         </Link>
         <div className="flex items-center gap-2">
            {['TERM_SHEET', 'LOI_ISSUED', 'CONTRACT_SIGNED'].includes(deal.status) && (
              <button 
                onClick={() => setShowWizard(true)}
-               className="flex items-center gap-2 px-6 py-2 bg-white text-black rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-white/5"
+               className="flex items-center gap-2 px-6 py-2 bg-foreground text-background rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-foreground/5"
              >
                <Zap size={14} /> Close Deal
              </button>
@@ -708,37 +725,37 @@ export default function GPDealDetailPage() {
       </div>
 
       {/* Hero Header */}
-      <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+      <div className="bg-card border border-border-theme rounded-3xl p-8 shadow-2xl relative overflow-hidden theme-transition">
         <div className="absolute top-0 right-0 p-8">
            <StatusBadge status={deal.status} />
         </div>
         <div className="relative z-10 flex items-start gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-[#F59F01]/10 flex items-center justify-center text-[#F59F01] border border-[#F59F01]/20">
+          <div className="w-20 h-20 rounded-2xl bg-[#F59F01]/10 flex items-center justify-center text-[#F59F01] border border-[#F59F01]/20 shadow-lg">
              <Building2 size={40} />
           </div>
           <div>
-            <h1 className="text-4xl font-black text-white tracking-tight">{deal.legal_name}</h1>
-            <div className="flex items-center gap-4 mt-2 text-white/40 text-sm">
+            <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">{deal.legal_name}</h1>
+            <div className="flex items-center gap-4 mt-2 text-text-muted text-sm font-medium">
               <span className="flex items-center gap-1.5"><Building2 size={14}/> {deal.sector}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
+              <span className="w-1.5 h-1.5 rounded-full bg-border-theme" />
               <span>OCR: {deal.ocr_registration_number}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
-              <span className="text-[#F59F01] font-bold uppercase tracking-tighter">{deal.deal_type_display}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-border-theme" />
+              <span className="text-[#F59F01] font-black uppercase tracking-tighter">{deal.deal_type_display}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap gap-2 p-1 bg-white/5 border border-white/10 rounded-xl w-fit">
+      <div className="flex flex-wrap gap-2 p-1.5 bg-card border border-border-theme rounded-2xl w-fit theme-transition">
         {visibleTabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
-            className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
+            className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
               activeTab === t.id
-                ? 'bg-[#F59F01] text-black shadow-lg shadow-[#F59F01]/20'
-                : 'text-white/40 hover:text-white hover:bg-white/5'
+                ? 'bg-[#F59F01] text-ls-primary-fixed shadow-lg shadow-[#F59F01]/20'
+                : 'text-text-muted hover:text-foreground hover:bg-foreground/5'
             }`}
           >
             {t.label}
@@ -747,7 +764,7 @@ export default function GPDealDetailPage() {
       </div>
 
       {/* Tab Panels */}
-      <div className="mt-8 bg-white/[0.02] border border-white/10 rounded-[40px] p-8 shadow-2xl backdrop-blur-2xl">
+      <div className="mt-8 bg-card border border-border-theme rounded-[40px] p-8 shadow-2xl backdrop-blur-2xl theme-transition">
         {activeTab === 'Overview' && <OverviewTab deal={deal} />}
 
         {activeTab === 'Data Room' && (

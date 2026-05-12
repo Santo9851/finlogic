@@ -75,7 +75,7 @@ const pillars = [
 
 export default function PhilosophyPage() {
   return (
-    <div className="bg-ls-primary text-ls-white min-h-screen">
+    <div className="bg-background text-foreground min-h-screen theme-transition">
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 overflow-hidden">
         <div className="absolute inset-0 bg-abstract-gradient opacity-20 pointer-events-none" />
@@ -98,7 +98,7 @@ export default function PhilosophyPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-ls-white/70 max-w-3xl mx-auto leading-relaxed"
+            className="text-xl text-text-muted max-w-3xl mx-auto leading-relaxed"
           >
             At Finlogic Capital, our investment philosophy is not a rigid formula – it's a living framework that guides every decision we make. We combine the ambition to seek extraordinary opportunities with the wisdom to grow them sustainably.
           </motion.p>
@@ -139,20 +139,20 @@ export default function PhilosophyPage() {
                   <div>
                     <h2 className="text-3xl md:text-4xl font-bold mb-4">{pillar.title}</h2>
                     <p className="text-xl text-ls-compliment italic font-medium mb-6">"{pillar.subtitle}"</p>
-                    <p className="text-lg text-ls-white/70 leading-relaxed mb-10">
+                    <p className="text-lg text-text-muted leading-relaxed mb-10">
                       {pillar.description}
                     </p>
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-bold uppercase tracking-widest text-ls-white/40">In Practice</h4>
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-text-muted/60">In Practice</h4>
                     <ul className="space-y-4">
                       {pillar.inPractice.map((item, i) => (
                         <li key={i} className="flex items-start group">
-                          <div className="mt-1.5 mr-4 p-1 rounded-full bg-ls-compliment/20 text-ls-compliment group-hover:bg-ls-compliment group-hover:text-ls-primary transition-all duration-300">
+                          <div className="mt-1.5 mr-4 p-1 rounded-full bg-ls-compliment/20 text-ls-compliment group-hover:bg-ls-compliment group-hover:text-ls-primary-fixed transition-all duration-300">
                             <ChevronRight className="w-4 h-4" />
                           </div>
-                          <span className="text-ls-white/80 group-hover:text-ls-white transition-colors">{item}</span>
+                          <span className="text-text-muted group-hover:text-foreground transition-colors">{item}</span>
                         </li>
                       ))}
                     </ul>
@@ -169,7 +169,7 @@ export default function PhilosophyPage() {
         <div className="absolute inset-0 bg-abstract-gradient opacity-10 pointer-events-none" />
         <div className="container mx-auto px-4 lg:px-8 max-w-4xl text-center relative z-10">
           <h2 className="text-4xl font-bold mb-8">The Finlogic Commitment</h2>
-          <p className="text-xl text-ls-white/70 leading-relaxed mb-12">
+          <p className="text-xl text-text-muted leading-relaxed mb-12">
             These five pillars are not just words on a page – they are the lens through which we evaluate every opportunity, manage every portfolio company, and build every relationship. They are the reason our partners trust us, and the reason we have consistently delivered value.
           </p>
           <div className="h-px w-24 bg-ls-compliment mx-auto" />

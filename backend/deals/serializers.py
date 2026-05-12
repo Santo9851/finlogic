@@ -83,6 +83,7 @@ class PEProjectDocumentSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(
         source='get_category_display', read_only=True
     )
+    url = serializers.SerializerMethodField()
 
     class Meta:
         model = PEProjectDocument
@@ -96,6 +97,13 @@ class PEProjectDocumentSerializer(serializers.ModelSerializer):
             'project': {'write_only': True},
             'uploaded_by': {'write_only': True, 'required': False},
         }
+
+    def get_url(self, obj):
+        request = self.context.get('request')
+        url = obj.url  # This calls the @property on the model
+        if url and url.startswith('/') and request:
+            return request.build_absolute_uri(url)
+        return url
 
 
 class PEProjectFormResponseSerializer(serializers.ModelSerializer):
@@ -275,6 +283,90 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
             'created_by': {'write_only': True, 'required': False},
         }
 
+    def validate(self, data):
+        """
+        Enforce Finlogic Unified Deal Flow Prerequisites (deal-flow.md).
+        Validates transitions between major statuses.
+        """
+        instance = self.instance
+        if not instance:
+            return data
+            
+        new_status = data.get('status')
+        if not new_status or new_status == instance.status:
+            return data
+
+        # Linear status progression enforcement (optional but recommended)
+        status_order = [
+            'PENDING_SUBMISSION', 'SUBMITTED', 'SCREENING', 'IC_REVIEW', 
+            'TERM_SHEET', 'LOI_ISSUED', 'CONTRACT_SIGNED', 'CAPITAL_CALLED', 
+            'CLOSED', 'DECLINED'
+        ]
+        
+        if new_status != 'DECLINED':
+            try:
+                old_idx = status_order.index(instance.status)
+                new_idx = status_order.index(new_status)
+                # Allow only moving forward by one step or staying (staying is already handled)
+                # Some flexibility might be needed, but let's stick to the flow.
+                if new_idx < old_idx:
+                    raise serializers.ValidationError({"status": f"Cannot revert status from {instance.status} to {new_status}."})
+            except ValueError:
+                pass
+
+        # Phase 2.4: SCREENING -> IC_REVIEW
+        if new_status == 'IC_REVIEW' and instance.status == 'SCREENING':
+            latest_run = instance.scoring_runs.filter(status='COMPLETED').order_by('-created_at').first()
+            if not latest_run:
+                raise serializers.ValidationError({"status": "A completed scoring run is required to move to IC Review."})
+            
+            uncleared_gates = latest_run.compliance_gates.exclude(status='CLEARED')
+            if uncleared_gates.exists():
+                raise serializers.ValidationError({"status": "All 5 compliance gates must be CLEARED before IC Review."})
+                
+            unreviewed_critical = instance.red_flags.filter(severity='CRITICAL', is_reviewed_by_gp=False)
+            if unreviewed_critical.exists():
+                raise serializers.ValidationError({"status": "All CRITICAL red flags must be reviewed before IC Review."})
+
+        # Phase 3.4: IC_REVIEW -> TERM_SHEET
+        if new_status == 'TERM_SHEET' and instance.status == 'IC_REVIEW':
+            if not instance.valuations.exists():
+                raise serializers.ValidationError({"status": "At least one Valuation Model (DCF or LBO) must exist before moving to Term Sheet."})
+            
+            signed_memo = instance.documents.filter(category='IC_SIGNED').exists()
+            if not signed_memo:
+                raise serializers.ValidationError({"status": "Signed IC Approval (Memo) must be uploaded before moving to Term Sheet."})
+
+        # Phase 4.3: TERM_SHEET -> LOI_ISSUED
+        if new_status == 'LOI_ISSUED' and instance.status == 'TERM_SHEET':
+            term_sheet = instance.term_sheets.order_by('-version', '-created_at').first()
+            if not term_sheet:
+                raise serializers.ValidationError({"status": "A Term Sheet must be drafted and saved before issuing LOI."})
+            
+            # Basic field check on term sheet
+            terms = term_sheet.gp_overridden_terms or term_sheet.ai_generated_terms
+            if not terms.get('investment_amount_npr') or not terms.get('pre_money_valuation_npr'):
+                raise serializers.ValidationError({"status": "Term Sheet must have Investment Amount and Valuation populated."})
+
+        # Phase 5.4: LOI_ISSUED -> CONTRACT_SIGNED
+        if new_status == 'CONTRACT_SIGNED' and instance.status == 'LOI_ISSUED':
+            signed_loi = instance.documents.filter(category='LOI_SIGNED').exists()
+            if not signed_loi:
+                raise serializers.ValidationError({"status": "The entrepreneur must upload the Signed LOI before advancing to Contract Signed."})
+
+        # Phase 6.4: CONTRACT_SIGNED -> CAPITAL_CALLED
+        if new_status == 'CAPITAL_CALLED' and instance.status == 'CONTRACT_SIGNED':
+            # This is usually handled by the Superadmin Capital Call view, but enforce here too
+            legal_docs = instance.documents.filter(category='LEGAL').exists()
+            if not legal_docs:
+                raise serializers.ValidationError({"status": "Executed SPA/SHA (LEGAL category) must be uploaded to Data Room."})
+            
+            checklist = getattr(instance, 'regulatory_checklist', None)
+            if not checklist or not checklist.all_approvals_obtained:
+                raise serializers.ValidationError({"status": "All required regulatory approvals (Regulatory Checklist) must be obtained."})
+
+        return data
+
     def get_can_access(self, obj):
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
@@ -331,10 +423,10 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
         return PortfolioKPIReportSerializer(obj.kpi_reports.all(), many=True).data
 
     def get_term_sheets(self, obj):
-        return TermSheetSerializer(obj.term_sheets.all(), many=True).data
+        return TermSheetSerializer(obj.term_sheets.all().order_by('-version', '-created_at'), many=True).data
 
     def get_spa_drafts(self, obj):
-        return SPADraftSerializer(obj.spa_drafts.all(), many=True).data
+        return SPADraftSerializer(obj.spa_drafts.all().order_by('-version', '-created_at'), many=True).data
 
 
 

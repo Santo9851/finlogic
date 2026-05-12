@@ -50,20 +50,20 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
   if (!investment) return <div className="p-10 text-center text-white/20">No investment record found.</div>;
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 theme-transition">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-black text-white tracking-tight uppercase">Exit Planning & Scenarios</h3>
+        <h3 className="text-xl font-black text-ls-primary dark:text-white tracking-tight uppercase">Exit Planning & Scenarios</h3>
         <div className="flex gap-4">
            <button 
              onClick={runIpoCheck}
-             className="px-6 py-2.5 bg-white/5 border border-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+             className="px-6 py-2.5 bg-ls-primary/5 dark:bg-white/5 border border-border-theme text-ls-primary dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-ls-primary/10 dark:hover:bg-white/10 transition-all"
            >
              {isLoadingIpo ? <Loader2 className="animate-spin" size={14} /> : <TrendingUp size={14} className="inline mr-2" />}
              Check IPO Eligibility
            </button>
            <button 
              onClick={() => setShowModal(true)}
-             className="px-6 py-2.5 bg-[#F59F01] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20"
+             className="px-6 py-2.5 bg-[#F59F01] text-ls-primary rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20"
            >
              Add Exit Scenario
            </button>
@@ -74,15 +74,15 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
         <div className="bg-[#10b981]/10 border border-[#10b981]/30 p-6 rounded-3xl animate-in zoom-in-95 duration-500">
            <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm font-black text-[#10b981] uppercase tracking-widest">IPO Eligibility Report</h4>
-              <button onClick={() => setIpoReport(null)} className="text-white/20 hover:text-white"><Zap size={16} /></button>
+              <button onClick={() => setIpoReport(null)} className="text-ls-primary/20 dark:text-white/20 hover:text-ls-primary dark:hover:text-white"><Zap size={16} /></button>
            </div>
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {ipoReport.criteria.map((c, i) => (
-                <div key={i} className="bg-black/20 p-4 rounded-2xl border border-white/5">
-                   <p className="text-[9px] text-white/40 uppercase font-black mb-1">{c.label}</p>
+                <div key={i} className="bg-ls-primary/5 dark:bg-black/20 p-4 rounded-2xl border border-border-theme">
+                   <p className="text-[9px] text-text-muted uppercase font-black mb-1">{c.label}</p>
                    <div className="flex items-center gap-2">
                       {c.passed ? <CheckCircle2 className="text-[#10b981]" size={14} /> : <AlertTriangle className="text-rose-500" size={14} />}
-                      <span className="text-xs text-white font-bold">{c.detail}</span>
+                      <span className="text-xs text-ls-primary dark:text-white font-bold">{c.detail}</span>
                    </div>
                 </div>
               ))}
@@ -92,32 +92,32 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="bg-card border border-border-theme rounded-3xl overflow-hidden shadow-2xl theme-transition">
             <table className="w-full text-left">
               <thead>
-                <tr className="bg-white/5">
-                  <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">Scenario</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">Type</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">Target Year</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">Exit Value</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest text-right">Prob. %</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-white/30 uppercase tracking-widest">Status</th>
+                <tr className="bg-ls-primary/5 dark:bg-white/5">
+                  <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">Scenario</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">Type</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">Target Year</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Exit Value</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Prob. %</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-ls-primary/5 dark:divide-white/5">
                 {scenarios.map(s => (
-                  <tr key={s.id} className={`hover:bg-white/5 transition-colors ${s.is_base_case ? 'bg-[#F59F01]/5' : ''}`}>
+                  <tr key={s.id} className={`hover:bg-ls-primary/5 dark:hover:bg-white/5 transition-colors ${s.is_base_case ? 'bg-[#F59F01]/5' : ''}`}>
                     <td className="px-6 py-4 flex items-center gap-2">
                        {s.is_base_case && <Star size={14} className="text-[#F59F01]" fill="#F59F01" />}
-                       <span className="text-xs font-bold text-white">{s.name}</span>
+                       <span className="text-xs font-bold text-ls-primary dark:text-white">{s.name}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-[9px] font-black text-white/60 uppercase border border-white/10 px-2 py-1 rounded">
+                      <span className="text-[9px] font-black text-ls-primary/60 dark:text-white/60 uppercase border border-border-theme px-2 py-1 rounded">
                         {s.exit_type_display}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs text-white/60">{s.target_year} BS</td>
-                    <td className="px-6 py-4 text-xs font-mono text-white text-right">NPR {parseFloat(s.expected_exit_value_npr).toLocaleString()}</td>
+                    <td className="px-6 py-4 text-xs text-ls-primary/60 dark:text-white/60">{s.target_year} BS</td>
+                    <td className="px-6 py-4 text-xs font-mono text-ls-primary dark:text-white text-right">NPR {parseFloat(s.expected_exit_value_npr).toLocaleString()}</td>
                     <td className="px-6 py-4 text-xs font-mono text-[#F59F01] text-right">{s.probability_pct}%</td>
                     <td className="px-6 py-4">
                       {s.is_approved_by_ic ? (
@@ -125,7 +125,7 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
                       ) : (
                         <button 
                           onClick={() => onApprove(s.id)}
-                          className="text-[9px] font-black text-white/20 hover:text-[#F59F01] uppercase tracking-widest"
+                          className="text-[9px] font-black text-ls-primary/20 dark:text-white/20 hover:text-[#F59F01] uppercase tracking-widest"
                         >
                           Pending Approval
                         </button>
@@ -138,8 +138,8 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
           </div>
         </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 flex flex-col items-center">
-           <h4 className="text-[10px] font-black text-white/30 uppercase tracking-[0.2em] mb-8">Scenario Probabilities</h4>
+        <div className="bg-card border border-border-theme rounded-3xl p-8 flex flex-col items-center theme-transition">
+           <h4 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-8">Scenario Probabilities</h4>
            <div className="h-[200px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                  <PieChart>
@@ -155,7 +155,7 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
                       ))}
                     </Pie>
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '12px' }}
+                      contentStyle={{ backgroundColor: 'var(--card)', border: '1px solid var(--border-theme)', borderRadius: '12px' }}
                       itemStyle={{ fontSize: '10px', fontWeight: '800' }}
                     />
                  </PieChart>
@@ -166,37 +166,36 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
                 <div key={s.id} className="flex items-center justify-between text-[10px]">
                    <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                      <span className="text-white/40 font-bold">{s.name}</span>
+                      <span className="text-text-muted font-bold">{s.name}</span>
                    </div>
-                   <span className="text-white font-black">{s.probability_pct}%</span>
+                   <span className="text-ls-primary dark:text-white font-black">{s.probability_pct}%</span>
                 </div>
               ))}
            </div>
         </div>
       </div>
 
-      {/* Exit Scenario Form Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#1A1A1A] border border-white/10 p-8 rounded-3xl max-lg w-full shadow-2xl space-y-6">
-            <h3 className="text-white font-black text-xl tracking-tight uppercase">New Exit Scenario</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ls-primary/80 dark:bg-black/80 backdrop-blur-sm theme-transition">
+          <div className="bg-background border border-border-theme p-8 rounded-3xl max-lg w-full shadow-2xl space-y-6 theme-transition">
+            <h3 className="text-ls-primary dark:text-white font-black text-xl tracking-tight uppercase">New Exit Scenario</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] text-white/30 uppercase font-black">Scenario Name</label>
+                <label className="text-[10px] text-text-muted uppercase font-black">Scenario Name</label>
                 <input 
                   type="text" required placeholder="e.g. Base Case Trade Sale"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                  className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-white/30 uppercase font-black">Exit Type</label>
+                  <label className="text-[10px] text-text-muted uppercase font-black">Exit Type</label>
                   <select 
                     value={formData.exit_type}
                     onChange={e => setFormData({...formData, exit_type: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                    className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                   >
                     <option value="TRADE_SALE">Trade Sale</option>
                     <option value="IPO">IPO (NEPSE)</option>
@@ -206,43 +205,43 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-white/30 uppercase font-black">Target Year (BS)</label>
+                  <label className="text-[10px] text-text-muted uppercase font-black">Target Year (BS)</label>
                   <input 
                     type="number" required
                     value={formData.target_year}
                     onChange={e => setFormData({...formData, target_year: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                    className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-white/30 uppercase font-black">Exit Value (NPR)</label>
+                  <label className="text-[10px] text-text-muted uppercase font-black">Exit Value (NPR)</label>
                   <input 
                     type="number" required
                     value={formData.expected_exit_value_npr}
                     onChange={e => setFormData({...formData, expected_exit_value_npr: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                    className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] text-white/30 uppercase font-black">Exit Multiple (x)</label>
+                  <label className="text-[10px] text-text-muted uppercase font-black">Exit Multiple (x)</label>
                   <input 
                     type="number" step="0.1" required
                     value={formData.exit_multiple}
                     onChange={e => setFormData({...formData, exit_multiple: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                    className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/30 uppercase font-black">Probability (%)</label>
+                    <label className="text-[10px] text-text-muted uppercase font-black">Probability (%)</label>
                     <input 
                       type="number" min="0" max="100"
                       value={formData.probability_pct}
                       onChange={e => setFormData({...formData, probability_pct: e.target.value})}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white text-xs outline-none focus:border-[#F59F01]"
+                      className="w-full bg-ls-primary/5 dark:bg-black/40 border border-border-theme rounded-xl px-4 py-2 text-ls-primary dark:text-white text-xs outline-none focus:border-[#F59F01]"
                     />
                  </div>
                  <div className="flex items-center gap-3 pt-6">
@@ -252,12 +251,12 @@ export default function ExitPlanningTab({ deal, onCreate, onApprove, isCreating 
                       onChange={e => setFormData({...formData, is_base_case: e.target.checked})}
                       className="w-4 h-4 accent-[#F59F01]"
                     />
-                    <label htmlFor="is_base_case" className="text-xs text-white/60 font-bold">Set as Base Case</label>
+                    <label htmlFor="is_base_case" className="text-xs text-text-muted font-bold">Set as Base Case</label>
                  </div>
               </div>
               <div className="flex gap-4 mt-6">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 text-white/40 text-xs font-black uppercase">Cancel</button>
-                <button type="submit" disabled={isCreating} className="flex-1 py-3 bg-[#F59F01] text-black rounded-xl text-xs font-black uppercase shadow-lg shadow-[#F59F01]/20">
+                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 text-ls-primary/40 dark:text-white/40 text-xs font-black uppercase">Cancel</button>
+                <button type="submit" disabled={isCreating} className="flex-1 py-3 bg-[#F59F01] text-ls-primary rounded-xl text-xs font-black uppercase shadow-lg shadow-[#F59F01]/20">
                   {isCreating ? 'Creating...' : 'Create Scenario'}
                 </button>
               </div>

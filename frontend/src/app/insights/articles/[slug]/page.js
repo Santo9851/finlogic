@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, useCallback, use } from "react";
@@ -19,15 +20,15 @@ import {
 import ArticleTOC, { extractHeadings, injectHeadingIds } from "@/components/ArticleTOC";
 import Cliffhanger from "@/components/insights/Cliffhanger";
 import { useAuth } from "@/lib/AuthContext";
+import { useTheme } from "next-themes";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.finlogiccapital.com";
 
 function Skeleton({ className = "" }) {
-  return <div className={`animate-pulse bg-white/5 rounded-lg ${className}`} />;
+  return <div className={`animate-pulse bg-foreground/5 rounded-lg ${className}`} />;
 }
 
-// ── Reading progress bar ────────────────────────────────────────────────────
-function ReadingProgress() {
+function ReadingProgress({ color }) {
   const [p, setP] = useState(0);
   useEffect(() => {
     const fn = () => {
@@ -38,44 +39,44 @@ function ReadingProgress() {
     return () => window.removeEventListener("scroll", fn);
   }, []);
   return (
-    <div className="fixed top-0 left-0 w-full h-[3px] bg-white/5 z-[60]">
-      <motion.div className="h-full bg-gradient-to-r from-[#F59F01] to-[#F59F01]/50" style={{ width: `${p}%` }} />
+    <div className="fixed top-0 left-0 w-full h-[4px] bg-foreground/[0.05] z-[60]">
+      <motion.div className="h-full" style={{ width: `${p}%`, backgroundColor: color }} />
     </div>
   );
 }
 
-// ── Related article card ────────────────────────────────────────────────────
 function RelatedCard({ article }) {
-  const color = PILLAR_COLORS[article.pillar?.toLowerCase()] || "#F59F01";
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const defaultAccent = isDark ? "#F59F01" : "#0B6EC3";
+  const color = PILLAR_COLORS[article.pillar?.toLowerCase()] || defaultAccent;
   const date = article.published_at
     ? new Date(article.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
     : "";
+
   return (
     <Link href={`/insights/articles/${article.slug}`}
-      className="group flex gap-3 p-4 rounded-2xl border border-white/5 hover:border-[#F59F01]/20 hover:bg-[#F59F01]/5 transition-all"
+      className={`group flex gap-4 p-4 rounded-2xl border border-border-theme hover:border-foreground/20 hover:bg-foreground/[0.02] transition-all theme-transition shadow-sm`}
     >
       {article.featured_image && (
-        <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-          <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-inner">
+          <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
         </div>
       )}
-      <div className="min-w-0">
-        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color }}>{article.pillar}</span>
-        <h4 className="font-bold text-white text-xs leading-snug mt-0.5 group-hover:text-[#F59F01] transition-colors line-clamp-2">{article.title}</h4>
-        <p className="text-white/30 text-[10px] mt-1">{date}</p>
+      <div className="min-w-0 space-y-1">
+        <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color }}>{article.pillar}</span>
+        <h4 className="font-black text-foreground text-xs leading-tight group-hover:text-[#F59F01] transition-colors line-clamp-2 uppercase tracking-tight">{article.title}</h4>
+        <p className="text-text-muted/40 text-[9px] font-bold uppercase tracking-widest">{date}</p>
       </div>
     </Link>
   );
 }
 
-// ── Mobile TOC drawer ───────────────────────────────────────────────────────
 function MobileTOC({ headings, accentColor, open, onClose, articleRef }) {
   const scrollTo = (id) => { 
     onClose();
     setTimeout(() => {
       let el = document.getElementById(id);
-      
-      // Aggressive fallback: if ID fails, try to find by text content
       if (!el) {
         const headingIndex = parseInt(id.split('-')[1]);
         const articleDiv = articleRef.current;
@@ -84,44 +85,40 @@ function MobileTOC({ headings, accentColor, open, onClose, articleRef }) {
           el = allHeadings[headingIndex];
         }
       }
-
       if (el) {
-        const yOffset = -100; 
+        const yOffset = -120; 
         const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
         window.scrollTo({ top: y, behavior: 'smooth' });
       }
     }, 350);
   };
+
   return (
     <AnimatePresence>
       {open && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-end"
+          className="fixed inset-0 z-[100] flex items-end"
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-xl" />
           <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30 }}
-            className="relative w-full bg-[#0D0120] border-t border-white/10 rounded-t-3xl p-6 max-h-[70vh] overflow-y-auto"
+            className="relative w-full bg-card border-t border-border-theme rounded-t-[3rem] p-10 max-h-[85vh] overflow-y-auto shadow-2xl"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-xs font-black uppercase tracking-widest text-white/50">In This Article</span>
-              <button onClick={onClose} className="p-1.5 rounded-full hover:bg-white/10 transition-colors"><X size={16} className="text-white/50" /></button>
+            <div className="flex items-center justify-between mb-8">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted">Table of Contents</span>
+              <button onClick={onClose} className="p-3 rounded-2xl bg-foreground/5 hover:bg-foreground/10 transition-all border border-border-theme"><X size={20} className="text-text-muted" /></button>
             </div>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {headings.map(h => (
-                <a 
+                <button 
                   key={h.id} 
-                  href={`#${h.id}`}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    scrollTo(h.id);
-                  }}
-                  className={`block w-full text-left py-3 px-4 rounded-xl text-sm transition-all active:bg-white/10
-                    ${h.level >= 3 ? "pl-8 text-white/50 text-xs" : "font-bold text-white/80"}`}
+                  onClick={() => scrollTo(h.id)}
+                  className={`block w-full text-left py-4 px-6 rounded-2xl transition-all active:scale-[0.98]
+                    ${h.level >= 3 ? "pl-12 text-text-muted text-xs font-medium" : "font-black text-foreground text-sm uppercase tracking-tight hover:bg-foreground/[0.03]"}`}
                 >
                   {h.text}
-                </a>
+                </button>
               ))}
             </div>
           </motion.div>
@@ -131,10 +128,12 @@ function MobileTOC({ headings, accentColor, open, onClose, articleRef }) {
   );
 }
 
-// ── Main page ───────────────────────────────────────────────────────────────
 export default function ArticleDetailPage({ params }) {
   const { slug } = use(params);
   const { user } = useAuth();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  
   const [article, setArticle]     = useState(null);
   const [seriesData, setSeriesData] = useState(null);
   const [related, setRelated]     = useState([]);
@@ -155,32 +154,20 @@ export default function ArticleDetailPage({ params }) {
           fetchArticles({ ordering: "-published_at" }),
         ]);
         setArticle(art);
-        
-        // If part of a series, fetch series details for nav
         if (art?.series_info?.slug) {
-          try {
-            const series = await fetchSeriesDetail(art.series_info.slug);
-            setSeriesData(series);
-          } catch (e) {
-            console.error("Failed to fetch series details", e);
-          }
+          const series = await fetchSeriesDetail(art.series_info.slug);
+          setSeriesData(series);
         }
-
         const all = normaliseList(others).filter(a => a.slug !== slug);
         const samePillar = all.filter(a => a.pillar === art.pillar);
         setRelated([...samePillar, ...all.filter(a => a.pillar !== art.pillar)].slice(0, 3));
-        
         if (art?.full_content) setHeadings(extractHeadings(art.full_content));
       } catch { setError(true); }
       finally { setLoading(false); }
     }
-    if (slug) {
-      window.scrollTo(0, 0);
-      load();
-    }
+    if (slug) { window.scrollTo(0, 0); load(); }
   }, [slug]);
 
-  // Inject IDs into real DOM after render
   useEffect(() => {
     if (!loading && article?.full_content) {
       document.title = `${article.title} | Finlogic Capital`;
@@ -194,14 +181,10 @@ export default function ArticleDetailPage({ params }) {
     try {
       await completeArticle(slug);
       setArticle(prev => ({ ...prev, is_completed: true }));
-    } catch (e) {
-      console.error("Failed to mark article as completed", e);
-    } finally {
-      setCompleting(false);
-    }
+    } catch (e) { console.error("Failed to mark article as completed", e); }
+    finally { setCompleting(false); }
   };
 
-  // Find next/prev in series
   const getSeriesNav = () => {
     if (!seriesData || !article?.article_number) return { prev: null, next: null };
     const articles = seriesData.articles || [];
@@ -214,8 +197,8 @@ export default function ArticleDetailPage({ params }) {
   };
 
   const { prev, next } = getSeriesNav();
-
-  const color = PILLAR_COLORS[article?.pillar?.toLowerCase()] || "#F59F01";
+  const accentColor = isDark ? "#F59F01" : "#0B6EC3";
+  const color = PILLAR_COLORS[article?.pillar?.toLowerCase()] || accentColor;
   const displayDate = article?.published_at
     ? new Date(article.published_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
     : "";
@@ -227,42 +210,29 @@ export default function ArticleDetailPage({ params }) {
   const shareX = () => article && window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(article.title)}&url=${encodeURIComponent(window.location.href)}`, "_blank");
   const shareLI = () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, "_blank");
 
-  const articleSchema = article ? {
-    "@context": "https://schema.org", "@type": "Article",
-    headline: article.title, description: article.excerpt || "",
-    image: article.featured_image ? [article.featured_image] : [],
-    datePublished: article.published_at || article.created_at,
-    dateModified: article.updated_at || article.published_at,
-    author: { "@type": "Person", name: article.author_name || "Finlogic Capital" },
-    publisher: { "@type": "Organization", name: "Finlogic Capital", logo: { "@type": "ImageObject", url: `${SITE_URL}/og-image.png` } },
-    mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/insights/articles/${article?.slug}` },
-  } : null;
-
   if (error) return (
-    <div className="bg-[#100226] text-white min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <p className="text-white/40 mb-4">Article not found.</p>
-        <Link href="/insights/articles" className="text-[#F59F01] text-sm font-bold hover:underline">← Back to Articles</Link>
+    <div className="bg-background text-foreground min-h-screen flex items-center justify-center theme-transition">
+      <div className="text-center p-12 bg-card border border-border-theme rounded-[3rem]">
+        <h3 className="text-2xl font-black mb-4 uppercase tracking-tight">Intelligence Not Found</h3>
+        <p className="text-text-muted mb-8 font-medium">The requested research paper is no longer in the public repository.</p>
+        <Link href="/insights/articles" className={`px-8 py-3 rounded-2xl ${isDark ? 'bg-[#F59F01]' : 'bg-[#0B6EC3]'} text-white text-[10px] font-black uppercase tracking-widest shadow-xl`}>← Return to Catalog</Link>
       </div>
     </div>
   );
 
   return (
-    <div className="bg-[#100226] text-white min-h-screen">
-      <ReadingProgress />
-
-      {articleSchema && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      )}
+    <div className="bg-background text-foreground min-h-screen theme-transition selection:bg-[#F59F01]/30">
+      <ReadingProgress color={accentColor} />
 
       {/* Mobile TOC floating button */}
       {!loading && headings.length > 0 && (
         <button onClick={() => setTocOpen(true)}
-          className="lg:hidden fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 rounded-full bg-[#F59F01] text-[#100226] font-black text-xs shadow-2xl shadow-[#F59F01]/20 hover:scale-105 transition-transform"
+          className={`lg:hidden fixed bottom-8 right-8 z-[90] flex items-center gap-3 px-6 py-4 rounded-2xl ${isDark ? 'bg-[#F59F01] text-ls-primary-fixed' : 'bg-[#0B6EC3] text-white'} font-black text-[10px] uppercase tracking-widest shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-all`}
         >
-          <List size={15} /> Contents
+          <List size={18} strokeWidth={3} /> Contents
         </button>
       )}
+      
       <MobileTOC 
         headings={headings} 
         accentColor={color} 
@@ -271,260 +241,187 @@ export default function ArticleDetailPage({ params }) {
         articleRef={articleRef}
       />
 
-      <div className="container mx-auto px-4 lg:px-8 pt-28 pb-24 max-w-6xl">
-        {/* Breadcrumbs / Series Nav */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-10">
-          <Link href="/insights/articles" className="inline-flex items-center gap-2 text-white/40 hover:text-[#F59F01] text-sm transition-colors">
-            <ArrowLeft size={15} /> Back to Articles
+      <div className="container mx-auto px-4 lg:px-8 pt-32 pb-32 max-w-7xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-16">
+          <Link href="/insights/articles" className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-muted hover:text-[#F59F01] transition-all">
+            <ArrowLeft size={16} /> Back to Catalog
           </Link>
           
           {!loading && article?.series_info && (
-            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-              <Link href={`/insights/series/${article.series_info.slug}`} className="hover:text-[#F59F01] transition-colors">
+            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted opacity-40">
+              <Link href={`/insights/series/${article.series_info.slug}`} className="hover:text-foreground transition-all">
                 {article.series_info.title}
               </Link>
-              <span className="text-white/10">/</span>
-              <span className="text-[#F59F01]">Chapter {article.article_number}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-border-theme" />
+              <span className={isDark ? "text-[#F59F01]" : "text-[#0B6EC3]"}>Chapter {article.article_number}</span>
             </div>
           )}
         </div>
 
-        {/* Three-column layout: [article | toc+related] */}
-        <div className="lg:grid lg:grid-cols-[1fr_300px] lg:gap-14 items-start">
+        <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-20 items-start">
 
-          {/* ── Main content column ─────────────────────────────────────── */}
-          <div>
-            {/* Header skeleton */}
+          <article className="min-w-0">
             {loading ? (
-              <div className="space-y-4 mb-10">
-                <Skeleton className="h-5 w-24" /><Skeleton className="h-12 w-full" /><Skeleton className="h-8 w-4/5" /><Skeleton className="h-5 w-64" />
+              <div className="space-y-6 mb-12">
+                <Skeleton className="h-6 w-32" /><Skeleton className="h-20 w-full" /><Skeleton className="h-10 w-4/5" />
               </div>
             ) : (
-              <motion.header initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
-                    style={{ background: `${color}18`, color }}
+              <header className="mb-16">
+                <div className="flex items-center gap-4 mb-8">
+                  <span className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]"
+                    style={{ background: `${color}15`, color }}
                   >
                     {PILLAR_LABELS[article.pillar?.toLowerCase()] || article.pillar}
                   </span>
                   {article.is_completed && (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#16c784]/10 text-[#16c784] text-[10px] font-black uppercase tracking-widest border border-[#16c784]/20">
-                      <CheckCircle2 size={10} /> Completed
+                    <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
+                      <CheckCircle2 size={12} /> Completed
                     </span>
                   )}
                 </div>
                 
-                <h1 className="text-3xl md:text-5xl font-black leading-tight mb-5">{article.title}</h1>
+                <h1 className="text-4xl md:text-7xl font-black leading-[0.95] tracking-tighter mb-8 text-foreground uppercase">{article.title}</h1>
                 
                 {article.excerpt && (
-                  <p className="text-xl text-white/55 leading-relaxed mb-7 border-l-4 pl-5" style={{ borderColor: `${color}60` }}>
+                  <p className="text-xl md:text-2xl text-text-muted leading-relaxed mb-12 border-l-[6px] pl-8 font-medium italic opacity-80" style={{ borderColor: `${color}30` }}>
                     {article.excerpt}
                   </p>
                 )}
 
-                {/* Meta + share row */}
-                <div className="flex flex-wrap items-center justify-between border-y border-white/6 py-4 gap-4">
-                  <div className="flex flex-wrap items-center gap-5 text-sm">
-                    <span className="flex items-center gap-1.5 font-bold text-white">
-                      <User size={13} className="text-white/40" /> {article.author_name || "Research Team"}
+                <div className="flex flex-wrap items-center justify-between border-y border-border-theme py-8 gap-8">
+                  <div className="flex flex-wrap items-center gap-10 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <span className="flex items-center gap-3 text-foreground">
+                      <User size={16} className="text-text-muted opacity-40" /> {article.author_name || "Research Team"}
                     </span>
-                    {displayDate && <span className="flex items-center gap-1.5 text-white/40"><Calendar size={12} /> {displayDate}</span>}
-                    {article.read_time && <span className="flex items-center gap-1.5 text-white/40"><Clock size={12} /> {article.read_time}</span>}
+                    {displayDate && <span className="flex items-center gap-3 text-text-muted"><Calendar size={16} className="opacity-40" /> {displayDate}</span>}
+                    {article.read_time && <span className="flex items-center gap-3 text-text-muted"><Clock size={16} className="opacity-40" /> {article.read_time}</span>}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-white/25 uppercase tracking-widest mr-1">Share</span>
-                    <button onClick={shareLI} className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white"><Linkedin size={14} /></button>
-                    <button onClick={shareX} className="p-2 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white"><Twitter size={14} /></button>
-                    <button onClick={handleCopy} className="relative p-2 rounded-full hover:bg-white/10 transition-colors text-white/40 hover:text-white">
-                      <Link2 size={14} />
-                      {copied && <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] bg-[#F59F01] text-black px-2 py-0.5 rounded font-bold whitespace-nowrap">Copied!</span>}
+                  <div className="flex items-center gap-3">
+                    <button onClick={shareLI} className="p-3 rounded-2xl bg-foreground/5 hover:bg-[#0B6EC3]/10 hover:text-[#0B6EC3] transition-all text-text-muted"><Linkedin size={18} /></button>
+                    <button onClick={shareX} className="p-3 rounded-2xl bg-foreground/5 hover:bg-[#F59F01]/10 hover:text-[#F59F01] transition-all text-text-muted"><Twitter size={18} /></button>
+                    <button onClick={handleCopy} className="relative p-3 rounded-2xl bg-foreground/5 hover:bg-foreground/10 transition-all text-text-muted">
+                      <Link2 size={18} />
+                      {copied && <span className="absolute -top-10 left-1/2 -translate-x-1/2 text-[10px] bg-foreground text-background px-3 py-1 rounded-full font-black uppercase tracking-widest whitespace-nowrap shadow-2xl">Link Copied</span>}
                     </button>
                   </div>
                 </div>
-              </motion.header>
+              </header>
             )}
 
-            {/* Featured image */}
-            {loading ? <Skeleton className="w-full aspect-video mb-10" /> :
+            {loading ? <Skeleton className="w-full aspect-video rounded-[3rem] mb-16" /> :
               article?.featured_image && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                  className="w-full aspect-video rounded-2xl overflow-hidden mb-12 shadow-2xl"
-                >
+                <div className="w-full aspect-video rounded-[3rem] overflow-hidden mb-20 shadow-[0_48px_96px_-24px_rgba(0,0,0,0.25)] border border-border-theme/50">
                   <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover" />
-                </motion.div>
+                </div>
               )
             }
 
-            {/* Article Content / Cliffhanger Logic */}
-            {loading ? (
-              <div className="space-y-3">
-                {[...Array(10)].map((_, i) => <Skeleton key={i} className={`h-4 ${i % 4 === 3 ? "w-3/5" : "w-full"}`} />)}
-              </div>
-            ) : article?.access_level === "cliffhanger" ? (
-              <div className="space-y-8">
-                <div className="article-body opacity-50 select-none pointer-events-none mask-fade-bottom">
-                  {article.snippet && (
-                    <div dangerouslySetInnerHTML={{ __html: article.snippet }} />
-                  )}
+            <div className="max-w-4xl">
+              {loading ? (
+                <div className="space-y-6">
+                  {[...Array(12)].map((_, i) => <Skeleton key={i} className={`h-4 ${i % 5 === 4 ? "w-2/3" : "w-full"}`} />)}
                 </div>
-                <Cliffhanger 
-                  title={article.title}
-                  teaserBullets={article.teaser_bullets}
-                  seriesSlug={article.slug}
-                  ctaType={user ? "subscribe" : "register"}
-                />
-              </div>
-            ) : article?.full_content ? (
-              <>
-                <motion.div ref={articleRef} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                  className="article-body"
-                  dangerouslySetInnerHTML={{ __html: article.full_content }}
-                />
+              ) : article?.access_level === "cliffhanger" ? (
+                <div className="space-y-12">
+                  <div className="article-body opacity-40 select-none pointer-events-none mask-fade-bottom scale-[0.98] origin-top blur-[1px]">
+                    {article.snippet && <div dangerouslySetInnerHTML={{ __html: article.snippet }} />}
+                  </div>
+                  <Cliffhanger 
+                    title={article.title}
+                    teaserBullets={article.teaser_bullets}
+                    seriesSlug={article.slug}
+                    ctaType={user ? "subscribe" : "register"}
+                  />
+                </div>
+              ) : article?.full_content ? (
+                <>
+                  <motion.div ref={articleRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}
+                    className="article-body font-serif leading-[1.8] text-lg lg:text-xl text-foreground/90 selection:bg-[#F59F01]/20"
+                    dangerouslySetInnerHTML={{ __html: article.full_content }}
+                  />
 
-                {/* Completion CTA */}
-                {user && !article.is_completed && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    className="mt-16 p-8 rounded-3xl bg-[#16c784]/5 border border-[#16c784]/20 flex flex-col items-center text-center"
-                  >
-                    <CheckCircle2 size={40} className="text-[#16c784] mb-4" />
-                    <h4 className="text-xl font-bold text-white mb-2">Finished reading?</h4>
-                    <p className="text-white/60 mb-6 text-sm">Mark this article as completed to track your progress in the series.</p>
-                    <button 
-                      onClick={handleComplete}
-                      disabled={completing}
-                      className="px-8 py-3 rounded-full bg-[#16c784] text-[#100226] font-black text-xs hover:scale-105 transition-transform disabled:opacity-50"
+                  {user && !article.is_completed && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }}
+                      className={`mt-24 p-12 rounded-[3rem] ${isDark ? 'bg-[#16c784]/5' : 'bg-ls-secondary/5'} border border-emerald-500/20 flex flex-col items-center text-center shadow-2xl theme-transition`}
                     >
-                      {completing ? "Saving..." : "Mark as Completed"}
-                    </button>
-                  </motion.div>
-                )}
+                      <div className="w-20 h-20 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-8 shadow-inner">
+                         <CheckCircle2 size={44} strokeWidth={3} />
+                      </div>
+                      <h4 className="text-3xl font-black text-foreground mb-4 uppercase tracking-tight">Institutional Milestone</h4>
+                      <p className="text-text-muted mb-10 text-lg font-medium max-w-md">Mark this intelligence module as completed to update your curriculum progress.</p>
+                      <button 
+                        onClick={handleComplete}
+                        disabled={completing}
+                        className={`px-12 py-5 rounded-2xl ${isDark ? 'bg-[#16c784]' : 'bg-[#0B6EC3]'} text-white text-xs font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all disabled:opacity-50`}
+                      >
+                        {completing ? "Archiving..." : "Mark as Completed"}
+                      </button>
+                    </motion.div>
+                  )}
 
-                {/* Downloadable Tools */}
-                {article.tools && article.tools.length > 0 && (
-                  <div className="mt-20">
-                    <h3 className="text-xl font-black uppercase tracking-widest mb-8 flex items-center gap-3">
-                      <Download size={20} className="text-[#F59F01]" /> Series Resources
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {article.tools.map(tool => {
-                        const hasAccess = !tool.requires_subscription || (user && (user.roles?.includes('investor') || user.roles?.includes('admin')));
-                        return (
-                          <div key={tool.id} className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-[#F59F01]/30 transition-all group">
-                            <div className="flex justify-between items-start mb-4">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-[#F59F01] bg-[#F59F01]/10 px-2 py-1 rounded">
-                                {tool.file_type}
-                              </span>
-                              {!hasAccess && <Lock size={14} className="text-white/30" />}
+                  {article.tools && article.tools.length > 0 && (
+                    <div className="mt-32">
+                      <h3 className="text-2xl font-black uppercase tracking-tighter mb-12 flex items-center gap-4">
+                        <Download size={28} className={isDark ? "text-[#F59F01]" : "text-[#0B6EC3]"} /> Intelligence Resources
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {article.tools.map(tool => {
+                          const hasAccess = !tool.requires_subscription || (user && (user.roles?.includes('investor') || user.roles?.includes('admin')));
+                          return (
+                            <div key={tool.id} className="p-8 rounded-[2rem] bg-card border border-border-theme hover:border-foreground/20 transition-all group shadow-lg">
+                              <div className="flex justify-between items-center mb-6">
+                                <span className={`text-[10px] font-black uppercase tracking-widest ${isDark ? 'bg-[#F59F01]/10 text-[#F59F01]' : 'bg-[#0B6EC3]/10 text-[#0B6EC3]'} px-3 py-1 rounded-full`}>
+                                  {tool.file_type}
+                                </span>
+                                {!hasAccess && <Lock size={16} className="text-text-muted opacity-40" />}
+                              </div>
+                              <h4 className="font-black text-foreground text-lg mb-3 group-hover:text-[#F59F01] transition-colors uppercase tracking-tight leading-tight">{tool.title}</h4>
+                              <p className="text-text-muted text-sm mb-8 line-clamp-2 font-medium opacity-60">{tool.description}</p>
+                              
+                              {hasAccess ? (
+                                <a href={tool.file} download className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-foreground hover:text-[#F59F01] transition-all">
+                                  <Download size={14} /> Download Asset
+                                </a>
+                              ) : (
+                                <Link href="/investors" className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#F59F01] hover:underline">
+                                  Unlock Intelligence
+                                </Link>
+                              )}
                             </div>
-                            <h4 className="font-bold text-white text-sm mb-2 group-hover:text-[#F59F01] transition-colors">{tool.title}</h4>
-                            <p className="text-white/40 text-xs mb-5 line-clamp-2">{tool.description}</p>
-                            
-                            {hasAccess ? (
-                              <a href={tool.file} download className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white hover:text-[#F59F01] transition-colors">
-                                <Download size={12} /> Download Tool
-                              </a>
-                            ) : (
-                              <Link href="/investors" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#F59F01] hover:underline">
-                                Subscribe to Unlock
-                              </Link>
-                            )}
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </>
+              ) : <p className="text-text-muted text-center py-32 font-medium italic opacity-40">Intelligence content encrypted or unavailable.</p>}
+            </div>
+          </article>
 
-                {/* Series Navigation */}
-                {(prev || next) && (
-                  <div className="mt-16 pt-10 border-t border-white/5 grid grid-cols-2 gap-4">
-                    {prev ? (
-                      <Link href={`/insights/articles/${prev.slug}`} className="group p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-[#F59F01]/20 transition-all text-left">
-                        <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-white/30 mb-3 group-hover:text-[#F59F01] transition-colors">
-                          <ChevronLeft size={14} /> Previous Chapter
-                        </span>
-                        <h4 className="text-sm font-bold text-white line-clamp-1">Chapter {prev.article_number}: {prev.title}</h4>
-                      </Link>
-                    ) : <div />}
-                    
-                    {next ? (
-                      <Link href={`/insights/articles/${next.slug}`} className="group p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-[#F59F01]/20 transition-all text-right">
-                        <span className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-white/30 mb-3 group-hover:text-[#F59F01] transition-colors">
-                          Next Chapter <ChevronRight size={14} />
-                        </span>
-                        <h4 className="text-sm font-bold text-white line-clamp-1">Chapter {next.article_number}: {next.title}</h4>
-                      </Link>
-                    ) : <div />}
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="text-white/40 text-center py-20">Content not available.</p>
-            )}
-
-            {/* Author bio */}
-            {!loading && article && (
-              <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-                className="mt-16 p-6 rounded-2xl flex flex-col sm:flex-row items-center sm:items-start gap-5"
-                style={{ background: `${color}08`, border: `1px solid ${color}20` }}
-              >
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: `${color}18`, border: `1px solid ${color}30` }}
-                >
-                  <User size={22} style={{ color }} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-white mb-1">{article.author_name || "Finlogic Research"}</h4>
-                  <p className="text-white/50 text-sm leading-relaxed">
-                    Published by the Finlogic Capital Research & Investment Committee — bringing institutional-grade analysis to emerging markets across South Asia.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Mobile related */}
-            {related.length > 0 && (
-              <div className="lg:hidden mt-14 border-t border-white/5 pt-10">
-                <h3 className="text-xl font-bold mb-5">Related Insights</h3>
-                <div className="space-y-3">{related.map(a => <RelatedCard key={a.id} article={a} />)}</div>
-              </div>
-            )}
-          </div>
-
-          {/* ── Right sidebar ────────────────────────────────────────────── */}
-          <aside className="hidden lg:block sticky top-28 space-y-6">
-            {/* Scroll-spy TOC */}
-            {!loading && headings.length > 0 && (
-              <ArticleTOC headings={headings} accentColor={color} />
-            )}
-            {loading && <Skeleton className="h-48" />}
-
-            {/* Callout legend card */}
+          <aside className="hidden lg:block sticky top-32 space-y-12">
+            {!loading && headings.length > 0 && <ArticleTOC headings={headings} accentColor={accentColor} />}
+            
             {!loading && (
-              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/6 space-y-3">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Content Blocks Used</h4>
+              <div className="p-8 rounded-[2.5rem] bg-card border border-border-theme space-y-6 shadow-xl">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40 mb-2">Annotation Guide</h4>
                 {[
-                  { cls: "callout-data",    label: "Data Point",    color: "#F59F01" },
-                  { cls: "callout-key",     label: "Key Takeaway",  color: "#16c784" },
-                  { cls: "callout-insight", label: "Deep Insight",  color: "#a855f7" },
-                  { cls: "callout-quote",   label: "Pull Quote",    color: "#fff" },
-                  { cls: "callout-stat",    label: "Statistic",     color: "#F59F01" },
+                  { cls: "callout-data",    label: "Critical Data", color: "#F59F01" },
+                  { cls: "callout-key",     label: "Strategic Pillar",  color: "#16c784" },
+                  { cls: "callout-insight", label: "Thesis Insight",  color: "#a855f7" },
+                  { cls: "callout-quote",   label: "Key Quote",    color: "var(--foreground)" },
                 ].map(({ cls, label, color: c }) => (
-                  <div key={cls} className="flex items-center gap-2 text-xs text-white/40">
-                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: c }} />
+                  <div key={cls} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-text-muted/60">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-inner" style={{ background: c }} />
                     {label}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Related articles */}
             {related.length > 0 && (
-              <div>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-white/35 mb-3">Related Insights</h4>
-                <div className="space-y-3">{related.map(a => <RelatedCard key={a.id} article={a} />)}</div>
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40">Contextual Intelligence</h4>
+                <div className="space-y-4">{related.map(a => <RelatedCard key={a.id} article={a} />)}</div>
               </div>
             )}
           </aside>

@@ -95,9 +95,9 @@ export default function Home() {
   const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
 
   return (
-    <div ref={containerRef} className="flex flex-col bg-ls-primary selection:bg-ls-compliment selection:text-ls-primary">
+    <div ref={containerRef} className="flex flex-col bg-background text-foreground selection:bg-ls-compliment selection:text-ls-primary theme-transition">
       {/* Hero Slider Section */}
-      <section className="relative h-screen min-h-[700px] w-full overflow-hidden bg-ls-primary text-ls-white">
+      <section className="relative h-screen min-h-[700px] w-full overflow-hidden bg-background text-foreground theme-transition">
         {/* Abstract Background Elements (Enhanced with Scroll Parallax) */}
         {mounted && (
           <motion.div style={{ y: y1 }} className="absolute inset-0 z-0 pointer-events-none">
@@ -130,7 +130,7 @@ export default function Home() {
             {[...Array(20)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute h-1 w-1 rounded-full bg-ls-white/20"
+                className="absolute h-1 w-1 rounded-full bg-foreground/20"
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `${Math.random() * 100}%`,
@@ -166,7 +166,7 @@ export default function Home() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="inline-flex items-center space-x-2 rounded-full border border-ls-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-ls-compliment transition-colors hover:bg-white/10"
+                    className="inline-flex items-center space-x-2 rounded-full border border-border-theme bg-card px-4 py-2 text-xs font-bold uppercase tracking-widest text-ls-compliment transition-colors hover:bg-border-theme"
                   >
                     <span className={`h-2 w-2 rounded-full ${HERO_SLIDES[currentSlide].accent}`} />
                     <span>Exclusive Private Equity Insights</span>
@@ -193,7 +193,7 @@ export default function Home() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.6 }}
-                    className="max-w-xl text-xl leading-relaxed text-ls-white/60 md:text-2xl"
+                    className="max-w-xl text-xl leading-relaxed text-text-muted md:text-2xl"
                   >
                     {HERO_SLIDES[currentSlide].subtitle}
                   </motion.p>
@@ -213,7 +213,7 @@ export default function Home() {
                     </Link>
                     <Link
                       href={HERO_SLIDES[currentSlide].secondaryHref}
-                      className="flex items-center rounded-full border border-ls-white/20 bg-white/5 px-10 py-5 text-lg font-semibold backdrop-blur-md transition-all hover:border-ls-white/40 hover:bg-white/10"
+                      className="flex items-center rounded-full border border-border-theme bg-card px-10 py-5 text-lg font-semibold backdrop-blur-md transition-all hover:border-ls-compliment hover:bg-border-theme"
                     >
                       <span>{HERO_SLIDES[currentSlide].secondaryCTA}</span>
                       <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -247,13 +247,13 @@ export default function Home() {
                 <button
                   key={index}
                   onClick={() => setCurrentSlide(index)}
-                  className={`h-1 transition-all duration-500 rounded-full ${index === currentSlide ? 'w-12 bg-ls-compliment' : 'w-4 bg-ls-white/20 hover:bg-ls-white/40'
+                  className={`h-1 transition-all duration-500 rounded-full ${index === currentSlide ? 'w-12 bg-ls-compliment' : 'w-4 bg-foreground/20 hover:bg-foreground/40'
                     }`}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
             </div>
-            <span className="text-xs font-mono text-ls-white/40">
+            <span className="text-xs font-mono text-foreground/40">
               0{currentSlide + 1} / 0{HERO_SLIDES.length}
             </span>
           </div>
@@ -261,13 +261,13 @@ export default function Home() {
           <div className="flex space-x-4">
             <button
               onClick={prevSlide}
-              className="group flex h-14 w-14 items-center justify-center rounded-full border border-ls-white/10 bg-white/5 text-ls-white/50 transition-all hover:border-ls-compliment hover:text-ls-compliment"
+              className="group flex h-14 w-14 items-center justify-center rounded-full border border-border-theme bg-card text-text-muted transition-all hover:border-ls-compliment hover:text-ls-compliment"
             >
               <ChevronLeft className="h-6 w-6 transition-transform group-hover:-translate-x-1" />
             </button>
             <button
               onClick={nextSlide}
-              className="group flex h-14 w-14 items-center justify-center rounded-full border border-ls-white/10 bg-white/5 text-ls-white/50 transition-all hover:border-ls-compliment hover:text-ls-compliment"
+              className="group flex h-14 w-14 items-center justify-center rounded-full border border-border-theme bg-card text-text-muted transition-all hover:border-ls-compliment hover:text-ls-compliment"
             >
               <ChevronRight className="h-6 w-6 transition-transform group-hover:translate-x-1" />
             </button>
@@ -276,12 +276,12 @@ export default function Home() {
       </section>
 
       {/* The Finlogic Difference Section */}
-      <section className="relative bg-ls-white py-24 lg:py-40 overflow-hidden">
+      <section className="relative bg-background py-24 lg:py-40 overflow-hidden theme-transition">
         {/* Parallax Background Text */}
         {mounted && (
           <motion.div
             style={{ x: y1 }}
-            className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-[20vw] font-black text-ls-primary/[0.02] pointer-events-none"
+            className="absolute left-0 top-1/2 -translate-y-1/2 whitespace-nowrap text-[20vw] font-black text-foreground/[0.02] pointer-events-none"
           >
             VISIONARY GROWTH ORCHESTRATION
           </motion.div>
@@ -297,8 +297,8 @@ export default function Home() {
             className="mb-20 space-y-4 text-center lg:mb-32"
           >
             <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-ls-compliment">The Finlogic Edge</h2>
-            <h3 className="text-4xl font-black text-ls-primary md:text-6xl lg:text-7xl">Orchestrating Excellence</h3>
-            <p className="mx-auto max-w-2xl text-xl text-ls-supporting/60">
+            <h3 className="text-4xl font-black text-foreground md:text-6xl lg:text-7xl">Orchestrating Excellence</h3>
+            <p className="mx-auto max-w-2xl text-xl text-text-muted">
               In a world of noise, we find the melody. Our approach is defined by precision, foresight, and unyielding principles.
             </p>
           </motion.div>
@@ -330,16 +330,16 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: card.delay }}
-                className="group relative overflow-hidden rounded-3xl bg-ls-supporting p-10 transition-all hover:-translate-y-4 hover:shadow-3xl lg:p-14"
+                className="group relative overflow-hidden rounded-3xl bg-card p-10 transition-all hover:-translate-y-4 hover:shadow-3xl lg:p-14 border border-border-theme"
               >
-                <div className="absolute -right-4 -top-4 text-ls-white/5 opacity-10 transition-transform group-hover:scale-150 group-hover:opacity-20">
+                <div className="absolute -right-4 -top-4 text-foreground/5 opacity-10 transition-transform group-hover:scale-150 group-hover:opacity-20">
                   <span className="text-9xl font-black">0{i + 1}</span>
                 </div>
-                <div className="mb-10 flex h-20 w-20 items-center justify-center rounded-2xl bg-ls-primary/40 backdrop-blur-xl">
+                <div className="mb-10 flex h-20 w-20 items-center justify-center rounded-2xl bg-ls-compliment/10 backdrop-blur-xl">
                   {card.icon}
                 </div>
-                <h4 className="mb-5 text-3xl font-bold text-ls-white">{card.title}</h4>
-                <p className="text-xl leading-relaxed text-ls-white/60">{card.desc}</p>
+                <h4 className="mb-5 text-3xl font-bold text-foreground">{card.title}</h4>
+                <p className="text-xl leading-relaxed text-text-muted">{card.desc}</p>
                 <Link href="/about" className="mt-10 flex items-center space-x-3 text-ls-compliment">
                   <span className="font-bold uppercase tracking-widest">Learn More</span>
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
@@ -351,7 +351,7 @@ export default function Home() {
       </section>
 
       {/* Philosophy at a Glance Section */}
-      <section className="relative overflow-hidden bg-ls-primary py-24 text-ls-white lg:py-40">
+      <section className="relative overflow-hidden bg-background py-24 text-foreground lg:py-40 theme-transition">
         {/* Parallax Accent Blob */}
         {mounted && (
           <motion.div
@@ -372,12 +372,12 @@ export default function Home() {
             >
               <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-ls-compliment">Foundational Pillars</h2>
               <h3 className="text-4xl font-black leading-tight md:text-6xl lg:text-7xl">The DNA of Our Success</h3>
-              <p className="text-xl text-ls-white/60">
+              <p className="text-xl text-text-muted">
                 Our philosophy isn't just a statement—it's an operational framework. We activate leadership and insight to build enduring enterprises.
               </p>
               <Link
                 href="/philosophy"
-                className="group inline-flex h-16 items-center rounded-full bg-ls-white px-10 font-bold text-ls-primary transition-all hover:bg-ls-compliment"
+                className="group inline-flex h-16 items-center rounded-full bg-foreground px-10 font-bold text-background transition-all hover:bg-ls-compliment"
               >
                 <span className="uppercase tracking-widest">Explore Our Philosophy</span>
                 <BookOpen className="ml-4 h-6 w-6 transition-transform group-hover:rotate-6" />
@@ -398,7 +398,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: i * 0.1 }}
-                  className="flex items-center justify-between border-b border-ls-white/10 bg-white/0 p-6 transition-all hover:bg-white/5 hover:border-ls-compliment"
+                  className="flex items-center justify-between border-b border-border-theme bg-card/0 p-6 transition-all hover:bg-card hover:border-ls-compliment"
                 >
                   <div className="flex items-center space-x-6">
                     <div className="text-ls-compliment opacity-50">{pillar.icon}</div>
@@ -413,7 +413,7 @@ export default function Home() {
       </section>
 
       {/* Latest Insights Section */}
-      <section className="bg-ls-white py-24 lg:py-40">
+      <section className="bg-background py-24 lg:py-40 theme-transition">
         <div className="container mx-auto px-4 lg:px-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -423,11 +423,11 @@ export default function Home() {
           >
             <div className="space-y-4">
               <h2 className="text-sm font-bold uppercase tracking-[0.3em] text-ls-compliment">Thought Leadership</h2>
-              <h3 className="text-4xl font-black text-ls-primary md:text-6xl">Latest Insights</h3>
+              <h3 className="text-4xl font-black text-foreground md:text-6xl">Latest Insights</h3>
             </div>
             <Link
               href="/insights"
-              className="group mt-10 inline-flex h-14 items-center rounded-full border-2 border-ls-primary px-10 font-bold transition-all hover:bg-ls-primary hover:text-ls-white md:mt-0"
+              className="group mt-10 inline-flex h-14 items-center rounded-full border-2 border-foreground px-10 font-bold transition-all hover:bg-foreground hover:text-background md:mt-0"
             >
               <span>View All Thoughts</span>
               <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -439,11 +439,11 @@ export default function Home() {
               // Skeletons
               [...Array(3)].map((_, i) => (
                 <div key={i} className="animate-pulse space-y-6">
-                  <div className="h-80 rounded-[2.5rem] bg-ls-supporting/5" />
+                  <div className="h-80 rounded-[2.5rem] bg-card" />
                   <div className="space-y-4 px-2">
-                    <div className="h-4 w-24 bg-ls-supporting/10 rounded" />
-                    <div className="h-6 w-full bg-ls-supporting/10 rounded" />
-                    <div className="h-6 w-2/3 bg-ls-supporting/10 rounded" />
+                    <div className="h-4 w-24 bg-card rounded" />
+                    <div className="h-6 w-full bg-card rounded" />
+                    <div className="h-6 w-2/3 bg-card rounded" />
                   </div>
                 </div>
               ))
@@ -457,7 +457,7 @@ export default function Home() {
                     transition={{ duration: 0.6, delay: i * 0.1 }}
                     className="group cursor-pointer space-y-6"
                   >
-                    <div className="relative h-80 overflow-hidden rounded-[2.5rem] bg-ls-supporting/5 transition-all group-hover:shadow-2xl">
+                    <div className="relative h-80 overflow-hidden rounded-[2.5rem] bg-card transition-all group-hover:shadow-2xl">
                       {post.featured_image ? (
                         <img 
                           src={post.featured_image} 
@@ -467,24 +467,24 @@ export default function Home() {
                       ) : (
                         <div className="absolute inset-0 bg-gradient-to-br from-ls-supporting/20 to-ls-primary/10 transition-transform duration-700 group-hover:scale-110" />
                       )}
-                      <div className="absolute left-8 top-8 rounded-full bg-ls-white/90 backdrop-blur-md px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-ls-primary">
+                      <div className="absolute left-8 top-8 rounded-full bg-background/90 backdrop-blur-md px-5 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-foreground">
                         {PILLAR_LABELS[post.pillar?.toLowerCase()] || post.pillar || 'Insight'}
                       </div>
                     </div>
                     <div className="space-y-4 px-2">
-                      <span className="font-mono text-xs text-ls-supporting/40 tracking-tighter">
+                      <span className="font-mono text-xs text-text-muted tracking-tighter">
                         {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}
                       </span>
-                      <h4 className="text-2xl font-bold leading-[1.3] text-ls-primary transition-colors group-hover:text-ls-compliment line-clamp-3">
+                      <h4 className="text-2xl font-bold leading-[1.3] text-foreground transition-colors group-hover:text-ls-compliment line-clamp-3">
                         {post.title}
                       </h4>
-                      <div className="h-1 w-12 bg-ls-supporting/10 transition-all group-hover:w-24 group-hover:bg-ls-compliment" />
+                      <div className="h-1 w-12 bg-border-theme transition-all group-hover:w-24 group-hover:bg-ls-compliment" />
                     </div>
                   </motion.div>
                 </Link>
               ))
             ) : (
-              <p className="text-ls-primary/40 col-span-3 text-center py-10">No insights published yet.</p>
+              <p className="text-text-muted col-span-3 text-center py-10">No insights published yet.</p>
             )}
           </div>
         </div>

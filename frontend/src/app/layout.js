@@ -3,6 +3,7 @@ import "./globals.css";
 import Layout from "@/components/Layout";
 import { AuthProvider } from "@/lib/AuthContext";
 import QueryProvider from "@/lib/QueryProvider";
+import { ThemeProvider } from "@/lib/ThemeProvider";
 import { Toaster } from "sonner";
 import Script from "next/script";
 
@@ -115,7 +116,7 @@ const websiteSchema = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Structured Data */}
         <script
@@ -130,17 +131,19 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://images.unsplash.com" />
       </head>
-      <body className={`antialiased`}>
-        <Script 
-          src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" 
-          strategy="afterInteractive"
-        />
-        <QueryProvider>
-          <AuthProvider>
-            <Layout>{children}</Layout>
-          </AuthProvider>
-        </QueryProvider>
-        <Toaster richColors position="top-right" />
+      <body className={`antialiased theme-transition`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <Script 
+            src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" 
+            strategy="afterInteractive"
+          />
+          <QueryProvider>
+            <AuthProvider>
+              <Layout>{children}</Layout>
+            </AuthProvider>
+          </QueryProvider>
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

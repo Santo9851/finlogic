@@ -1,175 +1,273 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
+    <title>Letter of Intent - {{ project.legal_name }}</title>
     <style>
         @page {
             size: A4;
-            margin: 2.5cm;
+            margin: 1in;
+            @bottom-right {
+                content: "Confidential - Finlogic Capital";
+                font-size: 8pt;
+                color: #999;
+            }
+            @bottom-left {
+                content: "Page " counter(page);
+                font-size: 8pt;
+                color: #999;
+            }
         }
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            color: #1a1a1a;
-            line-height: 1.6;
-            font-size: 11pt;
+            color: #08001a;
+            line-height: 1.5;
+            font-size: 10.5pt;
+            margin: 0;
+            padding: 0;
         }
         .header {
-            text-align: right;
-            border-bottom: 2px solid #F59F01;
-            padding-bottom: 10px;
-            margin-bottom: 30px;
+            border-bottom: 3px solid #F59F01;
+            padding-bottom: 15px;
+            margin-bottom: 35px;
         }
         .logo {
-            font-size: 24pt;
-            font-weight: bold;
+            font-size: 26pt;
+            font-weight: 900;
+            color: #08001a;
+            letter-spacing: -1.5px;
+            line-height: 1;
+        }
+        .logo span {
             color: #F59F01;
-            letter-spacing: -1px;
         }
         .brand-subtitle {
-            font-size: 8pt;
+            font-size: 7.5pt;
             text-transform: uppercase;
             color: #666;
+            letter-spacing: 3px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .confidential-tag {
+            float: right;
+            font-size: 8pt;
+            font-weight: 900;
+            color: #F59F01;
+            text-transform: uppercase;
             letter-spacing: 2px;
         }
-        .title {
+        .doc-title {
             text-align: center;
-            font-size: 18pt;
-            font-weight: bold;
-            margin-bottom: 40px;
+            font-size: 20pt;
+            font-weight: 900;
+            margin: 40px 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            color: #08001a;
         }
-        .recipient {
-            margin-bottom: 30px;
-        }
-        .section-title {
-            font-weight: bold;
-            text-transform: uppercase;
+        .meta-block {
+            margin-bottom: 35px;
             font-size: 10pt;
-            color: #F59F01;
-            margin-top: 25px;
-            margin-bottom: 10px;
-            border-left: 3px solid #F59F01;
-            padding-left: 10px;
+        }
+        .meta-row {
+            margin-bottom: 5px;
+        }
+        .meta-label {
+            font-weight: 900;
+            width: 80px;
+            display: inline-block;
+            text-transform: uppercase;
+            font-size: 8.5pt;
+            color: #666;
+        }
+        .section-header {
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 9pt;
+            color: #08001a;
+            margin-top: 30px;
+            margin-bottom: 12px;
+            background: #f9f9f9;
+            padding: 8px 12px;
+            border-left: 4px solid #F59F01;
         }
         .content {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        .terms-card {
+            background: #fff;
+            border: 1px solid #eee;
+            margin: 20px 0;
+            padding: 0;
         }
         .terms-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
         }
         .terms-table td {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .terms-table tr:last-child td {
+            border-bottom: none;
         }
         .term-label {
             font-weight: bold;
             width: 40%;
-            color: #444;
+            color: #555;
+            font-size: 9.5pt;
+        }
+        .term-value {
+            font-weight: 900;
+            color: #08001a;
         }
         .footer {
-            margin-top: 50px;
-            font-size: 9pt;
-            color: #888;
+            margin-top: 60px;
+            font-size: 8.5pt;
+            color: #666;
             border-top: 1px solid #eee;
             padding-top: 20px;
+            font-style: italic;
         }
-        .signature-box {
+        .signature-section {
             margin-top: 60px;
-            width: 100%;
+            page-break-inside: avoid;
         }
-        .signature-line {
-            border-top: 1px solid #1a1a1a;
-            width: 200px;
-            margin-top: 40px;
-            padding-top: 5px;
+        .sig-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .sig-box {
+            width: 45%;
+            vertical-align: top;
+        }
+        .sig-line {
+            border-top: 1.5px solid #08001a;
+            margin-top: 45px;
+            padding-top: 8px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 8.5pt;
+        }
+        .sig-sub {
+            font-size: 8.5pt;
+            color: #666;
+            margin-top: 4px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 8px;
         }
     </style>
 </head>
 <body>
-    <div className="header">
-        <div className="logo">FINLOGIC</div>
-        <div className="brand-subtitle">Private Equity & Venture Capital</div>
-    </div>
-
-    <div className="recipient">
-        <strong>Date:</strong> {{ date }}<br>
-        <strong>To:</strong> The Board of Directors<br>
-        {{ project.legal_name }}<br>
-        {{ project.ocr_registration_number }}
-    </div>
-
-    <div className="title">Letter of Intent</div>
-
-    <div className="content">
-        Dear {{ project.legal_name }} Management Team,
-        <br><br>
-        Finlogic Capital ("Finlogic" or "we") is pleased to submit this non-binding Letter of Intent (the "LOI") regarding a potential strategic investment in {{ project.legal_name }} (the "Company"). Based on our preliminary review of the Company's business and financials, we are excited about the prospect of partnering with you to accelerate your growth.
-    </div>
-
-    <div className="section-title">1. Investment Proposal</div>
-    <div className="content">
-        Finlogic proposes to invest in the Company under the following indicative terms:
-        <table className="terms-table">
+    <div class="header">
+        <div class="confidential-tag">
+            Strictly Private & Confidential
+        </div>
+        <table style="border: none; border-collapse: collapse;">
             <tr>
-                <td className="term-label">Proposed Investment</td>
-                <td>NPR {{ terms.investment_amount|default:"[To be finalized]" }}</td>
-            </tr>
-            <tr>
-                <td className="term-label">Post-Money Valuation</td>
-                <td>NPR {{ terms.valuation|default:"[To be finalized]" }}</td>
-            </tr>
-            <tr>
-                <td className="term-label">Target Ownership %</td>
-                <td>{{ terms.ownership_pct|default:"[To be finalized]" }}%</td>
-            </tr>
-            <tr>
-                <td className="term-label">Instrument</td>
-                <td>{{ terms.instrument|default:"Equity Shares" }}</td>
+                <td style="padding-right: 15px; vertical-align: middle;">
+                    <svg width="48" height="48" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="8" y="8" width="84" height="14" rx="3" fill="#5B2FD4" />
+                        <rect x="8" y="8" width="14" height="84" rx="3" fill="#5B2FD4" />
+                        <rect x="26" y="60" width="28" height="28" rx="5" fill="#F59F01" />
+                    </svg>
+                </td>
+                <td style="line-height: 1; vertical-align: middle;">
+                    <div style="font-family: 'Helvetica', Arial, sans-serif; font-weight: 900; font-size: 18pt; color: #08001a; letter-spacing: -1px; margin-bottom: 2px;">FINLOGIC</div>
+                    <div style="font-family: 'Helvetica', Arial, sans-serif; font-weight: 900; font-size: 18pt; color: #08001a; letter-spacing: -1px; margin-bottom: 2px;">CAPITAL</div>
+                    <div style="font-family: 'Helvetica', Arial, sans-serif; font-weight: 600; font-size: 11pt; color: #666; letter-spacing: 3.5px; text-transform: uppercase;">LIMITED</div>
+                </td>
             </tr>
         </table>
     </div>
 
-    <div className="section-title">2. Custom Nuances & Strategic Alignment</div>
-    <div className="content">
-        {{ content|safe|default:"No specific nuances provided." }}
+    <div class="meta-block">
+        <div class="meta-row"><span class="meta-label">Date:</span> {{ date }}</div>
+        <div class="meta-row"><span class="meta-label">Ref:</span> LOI/{{ project.id|stringformat:".6s"|upper }}/2024</div>
+        <div class="meta-row" style="margin-top: 15px;">
+            <span class="meta-label">To:</span> <strong>The Board of Directors</strong>
+        </div>
+        <div class="meta-row"><span class="meta-label"></span> {{ project.legal_name }}</div>
+        <div class="meta-row"><span class="meta-label"></span> Registration No: {{ project.ocr_registration_number|default:"[Pending]" }}</div>
     </div>
 
-    <div className="section-title">3. Conditions Precedent</div>
-    <div className="content">
-        Final approval for this investment is subject to the following:
+    <div class="doc-title">Letter of Intent</div>
+
+    <div class="content">
+        Dear Members of the Board,
+        <br><br>
+        Finlogic Capital Limited ("Finlogic" or "we") is pleased to submit this non-binding Letter of Intent regarding a potential strategic investment in <strong>{{ project.legal_name }}</strong> (the "Company"). Following our preliminary analysis of the Company's market position and financial trajectory, we believe there is a significant opportunity to create value through a long-term partnership.
+    </div>
+
+    <div class="section-header">1. Indicative Investment Terms</div>
+    <div class="terms-card">
+        <table class="terms-table">
+            <tr>
+                <td class="term-label">Proposed Gross Investment</td>
+                <td class="term-value">NPR {{ terms.investment_amount|default:"[As Negotiated]" }}</td>
+            </tr>
+            <tr>
+                <td class="term-label">Implied Post-Money Valuation</td>
+                <td class="term-value">NPR {{ terms.valuation|default:"[As Negotiated]" }}</td>
+            </tr>
+            <tr>
+                <td class="term-label">Target Equity Ownership</td>
+                <td class="term-value">{{ terms.ownership_pct|default:"[As Negotiated]" }}%</td>
+            </tr>
+            <tr>
+                <td class="term-label">Investment Instrument</td>
+                <td class="term-value">{{ terms.instrument|default:"Equity Shares" }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section-header">2. Strategic Nuances & Governance</div>
+    <div class="content">
+        {{ content|linebreaksbr|default:"The investment is predicated on the strategic alignment between Finlogic's capital growth mandate and the Company's expansion objectives." }}
+    </div>
+
+    <div class="section-header">3. Pre-Conditions & Due Diligence</div>
+    <div class="content">
+        Any definitive commitment to invest will be subject to:
         <ul>
-            <li>Satisfactory completion of detailed Financial, Legal, and Operational Due Diligence.</li>
-            <li>Approval by the Finlogic Investment Committee (IC) in compliance with SEBON guidelines.</li>
-            <li>Execution of definitive legal agreements (Share Subscription and Shareholders' Agreement).</li>
+            <li>Satisfactory completion of Financial, Legal, and Operational Due Diligence (the "DD Period").</li>
+            <li>Final ratification by the Finlogic Investment Committee (IC).</li>
+            <li>Unconditional approval from SEBON and other relevant regulatory bodies in Nepal.</li>
+            <li>Negotiation and execution of a definitive Share Subscription and Shareholders' Agreement (SSHA).</li>
         </ul>
     </div>
 
-    <div className="section-title">4. Confidentiality & Exclusivity</div>
-    <div className="content">
-        Both parties agree to maintain strict confidentiality regarding the existence and terms of this LOI. Furthermore, the Company agrees to an exclusivity period of 45 days from the date of this letter to finalize the transaction.
+    <div class="section-header">4. Exclusivity & Confidentiality</div>
+    <div class="content">
+        In consideration of the resources Finlogic will commit to the DD Period, the Company agrees to a <strong>45-day exclusivity period</strong> from the date of this letter. Both parties agree to maintain strict confidentiality regarding the terms and existence of these discussions.
     </div>
 
-    <div className="signature-box">
-        <table style="width: 100%;">
+    <div class="signature-section">
+        <table class="sig-grid">
             <tr>
-                <td style="width: 50%;">
-                    <div className="signature-line">For Finlogic Capital</div>
-                    {{ gp_name }}<br>
-                    Investment Manager
+                <td class="sig-box">
+                    <div class="sig-line">For Finlogic Capital Limited</div>
+                    <div class="sig-sub">Authorized Signatory: {{ gp_name }}</div>
+                    <div class="sig-sub">Title: Investment Manager</div>
                 </td>
-                <td style="width: 50%;">
-                    <div className="signature-line">Acknowledged by {{ project.legal_name }}</div>
-                    Name:<br>
-                    Title:
+                <td style="width: 10%;"></td>
+                <td class="sig-box">
+                    <div class="sig-line">Accepted for {{ project.legal_name }}</div>
+                    <div class="sig-sub">Name: __________________________</div>
+                    <div class="sig-sub">Title: ___________________________</div>
                 </td>
             </tr>
         </table>
     </div>
 
-    <div className="footer">
-        Finlogic Capital is a regulated Private Equity and Venture Capital manager. This LOI is intended solely as an expression of interest and does not constitute a legally binding commitment to invest, except for the provisions of Confidentiality and Exclusivity.
+    <div class="footer">
+        Finlogic Capital Limited is licensed by the Securities Board of Nepal (SEBON) as a Specialized Investment Fund Manager. This letter constitutes an expression of serious interest and, with the exception of Section 4, does not create legally binding obligations for either party.
     </div>
 </body>
 </html>

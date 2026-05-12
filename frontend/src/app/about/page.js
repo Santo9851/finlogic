@@ -231,7 +231,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="bg-ls-primary text-ls-white min-h-screen">
+    <div className="bg-background text-foreground min-h-screen theme-transition">
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0 bg-abstract-gradient opacity-20 pointer-events-none" />
@@ -247,7 +247,7 @@ export default function AboutPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-ls-white/70 max-w-2xl mx-auto"
+            className="text-xl text-text-muted max-w-2xl mx-auto"
           >
             Bridging visionary thinking with disciplined, insight-driven action.
           </motion.p>
@@ -259,9 +259,9 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-16">
           <div>
             <h2 className="text-3xl font-bold mb-8 text-ls-compliment">Who We Are</h2>
-            <div className="space-y-6 text-lg text-ls-white/80 leading-relaxed">
+            <div className="space-y-6 text-lg text-text-muted leading-relaxed">
               <p>
-                Finlogic Capital Limited is a private equity firm founded on the belief that the best investments are those that combine visionary thinking with timeless wisdom. Our name reflects our approach: <span className="text-ls-white font-bold">Fin</span> for finance, <span className="text-ls-white font-bold">logic</span> for the disciplined, insight-driven process we apply to every decision.
+                Finlogic Capital Limited is a private equity firm founded on the belief that the best investments are those that combine visionary thinking with timeless wisdom. Our name reflects our approach: <span className="text-foreground font-bold">Fin</span> for finance, <span className="text-foreground font-bold">logic</span> for the disciplined, insight-driven process we apply to every decision.
               </p>
               <p>
                 We are headquartered in Kathmandu, Nepal, with a focus on emerging markets and cross-border opportunities. Our team brings together diverse backgrounds – finance, entrepreneurship, technology, and advisory – united by a shared philosophy: to invest beyond the obvious.
@@ -270,9 +270,9 @@ export default function AboutPage() {
           </div>
           <div>
             <h2 className="text-3xl font-bold mb-8 text-ls-compliment">Our Story</h2>
-            <div className="space-y-6 text-lg text-ls-white/80 leading-relaxed">
+            <div className="space-y-6 text-lg text-text-muted leading-relaxed">
               <p>
-                Finlogic Capital was born from a simple observation: the most successful investments are not just about numbers; they are about vision, relationships, and timing. Our founder, <span className="text-ls-white">Santosh Poudel</span>, spent years studying the patterns of successful businesses and the deeper principles that drive sustainable growth.
+                Finlogic Capital was born from a simple observation: the most successful investments are not just about numbers; they are about vision, relationships, and timing. Our founder, <span className="text-foreground font-bold">Santosh Poudel</span>, spent years studying the patterns of successful businesses and the deeper principles that drive sustainable growth.
               </p>
               <p>
                 Since our inception, we have remained true to that vision – backing exceptional entrepreneurs, uncovering hidden opportunities, and building lasting partnerships with our investors.
@@ -286,7 +286,7 @@ export default function AboutPage() {
       <section className="py-24 bg-ls-supporting/5">
         <div className="container mx-auto px-4 lg:px-8 max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-12 text-ls-compliment">Our Mission</h2>
-          <p className="text-3xl md:text-4xl font-light leading-snug text-ls-white italic">
+          <p className="text-3xl md:text-4xl font-light leading-snug text-foreground italic">
             "To generate exceptional, risk-adjusted returns for our investors by identifying and nurturing visionary businesses, while fostering trust, transparency, and positive impact in every community we touch."
           </p>
         </div>
@@ -307,7 +307,7 @@ export default function AboutPage() {
                   {v.icon}
                 </div>
                 <h3 className="text-xl font-bold mb-4">{v.title}</h3>
-                <p className="text-sm text-ls-white/60">{v.description}</p>
+                <p className="text-sm text-text-muted">{v.description}</p>
               </motion.div>
             ))}
           </div>
@@ -332,10 +332,10 @@ export default function AboutPage() {
                     alt={member.name}
                     className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-ls-primary/20 group-hover:bg-transparent transition-colors" />
+                  <div className="absolute inset-0 bg-background/20 group-hover:bg-transparent transition-colors" />
                 </div>
                 <h3 className="text-xl font-bold mb-1 group-hover:text-ls-compliment transition-colors">{member.name}</h3>
-                <p className="text-ls-white/50 text-sm font-medium uppercase tracking-widest">{member.role}</p>
+                <p className="text-text-muted text-sm font-medium uppercase tracking-widest">{member.role}</p>
               </motion.div>
             ))}
           </div>
@@ -346,10 +346,10 @@ export default function AboutPage() {
       <section className="py-24 bg-ls-supporting/5 text-center">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="text-3xl font-bold mb-12 text-ls-compliment">Advisory Board</h2>
-          <p className="text-ls-white/50 italic mb-8">Our advisors include distinguished leaders from technology, finance, and international developmental agencies across Nepal and beyond.</p>
+          <p className="text-text-muted italic mb-8">Our advisors include distinguished leaders from technology, finance, and international developmental agencies across Nepal and beyond.</p>
           <div className="flex flex-wrap justify-center gap-8 opacity-40">
             {["Mr. Badri Khanal", "Mr. Himal Aryal",].map(idx => (
-              <div key={idx} className="h-12 w-48 bg-ls-white/10 rounded flex items-center justify-center font-bold">{idx}</div>
+              <div key={idx} className="h-12 w-48 bg-foreground/10 rounded flex items-center justify-center font-bold">{idx}</div>
             ))}
           </div>
         </div>
@@ -359,8 +359,8 @@ export default function AboutPage() {
       <section className="py-16 text-center">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="text-3xl font-bold mb-8">Join Our Journey</h2>
-          <p className="text-ls-white/60 mb-10 max-w-xl mx-auto">We are always looking for talented individuals who share our passion for vision and wisdom.</p>
-          <button className="rounded-full border border-ls-compliment px-10 py-4 text-ls-compliment font-bold hover:bg-ls-compliment hover:text-ls-primary transition-all">
+          <p className="text-text-muted mb-10 max-w-xl mx-auto">We are always looking for talented individuals who share our passion for vision and wisdom.</p>
+          <button className="rounded-full border border-ls-compliment px-10 py-4 text-ls-compliment font-bold hover:bg-ls-compliment hover:text-ls-primary-fixed transition-all">
             See Current Openings
           </button>
         </div>
@@ -400,7 +400,7 @@ export default function AboutPage() {
                   <h3 className="text-3xl font-bold mb-2">{selectedMember.name}</h3>
                   <p className="text-ls-compliment font-semibold uppercase tracking-widest text-sm">{selectedMember.role}</p>
                 </div>
-                <div className="space-y-4 text-ls-white/70 leading-relaxed mb-10 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin">
+                <div className="space-y-4 text-text-muted leading-relaxed mb-10 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin">
                   {selectedMember.bioFull
                     ? selectedMember.bioFull.map((para, i) => (
                       <p key={i}>

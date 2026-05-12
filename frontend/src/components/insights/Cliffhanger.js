@@ -9,7 +9,7 @@ export default function Cliffhanger({ teaserBullets, title, seriesSlug, ctaType 
     <motion.div 
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative mt-12 p-8 md:p-12 rounded-[2.5rem] bg-[#0D0120] border border-[#F59F01]/20 overflow-hidden shadow-2xl"
+      className="relative mt-12 p-8 md:p-12 rounded-[2.5rem] bg-card border border-[#F59F01]/20 overflow-hidden shadow-2xl theme-transition"
     >
       {/* Decorative background elements */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-[#F59F01]/5 blur-[100px] rounded-full -mr-20 -mt-20" />
@@ -20,12 +20,12 @@ export default function Cliffhanger({ teaserBullets, title, seriesSlug, ctaType 
           <Lock className="text-[#F59F01]" size={28} />
         </div>
 
-        <h3 className="text-2xl md:text-3xl font-black text-white mb-4">
+        <h3 className="text-2xl md:text-3xl font-black text-foreground mb-4">
           Want to finish reading <br/>
           <span className="text-[#F59F01]">"{title}"</span>?
         </h3>
 
-        <p className="text-white/60 max-w-lg mb-10 leading-relaxed">
+        <p className="text-text-muted max-w-lg mb-10 leading-relaxed font-medium">
           This article is part of an exclusive series. Create a free account to unlock deeper insights and the remaining chapters.
         </p>
 
@@ -37,10 +37,10 @@ export default function Cliffhanger({ teaserBullets, title, seriesSlug, ctaType 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 * i }}
-                className="flex items-start gap-3 p-4 rounded-2xl bg-white/5 border border-white/5"
+                className="flex items-start gap-3 p-4 rounded-2xl bg-foreground/5 border border-border-theme"
               >
                 <CheckCircle2 size={18} className="text-[#F59F01] flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-white/80 font-medium leading-snug">{bullet}</span>
+                <span className="text-sm text-text-muted font-bold leading-snug">{bullet}</span>
               </motion.div>
             ))}
           </div>
@@ -65,7 +65,7 @@ export default function Cliffhanger({ teaserBullets, title, seriesSlug, ctaType 
           
           <Link 
             href="/auth/login"
-            className="px-10 py-4 rounded-full bg-white/5 border border-white/10 text-white font-bold text-sm hover:bg-white/10 transition-colors"
+            className="px-10 py-4 rounded-full bg-foreground/5 border border-border-theme text-foreground font-bold text-sm hover:bg-foreground/10 transition-colors"
           >
             Sign In
           </Link>

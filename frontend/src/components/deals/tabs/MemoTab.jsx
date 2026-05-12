@@ -12,19 +12,19 @@ export default function MemoTab({ deal, onGenerate, onSave, onFinalize, onUpload
 
   if (!memo && !isProcessing) {
     return (
-      <div className="py-20 text-center bg-white/5 border border-white/10 rounded-3xl space-y-6">
-        <div className="w-20 h-20 rounded-3xl bg-white/5 flex items-center justify-center text-[#F59F01]/20 mx-auto border border-white/5">
+      <div className="py-20 text-center bg-ls-primary/5 dark:bg-white/5 border border-ls-primary/10 dark:border-white/10 rounded-3xl space-y-6 theme-transition">
+        <div className="w-20 h-20 rounded-3xl bg-ls-primary/5 dark:bg-white/5 flex items-center justify-center text-[#F59F01]/20 mx-auto border border-ls-primary/5 dark:border-white/5">
           <FileText size={40} />
         </div>
         <div className="max-w-md mx-auto px-6">
-          <h3 className="text-white font-bold text-lg mb-2">Draft Investment Memo</h3>
-          <p className="text-white/40 text-sm mb-8 leading-relaxed">
+          <h3 className="text-ls-primary dark:text-white font-bold text-lg mb-2">Draft Investment Memo</h3>
+          <p className="text-ls-primary/40 dark:text-white/40 text-sm mb-8 leading-relaxed">
             Use Gemini to synthesize all project data into a professional 8-section investment committee memo.
           </p>
           <button
             onClick={onGenerate}
             disabled={isGenerating}
-            className="px-8 py-3 bg-[#F59F01] text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
+            className="px-8 py-3 bg-[#F59F01] text-ls-primary rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 disabled:opacity-50"
           >
             {isGenerating ? 'Generating Memo Draft...' : 'Generate with AI'}
           </button>
@@ -181,31 +181,31 @@ export default function MemoTab({ deal, onGenerate, onSave, onFinalize, onUpload
   };
 
   return (
-    <div className="space-y-8 relative">
+    <div className="space-y-8 relative theme-transition">
       {isProcessing && (
-        <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500 min-h-[500px]">
+        <div className="absolute inset-0 z-50 bg-ls-primary/60 dark:bg-black/60 backdrop-blur-sm rounded-3xl flex flex-col items-center justify-center gap-4 animate-in fade-in duration-500 min-h-[500px]">
           <div className="w-16 h-16 rounded-full border-4 border-[#F59F01]/20 border-t-[#F59F01] animate-spin" />
           <div className="text-center">
-            <p className="text-white font-black text-lg uppercase tracking-tight">AI is Drafting Memo</p>
-            <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Synthesizing 8 sections of analysis...</p>
+            <p className="text-ls-white font-black text-lg uppercase tracking-tight">AI is Drafting Memo</p>
+            <p className="text-ls-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Synthesizing 8 sections of analysis...</p>
           </div>
         </div>
       )}
 
       <div className={`grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 ${isProcessing ? 'opacity-20 pointer-events-none' : ''}`}>
         {/* Sidebar */}
-        <div className="space-y-4">
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-xl">
+        <div className="space-y-4 theme-transition">
+          <div className="bg-card border border-border-theme rounded-3xl p-6 shadow-xl theme-transition">
             <div className="flex items-center justify-between mb-6">
-              <h4 className="text-xs font-black text-white uppercase tracking-widest">Sections</h4>
-              <span className="text-[10px] font-bold text-white/20">v{memo?.version} {memo?.status}</span>
+              <h4 className="text-xs font-black text-ls-primary dark:text-white uppercase tracking-widest">Sections</h4>
+              <span className="text-[10px] font-bold text-text-muted">v{memo?.version} {memo?.status}</span>
             </div>
             <div className="space-y-1">
               {sections.map(s => (
                 <button
                   key={s.id}
                   onClick={() => setActiveSection(s.id)}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeSection === s.id ? 'bg-[#F59F01] text-black' : 'text-white/40 hover:bg-white/5 hover:text-white'}`}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-xs font-bold transition-all ${activeSection === s.id ? 'bg-[#F59F01] text-ls-primary' : 'text-ls-primary/40 dark:text-white/40 hover:bg-ls-primary/5 dark:hover:bg-white/5 hover:text-ls-primary dark:hover:text-white'}`}
                 >
                   {s.name}
                 </button>
@@ -213,26 +213,26 @@ export default function MemoTab({ deal, onGenerate, onSave, onFinalize, onUpload
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="bg-card border border-border-theme rounded-3xl p-6 shadow-xl space-y-4 theme-transition">
             <button
               onClick={handleExport}
-              className="w-full py-3 bg-white/5 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 bg-ls-primary/5 dark:bg-white/5 border border-border-theme text-ls-primary dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-ls-primary/10 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2"
             >
               <Download size={14} /> Export to PDF
             </button>
-
+ 
             {memo?.status === 'DRAFT' && (
-              <div className="space-y-3 pt-4 border-t border-white/5">
+              <div className="space-y-3 pt-4 border-t border-border-theme">
                 <button
                   onClick={onGenerate}
                   disabled={isGenerating}
-                  className="w-full py-3 bg-white/5 border border-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-ls-primary/5 dark:bg-white/5 border border-border-theme text-ls-primary dark:text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-ls-primary/10 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2"
                 >
                   <Sparkles size={14} className="text-[#F59F01]" /> {isGenerating ? 'Regenerating...' : 'Re-generate with AI'}
                 </button>
                 <button
                   onClick={() => onFinalize(memo?.id)}
-                  className="w-full py-3 bg-[#10b981] text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#10b981]/20"
+                  className="w-full py-3 bg-[#10b981] text-ls-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#10b981]/20"
                 >
                   Finalize Memo
                 </button>
@@ -240,9 +240,9 @@ export default function MemoTab({ deal, onGenerate, onSave, onFinalize, onUpload
             )}
 
             {(memo?.status === 'FINAL' || memo?.status === 'IC_SIGNED') && (
-              <div className="pt-4 border-t border-white/5 space-y-3">
+              <div className="pt-4 border-t border-ls-primary/5 dark:border-white/5 space-y-3">
                 <p className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">Regulatory Compliance</p>
-                <p className="text-white/40 text-[10px] leading-relaxed">
+                <p className="text-ls-primary/40 dark:text-white/40 text-[10px] leading-relaxed">
                   Upload the physically signed and stamped IC Memo to proceed to the Term Sheet stage.
                 </p>
 
@@ -267,7 +267,7 @@ export default function MemoTab({ deal, onGenerate, onSave, onFinalize, onUpload
                     />
                     <label
                       htmlFor="signed-memo-upload"
-                      className="w-full py-3 bg-[#F59F01] text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 cursor-pointer flex items-center justify-center gap-2"
+                      className="w-full py-3 bg-[#F59F01] text-ls-primary rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20 cursor-pointer flex items-center justify-center gap-2"
                     >
                       <Upload size={14} /> {isUploading ? 'Uploading...' : 'Upload Signed Copy'}
                     </label>
@@ -279,16 +279,16 @@ export default function MemoTab({ deal, onGenerate, onSave, onFinalize, onUpload
         </div>
 
         {/* Editor Area */}
-        <div className="lg:col-span-3 space-y-6">
-          <div id="memo-content" className="bg-white/5 border border-white/10 rounded-3xl p-10 shadow-2xl min-h-[600px]">
-            <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6">
+        <div className="lg:col-span-3 space-y-6 theme-transition">
+          <div id="memo-content" className="bg-card border border-border-theme rounded-3xl p-10 shadow-2xl min-h-[600px] theme-transition">
+            <div className="flex items-center justify-between mb-10 border-b border-border-theme pb-6">
               <div>
-                <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Investment Memo</h2>
-                <p className="text-white/40 text-sm mt-1">{deal.legal_name} • Internal Confidential</p>
+                <h2 className="text-3xl font-black text-ls-primary dark:text-white uppercase tracking-tighter">Investment Memo</h2>
+                <p className="text-text-muted text-sm mt-1">{deal.legal_name} • Internal Confidential</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] font-black text-[#F59F01] uppercase tracking-widest">Version {memo?.version}</p>
-                <p className="text-[10px] text-white/20 mt-1 font-mono">{memo?.created_at ? format(new Date(memo?.created_at), 'yyyy-MM-dd') : ''}</p>
+                <p className="text-[10px] text-text-muted mt-1 font-mono">{memo?.created_at ? format(new Date(memo?.created_at), 'yyyy-MM-dd') : ''}</p>
               </div>
             </div>
 
@@ -331,9 +331,9 @@ function MemoSection({ title, content, onSave, isReadOnly }) {
   }, [isReadOnly, editor]);
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <h3 className="text-xl font-black text-white uppercase tracking-tight border-l-4 border-[#F59F01] pl-4">{title}</h3>
-      <div className={`prose prose-invert max-w-none bg-white/5 border border-white/10 rounded-2xl p-6 focus-within:border-[#F59F01]/50 transition-all ${isReadOnly ? 'opacity-80 pointer-events-none' : ''}`}>
+    <div className="space-y-6 animate-in fade-in duration-500 theme-transition">
+      <h3 className="text-xl font-black text-ls-primary dark:text-white uppercase tracking-tight border-l-4 border-[#F59F01] pl-4">{title}</h3>
+      <div className={`prose prose-slate dark:prose-invert max-w-none bg-ls-primary/5 dark:bg-white/5 border border-border-theme rounded-2xl p-6 focus-within:border-[#F59F01]/50 transition-all ${isReadOnly ? 'opacity-80 pointer-events-none' : ''}`}>
         <EditorContent editor={editor} />
       </div>
     </div>

@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * (gp)/fund-admin/documents/page.jsx
+ * GP-specific Fund Document Management (SEBON Compliant).
+ */
 import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
@@ -16,11 +20,15 @@ import {
   ChevronRight,
   MoreVertical,
   X,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  Building2,
+  Lock
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
 import FileUploader from '@/components/portal/FileUploader';
+import { useTheme } from 'next-themes';
 
 const DOC_TYPES = [
   { value: 'LPA', label: 'Limited Partnership Agreement' },
@@ -35,6 +43,8 @@ const DOC_TYPES = [
 ];
 
 export default function GPFundDocumentsPage() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [funds, setFunds] = useState([]);
   const [selectedFundId, setSelectedFundId] = useState('');
   const [documents, setDocuments] = useState([]);
@@ -143,12 +153,17 @@ export default function GPFundDocumentsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 theme-transition animate-in fade-in duration-700">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Fund Document Management</h1>
-          <p className="text-white/50 mt-1">Upload and manage SEBON-compliant reporting for LPs.</p>
+        <div className="flex items-center gap-6">
+          <div className="w-14 h-14 rounded-2xl bg-ls-compliment/10 flex items-center justify-center text-ls-compliment shadow-inner">
+            <Building2 size={32} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Fund Repository</h1>
+            <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-1">SEBON-Compliant Institutional Document Control</p>
+          </div>
         </div>
         
         <div className="flex items-center gap-4">
@@ -156,126 +171,141 @@ export default function GPFundDocumentsPage() {
             <select 
               value={selectedFundId}
               onChange={(e) => setSelectedFundId(e.target.value)}
-              className="bg-[#08001a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#F59F01]/50 outline-none appearance-none pr-10 min-w-[200px]"
+              className="bg-foreground/[0.03] border border-border-theme rounded-xl px-6 py-3 text-foreground text-[10px] font-black uppercase tracking-widest focus:border-ls-compliment/40 outline-none appearance-none pr-12 min-w-[240px] shadow-inner theme-transition"
             >
               {funds.map(f => (
-                <option key={f.id} value={f.id}>{f.name}</option>
+                <option key={f.id} value={f.id} className="bg-background">{f.name}</option>
               ))}
             </select>
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">
-              <MoreVertical size={14} />
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted/30">
+              <ChevronRight size={16} className="rotate-90" />
             </div>
           </div>
           
           <button 
             onClick={() => setShowUploadModal(true)}
-            className="flex items-center gap-2 bg-[#F59F01] hover:bg-[#F59F01]/90 text-black px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-[#F59F01]/20 active:scale-95"
+            className={`flex items-center gap-3 ${isDark ? 'bg-ls-compliment' : 'bg-ls-secondary'} text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95`}
           >
-            <Upload size={18} />
-            Upload Document
+            <Plus size={18} />
+            Ingest Document
           </button>
         </div>
       </div>
 
-      {/* Stats / Quick Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#08001a] border border-white/8 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[#F59F01]/5 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-[#F59F01]/10" />
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Total Documents</p>
-          <p className="text-3xl font-bold text-white">{documents.length}</p>
-        </div>
-        <div className="bg-[#08001a] border border-white/8 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-emerald-500/10" />
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Published</p>
-          <p className="text-3xl font-bold text-emerald-400">{documents.filter(d => d.is_published).length}</p>
-        </div>
-        <div className="bg-[#08001a] border border-white/8 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-amber-500/10" />
-          <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Pending Acknowledgment</p>
-          <p className="text-3xl font-bold text-amber-400">{documents.filter(d => d.requires_acknowledgment).length}</p>
-        </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {[
+          { label: 'Total Records', value: documents.length, icon: FileText, color: 'text-ls-compliment', bg: 'bg-ls-compliment/10' },
+          { label: 'Active Distribution', value: documents.filter(d => d.is_published).length, icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+          { label: 'Pending Signature', value: documents.filter(d => d.requires_acknowledgment).length, icon: Lock, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+        ].map((stat, i) => (
+          <div key={i} className="bg-card border border-border-theme rounded-[2.5rem] p-10 hover:bg-foreground/[0.02] transition-all group shadow-xl relative overflow-hidden theme-transition">
+            <div className={`absolute top-0 right-0 w-32 h-32 ${stat.bg} blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none opacity-50`} />
+            <div className="flex items-center justify-between mb-8 relative z-10">
+              <div className={`${stat.bg} ${stat.color} p-4 rounded-2xl shadow-inner`}>
+                <stat.icon size={24} />
+              </div>
+              <ChevronRight size={20} className="text-text-muted/10 group-hover:text-text-muted/40 transition-colors" />
+            </div>
+            <p className="text-text-muted/40 text-[10px] font-black uppercase tracking-[0.3em] mb-2 relative z-10">{stat.label}</p>
+            <p className="text-3xl font-black text-foreground uppercase tracking-tighter relative z-10">{stat.value}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Main Table */}
-      <div className="bg-[#08001a] border border-white/8 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="px-6 py-5 border-b border-white/8 flex items-center justify-between bg-white/2">
-          <h3 className="font-semibold text-white">Fund Repository</h3>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={14} />
-              <input 
-                type="text" 
-                placeholder="Search documents..." 
-                className="bg-white/5 border border-white/10 rounded-lg py-1.5 pl-9 pr-4 text-white text-xs focus:ring-1 focus:ring-[#F59F01]/50 outline-none w-48"
-              />
-            </div>
+      {/* Table Section */}
+      <div className="bg-card border border-border-theme rounded-[3rem] overflow-hidden shadow-2xl theme-transition">
+        <div className="px-10 py-8 border-b border-border-theme flex flex-col md:flex-row md:items-center justify-between gap-6 bg-foreground/[0.01]">
+          <div>
+            <h3 className="font-black text-foreground uppercase tracking-widest text-sm">Asset Registry</h3>
+            <p className="text-[9px] text-text-muted font-black uppercase tracking-[0.2em] mt-1">Institutional Grade Document Ledger</p>
+          </div>
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted/20 group-focus-within:text-ls-compliment transition-colors" size={16} />
+            <input 
+              type="text" 
+              placeholder="Query Repository..." 
+              className="bg-foreground/[0.03] border border-border-theme rounded-xl py-3 pl-12 pr-6 text-foreground text-xs focus:border-ls-compliment/40 outline-none w-full md:w-72 shadow-inner font-medium"
+            />
           </div>
         </div>
         
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-white/2 border-b border-white/8">
-                <th className="px-6 py-4 text-[10px] font-bold text-white/30 uppercase tracking-widest">Document</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-white/30 uppercase tracking-widest">Type</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-white/30 uppercase tracking-widest">Date</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-white/30 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-white/30 uppercase tracking-widest text-right">Actions</th>
+              <tr className="bg-foreground/[0.01] border-b border-border-theme">
+                <th className="px-10 py-6 text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em]">Document Specification</th>
+                <th className="px-10 py-6 text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em]">Taxonomy</th>
+                <th className="px-10 py-6 text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em]">Temporal Index</th>
+                <th className="px-10 py-6 text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em]">Visibility</th>
+                <th className="px-10 py-6 text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em] text-right">Protocol</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-border-theme/50">
               {loading ? (
-                <tr><td colSpan={5} className="text-center py-20 text-white/30">Loading repository...</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-10 py-32 text-center">
+                    <Loader2 className="w-10 h-10 text-ls-compliment animate-spin mx-auto mb-6" />
+                    <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Syncing Secure Vault...</p>
+                  </td>
+                </tr>
               ) : documents.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-20 text-white/30">No documents found for this fund.</td></tr>
+                <tr>
+                  <td colSpan={5} className="px-10 py-32 text-center">
+                    <div className="w-20 h-20 bg-foreground/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-border-theme shadow-inner">
+                      <AlertCircle className="text-text-muted/10" size={40} />
+                    </div>
+                    <p className="text-text-muted font-black uppercase tracking-widest text-xs">Repository Empty</p>
+                    <p className="text-text-muted/20 text-[10px] uppercase font-black tracking-[0.3em] mt-2">Initialize the fund vehicle by uploading relevant LPA or PPM data</p>
+                  </td>
+                </tr>
               ) : (
                 documents.map(doc => (
-                  <tr key={doc.id} className="hover:bg-white/2 transition-colors group">
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#F59F01] transition-colors">
-                          <FileText size={20} />
+                  <tr key={doc.id} className="hover:bg-foreground/[0.01] transition-all group">
+                    <td className="px-10 py-7">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-foreground/5 flex items-center justify-center text-text-muted/20 group-hover:text-ls-compliment transition-all shadow-inner">
+                          <FileText size={24} />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-white group-hover:text-[#F59F01] transition-colors">{doc.title}</p>
-                          <p className="text-xs text-white/30 truncate max-w-[200px]">{doc.file_name}</p>
+                          <p className="text-sm font-black text-foreground uppercase tracking-tight group-hover:text-ls-compliment transition-all">{doc.title}</p>
+                          <p className="text-[10px] text-text-muted/40 font-black uppercase tracking-widest mt-1 font-mono truncate max-w-[240px]">{doc.file_name}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <span className="px-2.5 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-bold text-white/50 uppercase tracking-wider">
+                    <td className="px-10 py-7">
+                      <span className="px-4 py-1.5 bg-foreground/5 border border-border-theme rounded-full text-[9px] font-black text-text-muted/60 uppercase tracking-widest shadow-inner">
                         {doc.document_type_display}
                       </span>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-white/70">{new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                        <span className="text-[10px] text-white/20">by {doc.uploaded_by_detail?.first_name}</span>
+                    <td className="px-10 py-7 font-mono text-[10px] text-text-muted/40">
+                      <div className="flex flex-col gap-1">
+                        <span className="flex items-center gap-2"><Clock size={12} className="opacity-20" /> {new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                        <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-ls-compliment/40' : 'text-ls-secondary/40'}`}>BY: {doc.uploaded_by_detail?.first_name}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-5">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${doc.is_published ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-white/20'}`} />
-                        <span className={`text-xs font-medium ${doc.is_published ? 'text-emerald-400' : 'text-white/30'}`}>
-                          {doc.is_published ? 'Published' : 'Draft'}
+                    <td className="px-10 py-7">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2.5 h-2.5 rounded-full shadow-inner ${doc.is_published ? 'bg-emerald-500 shadow-emerald-500/50' : 'bg-foreground/10'}`} />
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${doc.is_published ? 'text-emerald-500' : 'text-text-muted/30'}`}>
+                          {doc.is_published ? 'Public' : 'Encrypted Draft'}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="px-10 py-7 text-right">
+                      <div className="flex items-center justify-end gap-3">
                         <button 
                           onClick={() => handlePublishToggle(doc.id, doc.is_published)}
-                          className={`p-2 rounded-lg transition-colors ${doc.is_published ? 'text-amber-400 hover:bg-amber-400/10' : 'text-emerald-400 hover:bg-emerald-400/10'}`}
+                          className={`p-3 rounded-xl transition-all active:scale-95 border border-transparent shadow-sm hover:shadow-lg ${doc.is_published ? 'text-amber-500 hover:bg-amber-500/5 hover:border-amber-500/20' : 'text-emerald-500 hover:bg-emerald-500/5 hover:border-emerald-500/20'}`}
                           title={doc.is_published ? 'Unpublish' : 'Publish'}
                         >
-                          {doc.is_published ? <Clock size={16} /> : <CheckCircle size={16} />}
+                          {doc.is_published ? <Clock size={18} /> : <CheckCircle size={18} />}
                         </button>
                         <button 
                           onClick={() => handleDelete(doc.id)}
-                          className="p-2 text-rose-400 hover:bg-rose-400/10 rounded-lg transition-colors"
-                          title="Delete"
+                          className="p-3 text-rose-500 hover:bg-rose-500/5 hover:border-rose-500/20 border border-transparent rounded-xl transition-all active:scale-95 shadow-sm hover:shadow-lg"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -289,87 +319,87 @@ export default function GPFundDocumentsPage() {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#08001a] border border-white/10 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl relative">
-            <button 
-              onClick={() => setShowUploadModal(false)}
-              className="absolute top-6 right-6 text-white/40 hover:text-white transition-colors"
-            >
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 md:p-12 bg-background/90 backdrop-blur-3xl animate-in fade-in duration-500">
+          <div className="bg-card border border-border-theme w-full max-w-4xl rounded-[3rem] p-12 relative shadow-[0_48px_96px_-24px_rgba(0,0,0,0.5)] theme-transition overflow-y-auto max-h-[90vh]">
+            <button onClick={() => setShowUploadModal(false)} className="absolute top-8 right-8 p-3 bg-foreground/5 rounded-2xl text-text-muted hover:text-foreground transition-all active:scale-95">
               <X size={24} />
             </button>
             
-            <div className="p-8">
-              <h2 className="text-2xl font-bold text-white mb-6">Upload Fund Document</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 ml-1">Title</label>
+            <div className="mb-12">
+              <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">Ingest Fund Document</h2>
+              <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-2">Initialize cryptographic storage for institutional reporting</p>
+            </div>
+
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em] mb-1 px-1">Institutional Title</label>
                     <input 
                       type="text" 
                       value={newDoc.title}
                       onChange={(e) => setNewDoc({...newDoc, title: e.target.value})}
                       placeholder="e.g. Q4 2025 Progress Report"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-[#F59F01]/50 outline-none"
+                      className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl px-6 py-4 text-foreground text-sm focus:border-ls-compliment/40 outline-none shadow-inner font-medium theme-transition"
                     />
                   </div>
                   
-                  <div>
-                    <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 ml-1">Document Type</label>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em] mb-1 px-1">Taxonomy Class</label>
                     <select 
                       value={newDoc.document_type}
                       onChange={(e) => setNewDoc({...newDoc, document_type: e.target.value})}
-                      className="w-full bg-[#08001a] border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#F59F01]/40 transition-all appearance-none"
+                      className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl px-6 py-4 text-foreground text-sm outline-none focus:border-ls-compliment/40 transition-all shadow-inner font-medium appearance-none"
                     >
                       {DOC_TYPES.map(t => (
-                        <option key={t.value} value={t.value} className="bg-[#08001a] text-white">
+                        <option key={t.value} value={t.value} className="bg-background">
                           {t.label}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="flex items-center gap-4 p-6 bg-foreground/[0.03] rounded-[2rem] border border-border-theme shadow-inner group">
                     <input 
                       type="checkbox" 
                       id="requires_ack"
                       checked={newDoc.requires_acknowledgment}
                       onChange={(e) => setNewDoc({...newDoc, requires_acknowledgment: e.target.checked})}
-                      className="w-4 h-4 accent-[#F59F01]"
+                      className={`w-5 h-5 rounded border-border-theme text-ls-compliment focus:ring-ls-compliment/40 cursor-pointer`}
                     />
-                    <label htmlFor="requires_ack" className="text-sm text-white/80 cursor-pointer">Requires LP Acknowledgment</label>
+                    <label htmlFor="requires_ack" className="text-[10px] font-black uppercase tracking-widest text-text-muted/80 cursor-pointer select-none">LP Digital Acknowledgment Protocol</label>
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 ml-1">Description (Optional)</label>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-text-muted/40 uppercase tracking-[0.3em] mb-1 px-1">Institutional Context (Optional)</label>
                     <textarea 
                       value={newDoc.description}
                       onChange={(e) => setNewDoc({...newDoc, description: e.target.value})}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:ring-2 focus:ring-[#F59F01]/50 outline-none h-24 resize-none"
+                      className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl px-6 py-4 text-foreground text-sm focus:border-ls-compliment/40 outline-none h-[12.5rem] resize-none shadow-inner font-medium theme-transition"
                       placeholder="Context for LPs..."
                     />
                   </div>
 
                   {newDoc.document_type === 'CAPITAL_CALL' && (
-                    <div className="p-4 bg-[#F59F01]/5 rounded-2xl border border-[#F59F01]/20 space-y-3 animate-in slide-in-from-top-2">
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#F59F01]/60 uppercase tracking-widest mb-1">Total Call Amount (NPR)</label>
+                    <div className="p-8 bg-ls-compliment/5 rounded-[2.5rem] border border-ls-compliment/20 space-y-6 animate-in slide-in-from-right-4 shadow-xl">
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-ls-compliment uppercase tracking-[0.2em] mb-1">Notional Call Amount (NPR)</label>
                         <input 
                           type="number" 
                           value={newDoc.capital_call_amount}
                           onChange={(e) => setNewDoc({...newDoc, capital_call_amount: e.target.value})}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                          className="w-full bg-background border border-ls-compliment/20 rounded-xl px-5 py-3 text-foreground text-sm outline-none focus:border-ls-compliment shadow-inner"
                         />
                       </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#F59F01]/60 uppercase tracking-widest mb-1">Due Date</label>
+                      <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-ls-compliment uppercase tracking-[0.2em] mb-1">Maturity Date</label>
                         <input 
                           type="date" 
                           value={newDoc.capital_call_due_date}
                           onChange={(e) => setNewDoc({...newDoc, capital_call_due_date: e.target.value})}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm outline-none"
+                          className="w-full bg-background border border-ls-compliment/20 rounded-xl px-5 py-3 text-foreground text-sm outline-none focus:border-ls-compliment shadow-inner"
                         />
                       </div>
                     </div>
@@ -377,7 +407,7 @@ export default function GPFundDocumentsPage() {
                 </div>
               </div>
 
-              <div className="bg-white/2 border border-white/5 rounded-2xl p-6">
+              <div className="bg-foreground/[0.03] border border-border-theme rounded-[3rem] p-10 shadow-inner">
                 <FileUploader 
                   fundId={selectedFundId}
                   hideCategory={true}
@@ -385,14 +415,17 @@ export default function GPFundDocumentsPage() {
                 />
               </div>
               
-              <div className="mt-8 flex items-center justify-between text-white/30 text-xs">
-                <div className="flex items-center gap-2">
-                  <AlertCircle size={14} />
-                  <span>Max file size: 50MB (PDF, DOCX, XLSX)</span>
+              <div className="flex flex-col md:flex-row items-center justify-between text-text-muted/40 text-[9px] font-black uppercase tracking-[0.2em] gap-4">
+                <div className="flex items-center gap-3">
+                  <Lock size={14} className="text-emerald-500" />
+                  <span>Encrypted Storage Protocol Active (B2 Cloud)</span>
                 </div>
-                <span>Files are encrypted at rest on B2 Cloud</span>
+                <div className="flex items-center gap-3">
+                  <AlertCircle size={14} />
+                  <span>Max Payload: 50MB (PDF, XLSX, DOCX)</span>
+                </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

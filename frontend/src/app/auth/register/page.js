@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Loader2, Mail, Lock, User, Phone, Briefcase, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 import FinlogicLogo from '@/components/FinlogicLogo';
+import { useTheme } from 'next-themes';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -27,8 +28,11 @@ const registerSchema = z.object({
 export default function RegisterPage() {
   const { register: registerUser } = useAuth();
   const router = useRouter();
+  const { theme, resolvedTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRole, setSelectedRole] = useState('');
+
+  const isDark = resolvedTheme === 'dark';
 
   const {
     register,
@@ -76,19 +80,19 @@ export default function RegisterPage() {
     setValue('role', role, { shouldValidate: true });
   };
 
-  const inputClass = "block w-full pl-10 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors";
+  const inputClass = "block w-full pl-10 pr-3 py-2.5 bg-foreground/5 border border-border-theme rounded-xl text-foreground placeholder-text-muted/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors theme-transition";
 
   return (
-    <div className="min-h-screen bg-abstract-gradient flex flex-col items-center justify-center p-4 py-12">
+    <div className="min-h-screen bg-abstract-gradient flex flex-col items-center justify-center p-4 py-12 theme-transition">
       <div className="w-full max-w-lg">
 
         {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block mb-6 hover:scale-105 transition-transform">
-            <FinlogicLogo size={44} variant="full" darkBg={true} />
+            <FinlogicLogo size={44} variant="full" darkBg={isDark} />
           </Link>
-          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-white/60">Join the Finlogic Capital platform</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Create Account</h1>
+          <p className="text-text-muted">Join the Finlogic Capital platform</p>
         </div>
 
         {/* Role Selector */}
@@ -96,111 +100,111 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={() => handleRoleSelect('entrepreneur')}
-            className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all ${
+            className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all theme-transition ${
               selectedRole === 'entrepreneur'
                 ? 'border-[#F59F01] bg-[#F59F01]/10 shadow-lg shadow-[#F59F01]/10'
-                : 'border-white/10 bg-white/5 hover:border-white/30'
+                : 'border-border-theme bg-card hover:border-[#F59F01]/30'
             }`}
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedRole === 'entrepreneur' ? 'bg-[#F59F01]/20' : 'bg-white/5'}`}>
-              <Briefcase size={22} className={selectedRole === 'entrepreneur' ? 'text-[#F59F01]' : 'text-white/40'} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedRole === 'entrepreneur' ? 'bg-[#F59F01]/20' : 'bg-foreground/5'}`}>
+              <Briefcase size={22} className={selectedRole === 'entrepreneur' ? 'text-[#F59F01]' : 'text-text-muted'} />
             </div>
             <div className="text-center">
-              <p className={`font-semibold ${selectedRole === 'entrepreneur' ? 'text-white' : 'text-white/60'}`}>Entrepreneur</p>
-              <p className="text-xs text-white/40 mt-0.5">Submit projects for funding</p>
+              <p className={`font-semibold ${selectedRole === 'entrepreneur' ? 'text-[#F59F01]' : 'text-text-muted'}`}>Entrepreneur</p>
+              <p className="text-xs text-text-muted mt-0.5">Submit projects for funding</p>
             </div>
           </button>
           <button
             type="button"
             onClick={() => handleRoleSelect('investor')}
-            className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all ${
+            className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all theme-transition ${
               selectedRole === 'investor'
                 ? 'border-[#F59F01] bg-[#F59F01]/10 shadow-lg shadow-[#F59F01]/10'
-                : 'border-white/10 bg-white/5 hover:border-white/30'
+                : 'border-border-theme bg-card hover:border-[#F59F01]/30'
             }`}
           >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedRole === 'investor' ? 'bg-[#F59F01]/20' : 'bg-white/5'}`}>
-              <TrendingUp size={22} className={selectedRole === 'investor' ? 'text-[#F59F01]' : 'text-white/40'} />
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedRole === 'investor' ? 'bg-[#F59F01]/20' : 'bg-foreground/5'}`}>
+              <TrendingUp size={22} className={selectedRole === 'investor' ? 'text-[#F59F01]' : 'text-text-muted'} />
             </div>
             <div className="text-center">
-              <p className={`font-semibold ${selectedRole === 'investor' ? 'text-white' : 'text-white/60'}`}>Investor</p>
-              <p className="text-xs text-white/40 mt-0.5">Discover vetted opportunities</p>
+              <p className={`font-semibold ${selectedRole === 'investor' ? 'text-[#F59F01]' : 'text-text-muted'}`}>Investor</p>
+              <p className="text-xs text-text-muted mt-0.5">Discover vetted opportunities</p>
             </div>
           </button>
         </div>
-        {errors.role && <p className="text-sm text-red-400 text-center -mt-3 mb-4">{errors.role.message}</p>}
+        {errors.role && <p className="text-sm text-red-500 dark:text-red-400 text-center -mt-3 mb-4">{errors.role.message}</p>}
 
         {/* Form Card */}
-        <div className="glass-card rounded-2xl p-8 relative overflow-hidden">
+        <div className="glass-card rounded-2xl p-8 relative overflow-hidden theme-transition">
           <div className="absolute top-0 right-0 w-40 h-40 bg-[#F59F01]/5 rounded-full blur-3xl" />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative z-10">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">First Name</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">First Name</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40"><User size={16}/></div>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted"><User size={16}/></div>
                   <input {...register('first_name')} placeholder="John" className={inputClass} />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">Last Name</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Last Name</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40"><User size={16}/></div>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted"><User size={16}/></div>
                   <input {...register('last_name')} placeholder="Doe" className={inputClass} />
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">Email Address</label>
+              <label className="block text-sm font-medium text-text-muted mb-1.5">Email Address</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40"><Mail size={16}/></div>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted"><Mail size={16}/></div>
                 <input {...register('email')} type="email" placeholder="you@example.com" className={inputClass} />
               </div>
-              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+              {errors.email && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white/80 mb-1.5">Phone (Optional)</label>
+              <label className="block text-sm font-medium text-text-muted mb-1.5">Phone (Optional)</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40"><Phone size={16}/></div>
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted"><Phone size={16}/></div>
                 <input {...register('phone')} type="tel" placeholder="+977 98XXXXXXXX" className={inputClass} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">Password</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Password</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40"><Lock size={16}/></div>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted"><Lock size={16}/></div>
                   <input {...register('password')} type="password" placeholder="••••••••" className={inputClass} />
                 </div>
-                {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+                {errors.password && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.password.message}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-white/80 mb-1.5">Confirm Password</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Confirm Password</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40"><Lock size={16}/></div>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted"><Lock size={16}/></div>
                   <input {...register('password_confirm')} type="password" placeholder="••••••••" className={inputClass} />
                 </div>
-                {errors.password_confirm && <p className="mt-1 text-xs text-red-400">{errors.password_confirm.message}</p>}
+                {errors.password_confirm && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.password_confirm.message}</p>}
               </div>
             </div>
 
             <button
               type="submit"
               disabled={isLoading || !selectedRole}
-              className="w-full flex justify-center py-2.5 px-4 rounded-xl shadow-sm text-sm font-semibold text-[#100226] bg-[#F59F01] hover:bg-[#F59F01]/90 hover:shadow-lg hover:shadow-[#F59F01]/20 focus:outline-none focus:ring-2 focus:ring-[#F59F01] disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-2"
+              className="w-full flex justify-center py-2.5 px-4 rounded-xl shadow-sm text-sm font-semibold text-ls-primary-fixed bg-[#F59F01] hover:bg-[#F59F01]/90 hover:shadow-lg hover:shadow-[#F59F01]/20 focus:outline-none focus:ring-2 focus:ring-[#F59F01] disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-2"
             >
               {isLoading ? <><Loader2 className="animate-spin mr-2 h-4 w-4" />Creating Account...</> : 'Create Account'}
             </button>
           </form>
 
           <div className="mt-6 text-center relative z-10">
-            <p className="text-sm text-white/60">
+            <p className="text-sm text-text-muted">
               Already have an account?{' '}
-              <Link href="/auth/login" className="font-semibold text-white hover:text-[#F59F01] transition-colors">
+              <Link href="/auth/login" className="font-semibold text-foreground hover:text-[#F59F01] transition-colors">
                 Sign in
               </Link>
             </p>
