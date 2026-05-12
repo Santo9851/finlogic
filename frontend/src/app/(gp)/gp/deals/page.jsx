@@ -87,7 +87,20 @@ export default function GPDealsKanbanPage() {
     },
     onError: (err, variables, context) => {
       queryClient.setQueryData(['deals', 'projects'], context.previous);
-      toast.error('Failed to update deal status.');
+      // Extract specific validation message from the backend response
+      const errData = err?.response?.data;
+      let message = 'Failed to update deal status.';
+      if (errData) {
+        if (errData.status) {
+          // DRF ValidationError with field-level errors: { status: ["..."] } or { status: "..." }
+          message = Array.isArray(errData.status) ? errData.status[0] : errData.status;
+        } else if (errData.detail) {
+          message = errData.detail;
+        } else if (typeof errData === 'string') {
+          message = errData;
+        }
+      }
+      toast.error(message);
     },
     onSuccess: () => {
       toast.success('Deal moved');

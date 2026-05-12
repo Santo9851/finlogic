@@ -1410,6 +1410,8 @@ def generate_ai_spa_draft(project_id, user_id=None):
 
         data = json.loads(clean)
 
+
+
         # 4. Get version
         latest = project.spa_drafts.order_by('-version').first()
         new_version = (latest.version + 1) if latest else 1

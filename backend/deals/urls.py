@@ -119,11 +119,15 @@ from .views import (
     GPTermSheetDetailView,
     GPSPADraftListView,
     GPSPADraftDetailView,
+    GPUploadSignedSPAView,
+    GPDownloadSPAPDFView,
     # Phase 3 views
+
     EntrepreneurUploadSignedLOIView,
     GPCapitalCallBatchView,
     CapitalCallViewSet,
 )
+
 from .conversion_views import IssueLOIView, SuperadminFinalizeInvestmentView
 
 router = DefaultRouter()
@@ -384,10 +388,22 @@ urlpatterns = [
         name='gp-project-spa-drafts',
     ),
     path(
-        'deals/projects/<uuid:pk>/spa-draft-detail/',
+        'deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/',
         GPSPADraftDetailView.as_view(),
         name='gp-project-spa-draft-detail',
     ),
+    path(
+        'deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/upload-signed/',
+        GPUploadSignedSPAView.as_view(),
+        name='gp-project-spa-upload-signed',
+    ),
+    path(
+        'deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/download/',
+        GPDownloadSPAPDFView.as_view(),
+        name='gp-project-spa-download',
+    ),
+
+
     path(
         'deals/projects/<uuid:pk>/create-capital-calls/',
         GPCapitalCallBatchView.as_view(),

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Share Purchase Agreement - {{ project.legal_name }}</title>
+    <style>
+        @page {
+            margin: 1in;
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 9pt;
+                color: #666;
+            }
+            @bottom-left {
+                content: "Finlogic Capital - Share Purchase Agreement";
+                font-size: 9pt;
+                color: #666;
+            }
+        }
+        body {
+            font-family: 'Times New Roman', serif;
+            line-height: 1.5;
+            color: #08001a;
+            font-size: 11pt;
+            text-align: justify;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #F59F01;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        .logo {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 20pt;
+            font-weight: bold;
+            color: #08001a;
+            letter-spacing: -1px;
+        }
+        .logo span {
+            color: #F59F01;
+        }
+        .doc-title {
+            font-size: 22pt;
+            font-weight: bold;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .dated {
+            font-size: 10pt;
+            font-style: italic;
+            margin-top: 10px;
+            color: #666;
+        }
+        .section {
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+        .section-header {
+            font-weight: bold;
+            font-size: 13pt;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .section-number {
+            margin-right: 10px;
+        }
+        .clause-content {
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+        .signature-section {
+            margin-top: 60px;
+            page-break-inside: avoid;
+        }
+        .signature-grid {
+            width: 100%;
+            margin-top: 40px;
+        }
+        .signature-box {
+            width: 45%;
+            vertical-align: top;
+        }
+        .sig-line {
+            border-top: 1px solid #000;
+            margin-top: 50px;
+            padding-top: 5px;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 50px;
+            font-size: 8pt;
+            color: #999;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            text-align: center;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">FINLOGIC<span>CAPITAL</span></div>
+        <div class="doc-title">Share Purchase Agreement</div>
+        <div class="dated">Dated this {{ date|date:"jS" }} day of {{ date|date:"F, Y" }}</div>
+    </div>
+
+    <p style="margin-top: 40px;">
+        This <strong>SHARE PURCHASE AGREEMENT</strong> (the "Agreement") is entered into by and between:
+    </p>
+
+    <div class="section">
+        <div class="clause-content">
+            <strong>{{ project.legal_name }}</strong>, a company incorporated under the laws of Nepal, having its registered office at {{ project.location|default:"[Registered Address]" }} (hereinafter referred to as the <strong>"Seller"</strong>);
+        </div>
+        <p style="text-align: center; font-weight: bold; margin: 10px 0;">AND</p>
+        <div class="clause-content">
+            <strong>FINLOGIC CAPITAL PRIVATE EQUITY FUND I</strong>, a specialized investment fund licensed by SEBON, having its registered office at Kathmandu, Nepal (hereinafter referred to as the <strong>"Purchaser"</strong>).
+        </div>
+    </div>
+
+    {% for section in sections %}
+    <div class="section">
+        <div class="section-header">
+            <span class="section-number">{{ forloop.counter }}.</span> {{ section.label }}
+        </div>
+        <div class="clause-content">
+            {{ section.content }}
+        </div>
+    </div>
+    {% if forloop.counter == 3 or forloop.counter == 7 %}
+        <div class="page-break"></div>
+    {% endif %}
+    {% endfor %}
+
+
+    <div class="signature-section">
+        <h3 style="text-align: center; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 10px;">Execution</h3>
+        <p>IN WITNESS WHEREOF, the Parties have caused this Agreement to be executed by their duly authorized representatives on the date first written above.</p>
+        
+        <table class="signature-grid">
+            <tr>
+                <td class="signature-box">
+                    <p style="font-weight: bold;">For and on behalf of the SELLER:</p>
+                    <div class="sig-line">Name: {{ project.legal_name }}</div>
+                    <div style="margin-top: 10px;">By: ____________________</div>
+                    <div style="margin-top: 10px;">Title: ___________________</div>
+                </td>
+                <td style="width: 10%;"></td>
+                <td class="signature-box">
+                    <p style="font-weight: bold;">For and on behalf of the PURCHASER:</p>
+                    <div class="sig-line">Name: Finlogic Capital PE Fund I</div>
+                    <div style="margin-top: 10px;">By: ____________________</div>
+                    <div style="margin-top: 10px;">Title: Authorized Signatory</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        This document is a legally binding draft generated by Finlogic Capital. Confidential.
+    </div>
+</body>
+</html>

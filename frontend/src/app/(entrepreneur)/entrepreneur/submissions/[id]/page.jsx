@@ -219,7 +219,7 @@ export default function EntrepreneurSubmissionDetailPage() {
                         onClick={() => setShowUpload(true)}
                         className="w-full py-4 bg-foreground text-background text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-3 hover:scale-[1.02] shadow-xl"
                       >
-                        <Upload size={16} /> Upload Signed Contract
+                        <Upload size={16} /> Upload Signed LOI
                       </button>
                     )}
                  </div>
@@ -242,9 +242,10 @@ export default function EntrepreneurSubmissionDetailPage() {
             <FileUploader 
               projectId={deal.id} 
               category={deal.status === 'LOI_ISSUED' ? 'LOI_SIGNED' : 'SIGNED_CONTRACT'}
+              hideCategory={true}
               isEntrepreneur={true}
               isLocal={true}
-              uploadUrl={`/entrepreneur/submissions/${deal.id}/upload-local/`}
+              uploadUrl={deal.status === 'LOI_ISSUED' ? `/entrepreneur/submissions/${deal.id}/upload-signed-loi/` : `/entrepreneur/submissions/${deal.id}/upload-local/`}
               onSuccess={() => {
                 setShowUpload(false);
                 toast.success(deal.status === 'LOI_ISSUED' ? "Signed LOI uploaded successfully" : "Contract uploaded successfully");

@@ -3339,7 +3339,7 @@ class GPSPADraftListView(APIView):
 class GPSPADraftDetailView(APIView):
     """
     GET   /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/
-    PATCH /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/   - Override sections
+    PATCH /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/
     """
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
 
@@ -3352,36 +3352,152 @@ class GPSPADraftDetailView(APIView):
         project = get_deal_for_user(self.request, pk=pk)
         spa = get_object_or_404(SPADraft, pk=spa_id, project=project)
 
-        overrides = request.data.get('sections', {})
+        section_key = request.data.get('section_key')
+        new_content = request.data.get('new_content')
         remarks = request.data.get('remarks', '')
         new_status = request.data.get('status')
 
-        if overrides:
-            old_sections = dict(spa.sections)
-            spa.sections.update(overrides)
+        if section_key and new_content is not None:
+            old_content = spa.sections.get(section_key, '')
+            spa.sections[section_key] = new_content
             spa.save()
 
-            for key, new_val in overrides.items():
-                ImmutableAuditEvent.objects.create(
-                    event_type='SPA_OVERRIDE',
-                    actor=request.user,
-                    object_id=project.id,
-                    object_repr=str(project),
-                    content_type_label='deals.SPADraft',
-                    payload={
-                        'spa_draft_id': str(spa.id),
-                        'section': key,
-                        'old_value': old_sections.get(key),
-                        'new_value': new_val,
-                        'remarks': remarks,
-                    }
-                )
+            # Audit log
+            ImmutableAuditEvent.objects.create(
+                event_type='SPA_CLAUSE_OVERRIDE',
+                actor=request.user,
+                object_id=project.id,
+                object_repr=str(project),
+                content_type_label='deals.SPADraft',
+                payload={
+                    'spa_draft_id': str(spa.id),
+                    'section': section_key,
+                    'old_value': old_content,
+                    'new_value': new_content,
+                    'remarks': remarks,
+                }
+            )
 
-        if new_status and new_status in dict(SPADraft._meta.get_field('status').choices):
+        if new_status:
             spa.status = new_status
             spa.save()
 
         return Response(SPADraftSerializer(spa).data)
+
+
+class GPUploadSignedSPAView(APIView):
+    """
+    POST /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/upload-signed/
+    Upload the signed physical SPA. Triggers status change to CAPITAL_CALLED.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+
+    def post(self, request, pk, spa_id):
+        project = get_deal_for_user(request, pk=pk)
+        spa = get_object_or_404(SPADraft, pk=spa_id, project=project)
+        
+        if spa.status != 'FINAL':
+            return Response({"detail": "SPA must be in FINAL status before uploading signed copy."}, status=400)
+            
+        file_obj = request.FILES.get('signed_spa')
+        if not file_obj:
+            return Response({"detail": "No file uploaded."}, status=400)
+            
+        # 1. Archive the document
+        import uuid
+        doc_name = f"SIGNED_SPA_{project.legal_name.replace(' ', '_')}_{uuid.uuid4().hex[:6]}.pdf"
+        doc = PEProjectDocument.objects.create(
+            project=project,
+            filename=doc_name,
+            file_size=file_obj.size,
+            mime_type=file_obj.content_type,
+            category='SPA',
+            uploaded_by=request.user,
+            local_file=file_obj,
+            is_confirmed=True
+        )
+        
+        # 2. Advance Project Status
+        project.status = PEProject.Status.CAPITAL_CALLED
+        project.save(update_fields=['status'])
+        
+        # 3. Audit
+        ImmutableAuditEvent.objects.create(
+            event_type='SPA_EXECUTED',
+            actor=request.user,
+            object_id=project.id,
+            object_repr=str(project),
+            content_type_label='deals.PEProject',
+            payload={
+                'spa_draft_id': str(spa.id),
+                'document_id': str(doc.id),
+                'new_status': 'CAPITAL_CALLED'
+            }
+        )
+        
+        return Response({
+            "status": "Signed SPA uploaded successfully. Project status promoted.",
+            "document_id": str(doc.id)
+        })
+
+
+class GPDownloadSPAPDFView(APIView):
+    """
+    GET /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/download/
+    Generates and returns a high-fidelity PDF of the SPA draft.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get(self, request, pk, spa_id):
+        from .pdf_utils import render_pdf
+        from django.utils import timezone
+        from django.http import HttpResponse
+
+        project = get_deal_for_user(request, pk=pk)
+        spa = get_object_or_404(SPADraft, pk=spa_id, project=project)
+
+        labels = {
+            'recitals': 'Recitals',
+            'definitions': 'Definitions',
+            'purchase_price': 'Purchase Price & Payment',
+            'representations': 'Representations & Warranties',
+            'conditions_precedent': 'Conditions Precedent',
+            'covenants': 'Covenants',
+            'indemnification': 'Indemnification',
+            'governing_law': 'Governing Law & Dispute Resolution',
+            'closing_conditions': 'Closing Conditions',
+            'termination': 'Termination Provisions',
+            'schedules': 'Schedules & Annexures',
+        }
+
+        # Context for template - use a list of objects to avoid needing custom filters
+        section_list = []
+        for key, label in labels.items():
+            section_list.append({
+                'label': label,
+                'content': spa.sections.get(key, '')
+            })
+
+        context = {
+            'project': project,
+            'spa': spa,
+            'sections': section_list,
+            'date': timezone.now().date(),
+        }
+
+
+        try:
+            pdf_bytes = render_pdf('deals/spa_pdf_template.html', context)
+        except Exception as e:
+            return Response({"detail": f"PDF Generation failed: {str(e)}"}, status=500)
+
+        filename = f"SPA_{project.legal_name.replace(' ', '_')}_v{spa.version}.pdf"
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+
 
 # ---------------------------------------------------------------------------
 # Phase 3: LOI Entrepreneur Flow & Capital Calls
