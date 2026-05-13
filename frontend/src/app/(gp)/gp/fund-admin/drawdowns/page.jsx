@@ -33,12 +33,25 @@ export default function DrawdownManagement() {
   });
 
   // 2. Mutation to mark as received
-  const markReceived = useMutation({
+  const markVerified = useMutation({
     mutationFn: async (id) => {
-      return api.post(`/deals/capital-calls/${id}/mark_received/`);
+      return api.post(`/deals/capital-calls/${id}/verify_receipt/`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries(['admin', 'capital-calls']);
+      toast.success('Capital call verified and moved to Superadmin approval queue');
+    }
+  });
+
+  const uploadOnBehalf = useMutation({
+    mutationFn: async ({ id, formData }) => {
+      return api.post(`/deals/capital-calls/${id}/gp_upload_payment/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['admin', 'capital-calls']);
+      toast.success('Payment proof uploaded on behalf of LP');
     }
   });
 
@@ -144,18 +157,22 @@ export default function DrawdownManagement() {
                         </a>
                       )}
                       
-                      {call.status !== 'RECEIVED' && (
+                      {call.status === 'CALLED' && (
+                        <GPProxyUpload call={call} onUpload={(fd) => uploadOnBehalf.mutate({ id: call.id, formData: fd })} />
+                      )}
+
+                      {call.status === 'PAID' && (
                         <button
                           onClick={() => {
-                            if(confirm('Confirm that funds have been received in the bank account?')) {
-                              markReceived.mutate(call.id);
+                            if(confirm('Confirm that funds have been verified in the bank account? This will move it to Superadmin for final approval.')) {
+                              markVerified.mutate(call.id);
                             }
                           }}
-                          disabled={markReceived.isLoading}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
+                          disabled={markVerified.isLoading}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-purple-500/20 active:scale-95 disabled:opacity-50"
                         >
-                          {markReceived.isLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                          Confirm Receipt
+                          {markVerified.isLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                          Verify & Confirm
                         </button>
                       )}
                     </div>
@@ -177,5 +194,71 @@ export default function DrawdownManagement() {
         </div>
       </div>
     </div>
+  );
+}
+
+function GPProxyUpload({ call, onUpload }) {
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState(null);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('payment_proof', file);
+    onUpload(fd);
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <button 
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-lg active:scale-95"
+      >
+        <FileText size={14} />
+        Upload on Behalf
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="relative bg-card border border-border-theme rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-foreground uppercase tracking-tight mb-2">Proxy Payment Upload</h3>
+            <p className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-8 opacity-60">
+              Uploading for: {call.lp_commitment_name}
+            </p>
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="space-y-4">
+                <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest text-left">Select Proof (PDF/JPG)</label>
+                <input 
+                  type="file" 
+                  onChange={(e) => setFile(e.target.files[0])}
+                  required
+                  className="w-full bg-foreground/5 border border-border-theme p-4 rounded-2xl text-xs focus:ring-2 focus:ring-ls-compliment/20 outline-none"
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-border-theme text-text-muted hover:bg-foreground/5 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white shadow-xl hover:scale-105 transition-all active:scale-95"
+                >
+                  Confirm Upload
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

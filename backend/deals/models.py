@@ -571,6 +571,7 @@ class CapitalCall(models.Model):
         PENDING = 'PENDING', 'Pending'
         CALLED = 'CALLED', 'Called'
         PAID = 'PAID', 'Paid (Awaiting Verification)'
+        VERIFIED = 'VERIFIED', 'Verified (Awaiting Superadmin Approval)'
         RECEIVED = 'RECEIVED', 'Received'
         DEFAULTED = 'DEFAULTED', 'Defaulted'
 

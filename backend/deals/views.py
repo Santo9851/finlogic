@@ -3719,30 +3719,64 @@ class CapitalCallViewSet(viewsets.ModelViewSet):
         return Response({"status": "Payment notification submitted"})
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsGPStaff])
+    def gp_upload_payment(self, request, pk=None):
+        """
+        GP Staff endpoint to upload proof of payment on behalf of an LP (for non-tech savvy LPs).
+        """
+        call = self.get_object()
+        proof = request.FILES.get('payment_proof')
+        if not proof:
+            return Response({"detail": "Payment proof file is required."}, status=400)
+            
+        call.status = CapitalCall.Status.PAID
+        call.payment_proof = proof
+        call.notes = f"{call.notes}\nPayment proof uploaded by GP Staff ({request.user}) on behalf of LP on {timezone.now()}"
+        call.save()
+        
+        # Log audit
+        ImmutableAuditEvent.objects.create(
+            event_type='CAPITAL_PAID_NOTIFIED',
+            actor=request.user,
+            object_id=call.project.id if call.project else call.fund.id,
+            object_repr=str(call),
+            content_type_label='deals.CapitalCall',
+            payload={'call_id': str(call.id), 'on_behalf_of': call.lp_commitment.lp_profile.full_name}
+        )
+        return Response({"status": "Payment proof uploaded on behalf of LP"})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsGPStaff])
+    def verify_receipt(self, request, pk=None):
+        """
+        GP Staff endpoint to verify that funds hit the bank.
+        Moves status from PAID to VERIFIED.
+        """
+        call = self.get_object()
+        if call.status != CapitalCall.Status.PAID:
+            return Response({"detail": "Only calls in 'PAID' status can be verified by GP Staff."}, status=400)
+            
+        call.status = CapitalCall.Status.VERIFIED
+        call.notes = f"{call.notes}\nVerified by GP Staff {request.user} on {timezone.now()}"
+        call.save()
+        return Response({"status": "Capital call verified by GP Staff. Awaiting Superadmin approval."})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsSuperAdminRole])
     def mark_received(self, request, pk=None):
         """
-        GP endpoint to confirm receipt of funds.
-        Enforces project-level assignment permissions.
+        Superadmin endpoint for final approval of capital receipt.
+        Requires that GP Staff has already verified the receipt (status=VERIFIED).
         """
         call = self.get_object()
         user = request.user
         
-        # Superadmin has global access
-        is_super = user.has_role('super_admin')
-        
-        # If call is linked to a project, check assignment
-        if call.project and not is_super:
-            is_owner = call.project.created_by == user
-            is_collab = call.project.collaborators.filter(id=user.id).exists()
-            if not (is_owner or is_collab):
-                return Response(
-                    {"detail": "You are not authorized to reconcile capital for this specific project."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+        if call.status != CapitalCall.Status.VERIFIED:
+            return Response(
+                {"detail": "Capital call must be 'VERIFIED' by GP Staff before Superadmin can approve it."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         call.status = CapitalCall.Status.RECEIVED
         call.received_at = timezone.now()
-        call.notes = f"{call.notes}\nReceived marked by {user} on {call.received_at}"
+        call.notes = f"{call.notes}\nFinal approval by Superadmin {user} on {call.received_at}"
         call.save()
         
         # Update commitment
@@ -3756,7 +3790,6 @@ class CapitalCallViewSet(viewsets.ModelViewSet):
             lp_user = call.lp_commitment.lp_profile.user
             subject = f"Capital Receipt Confirmation: {call.fund.name}"
             
-            # Styled HTML version matching brand colors
             html_content = f"""
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #100226; color: #ffffff; padding: 40px; border-radius: 12px; border-top: 4px solid #F59F01;">
                 <h2 style="color: #F59F01; margin-top: 0;">Capital Receipt Confirmed</h2>
@@ -3768,10 +3801,10 @@ class CapitalCallViewSet(viewsets.ModelViewSet):
                     <p style="margin: 8px 0 0 0; font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Transaction Ref: {call.id}</p>
                 </div>
                 
-                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">Thank you for your partnership and your commitment to the fund's growth protocols. Your updated paid-in capital balance is now reflected in your LP dashboard.</p>
+                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">Thank you for your partnership. Your updated paid-in capital balance is now reflected in your LP dashboard.</p>
                 
                 <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
-                <p style="font-size: 11px; color: #94a3b8; margin: 0;">&copy; Finlogic Capital Limited. All rights reserved.<br>Kathmandu, Nepal</p>
+                <p style="font-size: 11px; color: #94a3b8; margin: 0;">&copy; Finlogic Capital Limited. All rights reserved.</p>
             </div>
             """
             
@@ -3800,4 +3833,5 @@ class CapitalCallViewSet(viewsets.ModelViewSet):
             }
         )
         
-        return Response({"status": "Capital call marked as received"})
+        return Response({"status": "Capital call approved and marked as received"})
+

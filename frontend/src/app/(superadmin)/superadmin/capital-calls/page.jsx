@@ -126,7 +126,7 @@ export default function CapitalCallsPage() {
         </div>
         
         <div className="flex items-center gap-4 bg-foreground/[0.03] p-1.5 rounded-2xl border border-border-theme shadow-inner">
-          {['ALL', 'CALLED', 'RECEIVED', 'DEFAULTED'].map((f) => (
+          {['ALL', 'CALLED', 'PAID', 'VERIFIED', 'RECEIVED', 'DEFAULTED'].map((f) => (
             <button
               key={f}
               onClick={() => setStatusFilter(f)}
@@ -205,6 +205,8 @@ export default function CapitalCallsPage() {
                       <span className={`
                         px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border shadow-inner
                         ${call.status === 'RECEIVED' ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' : 
+                          call.status === 'VERIFIED' ? 'bg-purple-500/5 text-purple-500 border-purple-500/20' :
+                          call.status === 'PAID' ? 'bg-blue-500/5 text-blue-500 border-blue-500/20' :
                           call.status === 'CALLED' ? 'bg-[#F59F01]/5 text-[#F59F01] border-[#F59F01]/20' :
                           'bg-rose-500/5 text-rose-500 border-rose-500/20'}
                       `}>
@@ -212,20 +214,29 @@ export default function CapitalCallsPage() {
                       </span>
                     </td>
                     <td className="px-10 py-7 text-right">
-                      {call.status === 'CALLED' ? (
+                      {call.status === 'VERIFIED' ? (
                         <button 
-                          onClick={() => markReceivedMutation.mutate(call.id)}
+                          onClick={() => {
+                            if(confirm('Final Approval: Confirm that funds are received and reconcile this call?')) {
+                              markReceivedMutation.mutate(call.id);
+                            }
+                          }}
                           disabled={markReceivedMutation.isLoading}
-                          className="px-6 py-2.5 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-purple-700 transition-all shadow-xl shadow-purple-500/20 active:scale-95 disabled:opacity-50"
+                          className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
                         >
-                          {markReceivedMutation.isLoading ? 'Processing...' : 'Mark Received'}
+                          {markReceivedMutation.isLoading ? 'Approving...' : 'Final Approve'}
                         </button>
                       ) : call.status === 'RECEIVED' ? (
                         <div className="flex items-center justify-end gap-2 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
                           <CheckCircle2 size={16} />
-                          Finalized
+                          Reconciled
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="flex items-center justify-end gap-2 text-text-muted/20 text-[10px] font-black uppercase tracking-widest">
+                          <Clock size={14} />
+                          Awaiting GP
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
