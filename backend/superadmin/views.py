@@ -566,3 +566,50 @@ class SuperAdminDealViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         deal = serializer.save()
         log_admin_action(self.request.user, ImmutableAuditEvent.EventType.COMPLIANCE_REVIEW, deal, {"action": "superadmin_deal_update"})
+
+    @action(detail=True, methods=['post'], url_path='request-revision')
+    def request_revision(self, request, pk=None):
+        deal = self.get_object()
+        reason = request.data.get('reason', 'No reason provided.')
+        
+        # 2. Reset latest SPA Draft to DRAFT
+        from deals.models import SPADraft, PEProjectDocument
+        latest_spa = deal.spa_drafts.order_by('-version', '-created_at').first()
+        if latest_spa:
+            latest_spa.status = 'DRAFT'
+            latest_spa.save(update_fields=['status'])
+            
+        # 3. Invalidate previous signed document if it exists
+        PEProjectDocument.objects.filter(project=deal, category='SPA').delete()
+        
+        # 4. Log Audit
+        log_admin_action(
+            request.user, 
+            ImmutableAuditEvent.EventType.COMPLIANCE_REVIEW, 
+            deal, 
+            {"action": "revision_requested", "reason": reason}
+        )
+        
+        # 3. Notify GP Staff (Owner + Collaborators)
+        recipient_emails = []
+        if deal.created_by and deal.created_by.email:
+            recipient_emails.append(deal.created_by.email)
+        
+        collabs = deal.collaborators.all()
+        for c in collabs:
+            if c.email and c.email not in recipient_emails:
+                recipient_emails.append(c.email)
+                
+        if recipient_emails:
+            try:
+                send_mail(
+                    subject=f"Revision Requested: {deal.legal_name} - SPA Execution",
+                    message=f"The Superadmin has requested a revision for the SPA of {deal.legal_name}.\n\nReason: {reason}\n\nThe SPA draft has been reset to 'DRAFT' status. Please address the feedback, finalize the draft, and re-upload the signed copy.",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=recipient_emails,
+                    fail_silently=True
+                )
+            except Exception as e:
+                pass
+                
+        return Response({"status": "Revision requested. SPA draft reset to DRAFT and GP team notified."})

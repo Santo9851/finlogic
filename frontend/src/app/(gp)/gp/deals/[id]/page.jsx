@@ -713,7 +713,7 @@ export default function GPDealDetailPage() {
           <ChevronLeft size={16} /> Back to Pipeline
         </Link>
         <div className="flex items-center gap-2">
-           {['TERM_SHEET', 'LOI_ISSUED', 'CONTRACT_SIGNED'].includes(deal.status) && (
+           {['TERM_SHEET', 'LOI_ISSUED'].includes(deal.status) && (
              <button 
                onClick={() => setShowWizard(true)}
                className="flex items-center gap-2 px-6 py-2 bg-foreground text-background rounded-lg text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-foreground/5"

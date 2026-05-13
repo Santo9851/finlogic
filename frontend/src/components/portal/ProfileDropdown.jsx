@@ -12,6 +12,7 @@ import {
   Library, 
   ArrowLeftRight 
 } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -24,10 +25,25 @@ export default function ProfileDropdown({
   rolePath = null 
 }) {
   const { user, logout } = useAuth();
+  const dropdownRef = useRef(null);
   const accountPath = rolePath || `/${roleLabel.toLowerCase().replace(' ', '-')}/profile`;
 
+  // Close on outside click
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    }
+
+    if (profileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileOpen, setProfileOpen]);
+
   return (
-    <div className="relative">
+    <div className="relative" ref={dropdownRef}>
       <div 
         onClick={() => setProfileOpen(!profileOpen)}
         className="flex items-center gap-3 px-3 py-1.5 bg-foreground/5 border border-border-theme rounded-full hover:bg-foreground/10 transition-all cursor-pointer active:scale-95 theme-transition group"
@@ -45,9 +61,6 @@ export default function ProfileDropdown({
       <AnimatePresence>
         {profileOpen && (
           <>
-            {/* Backdrop for mobile/outside clicks if needed, though usually handled by parent useEffect */}
-            <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setProfileOpen(false)} />
-            
             <motion.div 
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

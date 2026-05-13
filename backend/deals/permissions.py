@@ -41,6 +41,16 @@ class IsLPRole(permissions.BasePermission):
         return request.user.has_role('investor')
 
 
+class IsSuperAdminRole(permissions.BasePermission):
+    """Grant access only to Superadmins."""
+    message = "Only Superadmins can execute this institutional action."
+
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        return request.user.has_role('super_admin')
+
+
 class IsGPInvestorRole(permissions.BasePermission):
     """Grant access only to GP Investors ('gp_investor' role)."""
     message = "You must have the gp_investor role to access this resource."

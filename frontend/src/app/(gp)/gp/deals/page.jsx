@@ -148,6 +148,21 @@ export default function GPDealsKanbanPage() {
     let newStatus = isColumn ? overId : projects.find(p => p.id === overId)?.status;
 
     if (newStatus && activeDeal.status !== newStatus) {
+      if (newStatus === 'CAPITAL_CALLED') {
+        toast.error("Institutional Authorization Required: Only Superadmins can initiate capital drawdowns.");
+        return;
+      }
+
+      // Lock backward movement if SPA is uploaded
+      if (activeDeal.documents?.some(d => d.category === 'SPA')) {
+        const currentIndex = COLUMNS.findIndex(c => c.id === activeDeal.status);
+        const newIndex = COLUMNS.findIndex(c => c.id === newStatus);
+        if (newIndex < currentIndex) {
+          toast.error("Document Locked: Cannot revert status once the signed SPA is uploaded. Contact Superadmin for revision.");
+          return;
+        }
+      }
+      
       mutation.mutate({ id: active.id, status: newStatus });
     }
   };
@@ -255,7 +270,10 @@ function KanbanCard({ deal, isOverlay = false }) {
     transform,
     transition,
     isDragging
-  } = useSortable({ id: deal.id, disabled: !deal.can_access });
+  } = useSortable({ 
+    id: deal.id, 
+    disabled: !deal.can_access || deal.status === 'CAPITAL_CALLED' 
+  });
 
   const style = {
     transform: CSS.Translate.toString(transform),

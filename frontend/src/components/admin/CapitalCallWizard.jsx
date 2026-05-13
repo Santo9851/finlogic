@@ -36,7 +36,7 @@ export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-8 bg-background/90 backdrop-blur-3xl animate-in fade-in duration-500 theme-transition">
-      <div className="bg-card border border-border-theme w-full max-w-xl rounded-[3rem] shadow-[0_48px_96px_-24px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col theme-transition relative">
+      <div className="bg-card border border-border-theme w-full max-w-xl rounded-[3rem] shadow-[0_48px_96px_-24px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[90vh] theme-transition relative">
         <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 blur-[80px] rounded-full -mr-24 -mt-24 pointer-events-none" />
         
         {/* Header */}
@@ -56,7 +56,7 @@ export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
         </div>
 
         {/* Content */}
-        <div className="p-12 space-y-10 relative z-10">
+        <div className="flex-1 overflow-y-auto p-12 space-y-10 relative z-10 custom-scrollbar">
           <div className="bg-purple-500/5 border border-purple-500/10 rounded-[2rem] p-6 flex items-start gap-5 shadow-inner">
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 shrink-0">
               <Info size={20} />

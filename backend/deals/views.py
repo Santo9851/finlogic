@@ -80,6 +80,7 @@ from .permissions import (
     IsGPStaff,
     IsLPRole,
     IsDealAccessible,
+    IsSuperAdminRole,
 )
 from .serializers import (
     DocumentUploadRequestSerializer,
@@ -3388,7 +3389,7 @@ class GPSPADraftDetailView(APIView):
 class GPUploadSignedSPAView(APIView):
     """
     POST /api/deals/projects/<uuid:pk>/spa-drafts/<uuid:spa_id>/upload-signed/
-    Upload the signed physical SPA. Triggers status change to CAPITAL_CALLED.
+    Upload the signed physical SPA. Advances status to CONTRACT_SIGNED.
     """
     permission_classes = [permissions.IsAuthenticated, IsGPStaff]
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
@@ -3418,8 +3419,9 @@ class GPUploadSignedSPAView(APIView):
             is_confirmed=True
         )
         
-        # 2. Advance Project Status
-        project.status = PEProject.Status.CAPITAL_CALLED
+        # 2. Advance Project Status to CONTRACT_SIGNED
+        # (Drawdown/CAPITAL_CALLED is now a manual action for Superadmins)
+        project.status = PEProject.Status.CONTRACT_SIGNED
         project.save(update_fields=['status'])
         
         # 3. Audit
@@ -3432,12 +3434,29 @@ class GPUploadSignedSPAView(APIView):
             payload={
                 'spa_draft_id': str(spa.id),
                 'document_id': str(doc.id),
-                'new_status': 'CAPITAL_CALLED'
+                'new_status': 'CONTRACT_SIGNED'
             }
         )
+
+        # 4. Notify Superadmin
+        try:
+            from django.core.mail import send_mail
+            from django.contrib.auth import get_user_model
+            SuperAdmins = get_user_model().objects.filter(roles__contains='super_admin')
+            admin_emails = [a.email for a in SuperAdmins if a.email]
+            if admin_emails:
+                send_mail(
+                    subject=f"Action Required: Signed SPA Uploaded - {project.legal_name}",
+                    message=f"GP Staff ({request.user.get_full_name()}) has uploaded the signed SPA for {project.legal_name}.\n\nPlease review the documents and issue the Capital Call to proceed with drawdown.",
+                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@finlogiccapital.com'),
+                    recipient_list=admin_emails,
+                    fail_silently=True
+                )
+        except Exception as e:
+            logger.warning(f"Failed to notify superadmin of SPA upload: {e}")
         
         return Response({
-            "status": "Signed SPA uploaded successfully. Project status promoted.",
+            "status": "Signed SPA uploaded successfully. Project is in CONTRACT_SIGNED. Superadmin has been notified for final review and drawdown.",
             "document_id": str(doc.id)
         })
 
@@ -3556,7 +3575,7 @@ class GPCapitalCallBatchView(APIView):
     POST /api/deals/projects/{id}/create-capital-calls/
     Creates pro-rata capital calls for all LPs in the fund for this deal.
     """
-    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdminRole]
 
     def post(self, request, pk):
         project = get_deal_for_user(self.request, pk=pk)
@@ -3574,14 +3593,29 @@ class GPCapitalCallBatchView(APIView):
         if not amount or not due_date:
             return Response({"detail": "total_amount_npr and due_date are required."}, status=400)
             
-        total_committed = fund.lp_commitments.aggregate(total=Sum('committed_amount_npr'))['total'] or 0
+        from decimal import Decimal
+        amount_dec = Decimal(str(amount))
+            
+        total_committed = fund.lp_commitments.aggregate(total=Sum('committed_amount_npr'))['total'] or Decimal('0')
         if total_committed == 0:
             return Response({"detail": "Fund has no LP commitments."}, status=400)
+            
+        # 1. Fund Sufficiency Verification
+        total_called_to_date = fund.lp_commitments.aggregate(total=Sum('called_amount_npr'))['total'] or Decimal('0')
+        uncalled_capital = total_committed - total_called_to_date
+        
+        if amount_dec > uncalled_capital:
+            return Response({
+                "detail": "Insufficient Uncalled Capital: The requested amount exceeds the fund's available capital pool.",
+                "available": float(uncalled_capital),
+                "requested": float(amount_dec)
+            }, status=400)
             
         # Create calls
         calls = []
         for comm in fund.lp_commitments.all():
-            lp_share = (comm.committed_amount_npr / total_committed) * float(amount)
+            # Allocation = (LP Commitment / Total Fund Commitment) * Total Drawdown
+            lp_share = (comm.committed_amount_npr / total_committed) * amount_dec
             call = CapitalCall.objects.create(
                 fund=fund,
                 project=project,
@@ -3611,9 +3645,16 @@ class GPCapitalCallBatchView(APIView):
                 'call_count': len(calls)
             }
         )
-        
+
+        # Trigger background emails
+        try:
+            from .tasks import batch_send_capital_call_emails
+            batch_send_capital_call_emails.delay([str(c.id) for c in calls])
+        except Exception as e:
+            logger.warning(f"Failed to trigger capital call emails task: {e}")
+
         return Response({
-            "status": f"Successfully issued {len(calls)} capital calls.",
+            "status": f"Successfully issued {len(calls)} capital calls. Emails queued.",
             "total_amount_npr": amount,
             "project_status": project.status
         })

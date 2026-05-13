@@ -16,7 +16,7 @@ import uuid
 from datetime import timedelta
 
 from django.conf import settings
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 
@@ -26,6 +26,7 @@ from .models import (
     CapitalCall,
     Distribution,
     ImmutableAuditEvent,
+    LPFundCommitment,
 )
 
 logger = logging.getLogger(__name__)
@@ -353,3 +354,26 @@ def distribution_post_save(sender, instance, created, **kwargs):
                 'distribution_date': str(instance.distribution_date),
             },
         )
+# ---------------------------------------------------------------------------
+# LPFundCommitment signals
+# ---------------------------------------------------------------------------
+
+@receiver([post_save, post_delete], sender=LPFundCommitment)
+def update_fund_committed_capital(sender, instance, **kwargs):
+    """
+    Update the cached committed_capital_npr on the Fund model
+    whenever a commitment is added, changed, or removed.
+    """
+    from django.db.models import Sum
+    fund = instance.fund
+    total = LPFundCommitment.objects.filter(fund=fund).aggregate(
+        total=Sum('committed_amount_npr')
+    )['total'] or 0
+    
+    fund.committed_capital_npr = total
+    
+    # Auto-update fund status if fully committed
+    if total >= fund.target_size_npr and fund.status == fund.Status.RAISING:
+        fund.status = fund.Status.INVESTING
+        
+    fund.save(update_fields=['committed_capital_npr', 'status'])

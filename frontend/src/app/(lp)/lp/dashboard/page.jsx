@@ -31,8 +31,7 @@ export default function LPDashboard() {
   const isDark = resolvedTheme === "dark";
   const [selectedFundId, setSelectedFundId] = useState(null);
 
-  // 1. Fetch LP Dashboard Summary
-  const { data: dashboard, isLoading } = useQuery({
+  const { data: dashboard, isLoading, error } = useQuery({
     queryKey: ['lp', 'dashboard'],
     queryFn: async () => {
       const res = await api.get('/deals/lp/dashboard/');
@@ -47,7 +46,7 @@ export default function LPDashboard() {
   }, [funds, selectedFundId]);
 
   // 2. Fetch Fund Details (for selected fund)
-  const { data: fundDetail, isLoading: isLoadingDetail } = useQuery({
+  const { data: fundDetail, isLoading: isLoadingDetail, error: detailError } = useQuery({
     queryKey: ['lp', 'fund', selectedFund?.id],
     queryFn: async () => {
       const res = await api.get(`/deals/lp/fund/${selectedFund.id}/`);
@@ -62,6 +61,32 @@ export default function LPDashboard() {
       <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Syncing Portfolio Assets...</p>
     </div>
   );
+
+  if (error) {
+    const isNoProfile = error.response?.status === 404;
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-8 text-center px-6">
+        <div className="w-20 h-20 bg-red-500/10 rounded-[2rem] flex items-center justify-center text-red-500 shadow-xl shadow-red-500/10">
+          <ShieldCheck size={40} />
+        </div>
+        <div className="space-y-3">
+          <h2 className="text-2xl font-black uppercase tracking-tight text-foreground">
+            {isNoProfile ? 'Investor Profile Not Found' : 'Access Restricted'}
+          </h2>
+          <p className="text-text-muted max-w-md mx-auto text-sm leading-relaxed">
+            {isNoProfile 
+              ? "Your account is not currently registered as a Limited Partner. Please contact the GP team to initialize your investment profile." 
+              : "We encountered an issue syncing your portfolio data. Please verify your connection or contact support."}
+          </p>
+        </div>
+        {isNoProfile && (
+          <button className="bg-foreground text-background px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all active:scale-95 shadow-2xl">
+            Contact GP Support
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-12 pb-20 theme-transition animate-in fade-in duration-700">

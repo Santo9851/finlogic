@@ -20,7 +20,8 @@ import {
   CircleDollarSign,
   Briefcase,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
@@ -75,6 +76,23 @@ export default function SuperAdminDealsPage() {
       closeModal();
     },
     onError: (err) => toast.error(err.response?.data?.detail || 'Failed to update deal')
+  });
+
+  const requestRevisionMutation = useMutation({
+    mutationFn: (id) => {
+      const reason = window.prompt("Enter the reason for requesting a revision (this will be sent to the GP team):", "Legal conditions need update.");
+      if (reason === null) throw new Error("Cancelled");
+      return api.post(`/superadmin/deals/${id}/request-revision/`, { reason });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(['superadmin', 'deals']);
+      toast.success('Revision request sent to GP team.');
+    },
+    onError: (err) => {
+      if (err.message !== "Cancelled") {
+        toast.error(err.response?.data?.detail || 'Failed to request revision');
+      }
+    }
   });
 
   // 4. Filtering
@@ -219,12 +237,21 @@ export default function SuperAdminDealsPage() {
                   <td className="px-10 py-7 text-right">
                     <div className="flex items-center justify-end gap-3">
                       {deal.status === 'CONTRACT_SIGNED' && (
-                        <button 
-                          onClick={() => { setSelectedDeal(deal); setShowCapitalCallWizard(true); }}
-                          className="px-6 py-2.5 bg-ls-compliment text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.05] transition-all flex items-center gap-2 shadow-lg shadow-ls-compliment/20 active:scale-95"
-                        >
-                          <CircleDollarSign size={14} /> Issue Call
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => requestRevisionMutation.mutate(deal.id)}
+                            disabled={requestRevisionMutation.isPending}
+                            className="px-4 py-2.5 bg-foreground/5 text-text-muted rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-foreground/10 transition-all flex items-center gap-2 border border-border-theme active:scale-95 disabled:opacity-50"
+                          >
+                            <RotateCcw size={14} /> Request Revision
+                          </button>
+                          <button 
+                            onClick={() => { setSelectedDeal(deal); setShowCapitalCallWizard(true); }}
+                            className="px-6 py-2.5 bg-ls-compliment text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.05] transition-all flex items-center gap-2 shadow-lg shadow-ls-compliment/20 active:scale-95"
+                          >
+                            <CircleDollarSign size={14} /> Issue Call
+                          </button>
+                        </div>
                       )}
                       {deal.status === 'CAPITAL_CALLED' && (
                         <button 

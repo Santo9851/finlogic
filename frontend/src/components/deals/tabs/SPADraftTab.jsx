@@ -139,7 +139,7 @@ export default function SPADraftTab({ deal }) {
       return res.data;
     },
     onSuccess: () => {
-      toast.success('Signed SPA uploaded. Project promoted to CAPITAL_CALLED.');
+      toast.success('Signed SPA uploaded successfully. Superadmin notified for review.');
       queryClient.invalidateQueries(['deals', projectId, 'spa-drafts']);
       queryClient.invalidateQueries(['deals', 'project', projectId]);
       setSignedFile(null);
@@ -244,7 +244,7 @@ export default function SPADraftTab({ deal }) {
 
           <button
             onClick={() => generateMutation.mutate()}
-            disabled={isProcessing || latest.status !== 'DRAFT'}
+            disabled={isProcessing || latest.status !== 'DRAFT' || deal.status === 'CAPITAL_CALLED'}
             className="flex items-center gap-2 px-4 py-2 bg-[#F59F01]/10 text-[#F59F01] rounded-xl text-xs font-bold hover:bg-[#F59F01]/20 transition-all disabled:opacity-50"
           >
             {isProcessing ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
@@ -258,7 +258,7 @@ export default function SPADraftTab({ deal }) {
               <button
                 key={s}
                 onClick={() => statusMutation.mutate(s)}
-                disabled={latest.status === s || statusMutation.isPending}
+                disabled={latest.status === s || statusMutation.isPending || deal.status === 'CAPITAL_CALLED' || deal.documents?.some(d => d.category === 'SPA')}
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${
                   latest.status === s ? 'bg-ls-primary text-white scale-105' : 'bg-ls-primary/5 text-text-muted hover:bg-ls-primary/10'
                 }`}
@@ -277,7 +277,7 @@ export default function SPADraftTab({ deal }) {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-ls-primary dark:text-white uppercase tracking-tight">Execution Phase</h3>
-                  <p className="text-text-muted text-xs font-medium">Download, Print, and Upload the Executed Share Purchase Agreement to trigger Capital Calls.</p>
+                  <p className="text-text-muted text-xs font-medium">Download, Print, and Upload the Executed Share Purchase Agreement. The Superadmin will then review and initiate Capital Calls.</p>
                 </div>
               </div>
 
@@ -294,25 +294,46 @@ export default function SPADraftTab({ deal }) {
                 </button>
 
 
-                <label className="relative flex items-center justify-center gap-3 p-6 bg-white dark:bg-white/5 border border-border-theme rounded-xl hover:border-[#F59F01] transition-all group cursor-pointer">
+                <label 
+                  className={`relative flex items-center justify-center gap-3 p-6 bg-white dark:bg-white/5 border border-border-theme rounded-xl transition-all group ${
+                    deal.documents?.some(d => d.category === 'SPA') 
+                    ? 'opacity-50 cursor-not-allowed bg-foreground/5' 
+                    : 'hover:border-[#F59F01] cursor-pointer'
+                  }`}
+                >
                   <input
                     type="file"
                     className="hidden"
                     accept=".pdf,.jpg,.jpeg,.png"
                     onChange={handleFileUpload}
-                    disabled={uploadSignedMutation.isPending}
+                    disabled={uploadSignedMutation.isPending || deal.documents?.some(d => d.category === 'SPA')}
                   />
                   {uploadSignedMutation.isPending ? (
                     <Loader2 size={20} className="text-[#F59F01] animate-spin" />
                   ) : (
-                    <Upload size={20} className="text-text-muted group-hover:text-[#F59F01] transition-colors" />
+                    <Upload size={20} className={deal.documents?.some(d => d.category === 'SPA') ? 'text-text-muted/30' : 'text-text-muted group-hover:text-[#F59F01] transition-colors'} />
                   )}
                   <div className="text-left">
-                    <p className="text-sm font-bold text-ls-primary dark:text-white">Upload Signed Copy</p>
-                    <p className="text-[10px] text-text-muted">Trigger capital calls for LPs</p>
+                    <p className={`text-sm font-bold ${deal.documents?.some(d => d.category === 'SPA') ? 'text-text-muted' : 'text-ls-primary dark:text-white'}`}>
+                      {deal.documents?.some(d => d.category === 'SPA') ? 'Upload Locked' : 'Upload Signed Copy'}
+                    </p>
+                    <p className="text-[10px] text-text-muted">
+                      {deal.documents?.some(d => d.category === 'SPA') ? 'Awaiting Superadmin Review' : 'Initiate Superadmin review process'}
+                    </p>
                   </div>
                 </label>
               </div>
+
+              {deal.documents?.some(d => d.category === 'SPA') && (
+                <div className="pt-4 border-t border-[#F59F01]/10">
+                  <p className="text-[10px] text-[#F59F01] font-black uppercase tracking-widest flex items-center gap-2">
+                    <CheckCircle2 size={12} /> Signed Document Uploaded — Pending Superadmin Finalization
+                  </p>
+                  <p className="text-[9px] text-text-muted font-medium mt-1">
+                    You can re-upload the signed SPA if revisions were requested by the Superadmin.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -321,8 +342,8 @@ export default function SPADraftTab({ deal }) {
              <div className="bg-green-500/5 border border-green-500/30 rounded-2xl p-6 flex items-center gap-4 text-green-500 w-full mt-4">
                <CheckCircle2 size={24} />
                <div>
-                 <p className="text-sm font-bold uppercase tracking-tight">Investment Executed</p>
-                 <p className="text-xs opacity-70 font-medium">Signed SPA is archived. Capital calls have been initiated for all committed LPs.</p>
+                 <p className="text-sm font-bold uppercase tracking-tight">Investment Executed & Locked</p>
+                 <p className="text-xs opacity-70 font-medium">Drawdown has been initiated. This record is now immutable for audit compliance.</p>
                </div>
              </div>
           )}

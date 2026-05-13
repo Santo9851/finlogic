@@ -356,14 +356,28 @@ class PEProjectDetailSerializer(serializers.ModelSerializer):
 
         # Phase 6.4: CONTRACT_SIGNED -> CAPITAL_CALLED
         if new_status == 'CAPITAL_CALLED' and instance.status == 'CONTRACT_SIGNED':
-            # This is usually handled by the Superadmin Capital Call view, but enforce here too
-            legal_docs = instance.documents.filter(category='LEGAL').exists()
+            # This is strictly gated to the Superadmin Capital Call view.
+            # We block it here to prevent Kanban drags from triggering it accidentally.
+            if not self.context['request'].user.has_role('super_admin'):
+                raise serializers.ValidationError({"status": "Institutional Authorization Required: Only Superadmins can initiate capital drawdowns."})
+            
+            legal_docs = instance.documents.filter(category='SPA').exists()
             if not legal_docs:
-                raise serializers.ValidationError({"status": "Executed SPA/SHA (LEGAL category) must be uploaded to Data Room."})
+                # Allow 'LEGAL' as fallback if category was mapped differently
+                legal_docs = instance.documents.filter(category='LEGAL').exists()
+                
+            if not legal_docs:
+                raise serializers.ValidationError({"status": "Executed SPA (Signed Contract) must be uploaded to Data Room."})
             
             checklist = getattr(instance, 'regulatory_checklist', None)
             if not checklist or not checklist.all_approvals_obtained:
                 raise serializers.ValidationError({"status": "All required regulatory approvals (Regulatory Checklist) must be obtained."})
+
+        # Lock status once CAPITAL_CALLED if capital calls exist
+        if instance.status == 'CAPITAL_CALLED' and new_status not in ['CLOSED', 'DECLINED']:
+            from .models import CapitalCall
+            if CapitalCall.objects.filter(project=instance).exists():
+                raise serializers.ValidationError({"status": "This deal is locked. Capital drawdown has been initiated and cannot be reversed."})
 
         return data
 

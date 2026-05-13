@@ -459,6 +459,51 @@ class LPFundCommitment(models.Model):
     def uncalled_amount_npr(self):
         return self.committed_amount_npr - self.called_amount_npr
 
+    def clean(self):
+        """
+        Validate that commitments do not exceed fund target size.
+        """
+        from django.db.models import Sum
+        from decimal import Decimal
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        target_size = Decimal(str(self.fund.target_size_npr))
+        current_amount = Decimal(str(self.committed_amount_npr))
+        
+        # 1. Individual check
+        if current_amount > target_size:
+            logger.warning(f"Validation Failed: Individual commitment {current_amount} > Target Size {target_size}")
+            raise ValidationError({
+                'committed_amount_npr': f"Individual LP commitment (NPR {current_amount:,.2f}) cannot exceed total fund target size (NPR {target_size:,.2f})."
+            })
+            
+        # 2. Aggregate check
+        # We need the sum of ALL other commitments to this fund
+        existing_total_query = LPFundCommitment.objects.filter(fund=self.fund)
+        if self.pk:
+            existing_total_query = existing_total_query.exclude(pk=self.pk)
+            
+        existing_total = existing_total_query.aggregate(
+            total=Sum('committed_amount_npr')
+        )['total'] or Decimal('0')
+        
+        existing_total = Decimal(str(existing_total))
+        new_total = existing_total + current_amount
+        
+        logger.info(f"Checking Aggregate: Existing {existing_total} + New {current_amount} = {new_total} (Limit: {target_size})")
+        
+        if new_total > target_size:
+             logger.warning(f"Validation Failed: Aggregate total {new_total} > Target Size {target_size}")
+             raise ValidationError({
+                 'committed_amount_npr': f"Total fund commitments (NPR {new_total:,.2f}) would exceed target fund size (NPR {target_size:,.2f}). Current committed by others: NPR {existing_total:,.2f}."
+             })
+
+    def save(self, *args, **kwargs):
+        # Force validation logic even if not called by a form
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 # ---------------------------------------------------------------------------
 # 6. PEInvestment

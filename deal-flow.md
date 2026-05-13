@@ -34,8 +34,8 @@ PENDING_SUBMISSION → SUBMITTED → SCREENING → IC_REVIEW → TERM_SHEET
 
 | Role | Can Do |
 |---|---|
-| **GP Staff** (`admin`) | Create deals, invite entrepreneurs, run AI analysis, score, generate memos/valuations/terms, issue LOI, advance status up to `CONTRACT_SIGNED` |
-| **Superadmin** (`super_admin`) | Everything GP Staff can do + manage collaborators, create capital calls, finalize investments (CLOSED), manage compliance |
+| **GP Staff** (`admin`) | Create deals, invite entrepreneurs, run AI analysis, score, generate memos/valuations/terms, issue LOI, advance status up to `CONTRACT_SIGNED`, upload signed SPA |
+| **Superadmin** (`super_admin`) | Everything GP Staff can do + manage collaborators, **Issue Capital Calls** (gates Phase 7), **Request Revision** (reverts SPA status), finalize investments (CLOSED), manage compliance |
 | **Entrepreneur** (`entrepreneur`) | Fill submission form, upload documents, view deal status, download and upload signed LOI |
 | **LP Investor** (`investor`) | View deals at `LOI_ISSUED` or later, view capital call notices, view portfolio performance |
 
@@ -292,15 +292,21 @@ The `RegulatoryChecklist` model tracks Nepal-specific approvals. These are enfor
 - **Enforcement:** Capital call creation (next phase) validates all required approvals are obtained
 - **Audit:** `ImmutableAuditEvent` type `COMPLIANCE_REVIEW`
 
-### 6.4 Exit Gate from CONTRACT_SIGNED → CAPITAL_CALLED
+### 6.4 Superadmin Review & Revision Protocol
+Once the signed SPA is uploaded, the deal stays in `CONTRACT_SIGNED`. The **Superadmin** performs a "four-eyes" check:
+- **Approval:** Superadmin clicks "Issue Capital Call" → Advances to `CAPITAL_CALLED` (Phase 7).
+- **Revision Requested:** Superadmin clicks "Request Revision" (with reason).
+  - **Effect:** Latest `SPADraft` status resets to `DRAFT`.
+  - **Notification:** GP Staff receives automated email with feedback.
+  - **Action:** GP Staff addresses feedback, re-finalizes, and re-uploads signed copy.
+
+### 6.5 Exit Gate from CONTRACT_SIGNED → CAPITAL_CALLED (Hard Gate)
 
 **Prerequisites:**
-1. SPA + SHA documents uploaded to Data Room (`category='LEGAL'`)
+1. SPA document uploaded to Data Room (`category='SPA'`)
 2. `RegulatoryChecklist`: all required approvals obtained
-3. Fund is in `INVESTING` status
-4. Fund has sufficient uncalled capital: `SUM(LP uncalled) >= deal investment amount`
-
-Superadmin creates capital call (see Phase 7).
+3. Fund has sufficient uncalled capital
+4. **Actor:** Superadmin role REQUIRED. Status transition is blocked for GP Staff.
 
 ---
 
@@ -308,24 +314,22 @@ Superadmin creates capital call (see Phase 7).
 
 **Status:** `CAPITAL_CALLED`
 
-### 7.1 Superadmin Creates Capital Call
-
+### 7.1 Institutional Drawdown Execution
 - **Actor:** Superadmin only (`super_admin` role)
-- **Frontend:** Superadmin Deals page → "Issue Capital Call" button (visible only at `CONTRACT_SIGNED`)
-- **Backend:** `POST /api/deals/capital-calls/create/`
+- **Frontend:** Superadmin Deals page → "Issue Call" button (visible only at `CONTRACT_SIGNED`)
+- **Backend:** `POST /api/deals/projects/{id}/create-capital-calls/`
 - **Validation:**
-  1. Deal is `CONTRACT_SIGNED`
-  2. All regulatory checklist gates passed
-  3. Fund uncalled capital >= investment amount
-  4. Fund status is `INVESTING`
+  1. Deal is `CONTRACT_SIGNED` with uploaded SPA.
+  2. All regulatory checklist gates passed.
+  3. Fund uncalled capital >= investment amount.
 - **Pro-rata calculation:**
   ```
   LP call amount = (LP committed / Total fund committed) × Deal investment amount
   ```
-- **Action:** Creates one `CapitalCall` record per LP in the fund, each with `status='CALLED'`
-- **Status:** Deal moves to `CAPITAL_CALLED`
-- **Side Effect:** Email notification to each LP with capital call notice (amount, due date, deal summary, payment instructions)
-- **Audit:** `ImmutableAuditEvent` type `CAPITAL_CALLED`
+- **Terminal Action:** Creates `CapitalCall` records for LPs.
+- **Status Change:** Deal moves to `CAPITAL_CALLED`.
+- **Locking:** Once in `CAPITAL_CALLED`, status changes are restricted to ensure audit compliance. GP Staff cannot drag card out of this column.
+- **Side Effect:** Automated professional email notices sent to all committed LPs.
 
 ### 7.2 LP Payment Tracking
 

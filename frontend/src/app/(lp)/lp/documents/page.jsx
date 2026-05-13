@@ -18,8 +18,11 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 
 export default function LPDocumentsPage() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
@@ -80,29 +83,29 @@ export default function LPDocumentsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700 pb-20 theme-transition">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-[#F59F01]/10 flex items-center justify-center text-[#F59F01]">
+        <div className="flex items-center gap-6">
+          <div className="w-16 h-16 rounded-[1.5rem] bg-ls-compliment/10 flex items-center justify-center text-ls-compliment shadow-inner">
             <FileCheck size={32} />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight text-glow">Fund Repository</h1>
-            <p className="text-white/50 text-sm mt-0.5">Access official fund reports, legal documents, and capital notices.</p>
+            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Fund Repository</h1>
+            <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-1">Access official fund reports, legal documents, and capital notices.</p>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="bg-white/5 border border-white/10 rounded-xl p-1 flex">
+          <div className="bg-foreground/[0.03] border border-border-theme rounded-2xl p-1.5 flex shadow-inner">
             {['ALL', 'LPA', 'CAPITAL_CALL', 'QUARTERLY_REPORT', 'CAPITAL_ACCOUNT'].map(type => (
               <button
                 key={type}
                 onClick={() => setFilterType(type)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                   filterType === type 
-                  ? 'bg-[#F59F01] text-black shadow-lg shadow-[#F59F01]/20' 
-                  : 'text-white/40 hover:text-white'
+                  ? 'bg-ls-compliment text-white shadow-lg shadow-ls-compliment/20' 
+                  : 'text-text-muted/40 hover:text-foreground'
                 }`}
               >
                 {type === 'ALL' ? 'All Files' : type === 'CAPITAL_ACCOUNT' ? 'Statements' : type.replace('_', ' ')}
@@ -116,30 +119,32 @@ export default function LPDocumentsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Sidebar / Filters */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-[#08001a] border border-white/8 rounded-2xl p-6 shadow-xl">
-            <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-4">Security Notice</h3>
-            <div className="flex items-start gap-3 p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
+          <div className="bg-card border border-border-theme rounded-[2rem] p-8 shadow-xl theme-transition overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-ls-compliment/5 blur-[30px] rounded-full -mr-10 -mt-10 pointer-events-none" />
+            <h3 className="text-[10px] font-black text-text-muted/40 uppercase tracking-[0.2em] mb-6">Security Notice</h3>
+            <div className="flex items-start gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl shadow-inner">
               <ShieldCheck className="text-emerald-500 mt-0.5 shrink-0" size={16} />
-              <p className="text-[11px] text-white/60 leading-relaxed">
-                All document access is logged for audit purposes. Pre-signed download links are valid for 60 minutes.
+              <p className="text-[11px] text-text-muted/60 leading-relaxed font-medium">
+                All document access is logged for institutional audit. Pre-signed links expire in 60 minutes.
               </p>
             </div>
             
-            <div className="mt-6 space-y-2">
-              <p className="text-xs text-white/30 font-medium ml-1 mb-2">Recent Activities</p>
+            <div className="mt-8 space-y-3">
+              <p className="text-[10px] text-text-muted/30 font-black uppercase tracking-widest ml-1 mb-2">Recent Activities</p>
               {documents.slice(0, 3).map(doc => (
                 <div key={doc.id} className="flex items-center gap-3 text-[11px] py-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#F59F01]" />
-                  <span className="text-white/40 truncate">{doc.title}</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-ls-compliment" />
+                  <span className="text-text-muted/50 truncate font-medium">{doc.title}</span>
                 </div>
               ))}
             </div>
           </div>
           
-          <div className="bg-gradient-to-br from-[#1a1a2e] to-[#08001a] border border-white/8 rounded-2xl p-6 shadow-xl">
-            <p className="text-xs font-bold text-[#F59F01] uppercase tracking-wider mb-2">Help Center</p>
-            <p className="text-xs text-white/50 leading-relaxed mb-4">Questions about your quarterly reports or capital calls?</p>
-            <button className="w-full py-2 bg-white/5 border border-white/10 rounded-xl text-white text-xs font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+          <div className="bg-card border border-border-theme rounded-[2rem] p-8 shadow-xl theme-transition relative overflow-hidden">
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-ls-compliment/20" />
+            <p className="text-[10px] font-black text-ls-compliment uppercase tracking-[0.2em] mb-3">Institutional Support</p>
+            <p className="text-[11px] text-text-muted/60 leading-relaxed mb-6 font-medium">Questions regarding your quarterly statements or capital commitment schedules?</p>
+            <button className="w-full py-4 bg-foreground/[0.03] border border-border-theme rounded-xl text-foreground text-[10px] font-black uppercase tracking-widest hover:bg-foreground/[0.08] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95">
               Contact LP Support
               <ArrowRight size={14} />
             </button>
@@ -147,94 +152,95 @@ export default function LPDocumentsPage() {
         </div>
 
         {/* Document List */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-3 space-y-6">
           {loading ? (
             Array(4).fill(0).map((_, i) => (
-              <div key={i} className="h-24 bg-white/5 border border-white/10 rounded-2xl animate-pulse" />
+              <div key={i} className="h-28 bg-foreground/[0.03] border border-border-theme rounded-[2rem] animate-pulse" />
             ))
           ) : filteredDocs.length === 0 ? (
-            <div className="bg-[#08001a] border border-white/8 rounded-2xl p-12 text-center">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4 text-white/10">
-                <FileText size={32} />
+            <div className="bg-card border border-border-theme rounded-[2.5rem] p-20 text-center shadow-xl theme-transition">
+              <div className="w-20 h-20 rounded-full bg-foreground/[0.03] flex items-center justify-center mx-auto mb-6 text-text-muted/10 shadow-inner">
+                <FileText size={40} />
               </div>
-              <h3 className="text-white font-semibold">No documents available</h3>
-              <p className="text-white/30 text-sm mt-1">Check back later for new fund updates.</p>
+              <h3 className="text-xl font-black text-foreground uppercase tracking-tight">No records available</h3>
+              <p className="text-text-muted/40 text-[10px] font-black uppercase tracking-widest mt-2">Check back later for newly issued fund updates.</p>
             </div>
           ) : (
             filteredDocs.map(doc => (
-              <div key={doc.id} className="bg-[#08001a] border border-white/8 hover:border-[#F59F01]/30 rounded-2xl p-5 shadow-lg group transition-all duration-300">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-5 flex-1 min-w-0">
-                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-white/30 group-hover:text-[#F59F01] transition-colors shrink-0">
-                      <FileText size={24} />
+              <div key={doc.id} className="bg-card border border-border-theme hover:border-ls-compliment/30 rounded-[2rem] p-6 shadow-xl group transition-all duration-300 theme-transition relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-ls-compliment opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex items-center gap-6 flex-1 min-w-0">
+                    <div className="w-14 h-14 rounded-2xl bg-foreground/[0.03] flex items-center justify-center text-text-muted/30 group-hover:text-ls-compliment transition-colors shrink-0 shadow-inner">
+                      <FileText size={28} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-base font-bold text-white group-hover:text-[#F59F01] transition-colors truncate">{doc.title}</h3>
+                      <div className="flex items-center gap-4 mb-2">
+                        <h3 className="text-lg font-black text-foreground group-hover:text-ls-compliment transition-colors truncate uppercase tracking-tight">{doc.title}</h3>
                         {isNew(doc.publish_date) && (
-                          <span className="bg-emerald-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded shadow-[0_0_10px_rgba(16,185,129,0.5)]">New</span>
+                          <span className="bg-emerald-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full shadow-[0_4px_10px_rgba(16,185,129,0.3)]">New</span>
                         )}
                         {doc.requires_acknowledgment && !doc.has_acknowledged && (
-                          <span className="bg-amber-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded animate-pulse">Action Required</span>
+                          <span className="bg-amber-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full animate-pulse shadow-[0_4px_10px_rgba(245,159,1,0.3)]">Action Required</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-4 text-xs">
-                        <div className="flex items-center gap-1.5 text-white/40">
-                          <Building2 size={12} />
-                          <span>{doc.fund_name || 'Finlogic Fund'}</span>
+                      <div className="flex items-center gap-5 text-[10px] font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-2 text-text-muted/40">
+                          <Building2 size={14} className="text-ls-secondary" />
+                          <span>{doc.fund_name || 'Finlogic Institutional Fund'}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-white/40">
-                          <Calendar size={12} />
+                        <div className="flex items-center gap-2 text-text-muted/40">
+                          <Calendar size={14} />
                           <span>{new Date(doc.publish_date).toLocaleDateString()}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-white/20">
-                          <Clock size={12} />
+                        <div className="flex items-center gap-2 text-text-muted/20">
+                          <Clock size={14} />
                           <span>{(doc.file_size / 1024 / 1024).toFixed(2)} MB</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     {doc.requires_acknowledgment && !doc.has_acknowledged && (
                       <button 
                         onClick={() => handleAcknowledge(doc.id)}
-                        className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-amber-500 hover:text-black transition-all"
+                        className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-lg active:scale-95"
                       >
                         <CheckCircle2 size={14} />
-                        Acknowledge
+                        Execute Acknowledge
                       </button>
                     )}
                     {doc.has_acknowledged && (
-                      <div className="flex items-center gap-2 text-emerald-500 px-3 py-2 text-xs font-bold bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-emerald-500/5 rounded-xl border border-emerald-500/10 shadow-inner">
                         <CheckCircle2 size={14} />
-                        Signed
+                        Identity Verified
                       </div>
                     )}
                     <button 
                       onClick={() => handleDownload(doc.id, doc.file_name, doc.document_type)}
-                      className="p-3 bg-white/5 border border-white/10 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all active:scale-90"
-                      title="Download"
+                      className="p-4 bg-foreground/[0.03] border border-border-theme rounded-xl text-text-muted/60 hover:text-ls-compliment hover:bg-ls-compliment/5 transition-all active:scale-90 shadow-md group/btn"
+                      title="Ingest Document"
                     >
-                      <Download size={18} />
+                      <Download size={20} className="group-hover/btn:translate-y-0.5 transition-transform" />
                     </button>
                   </div>
                 </div>
                 
                 {doc.document_type === 'CAPITAL_CALL' && (
-                  <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-[#F59F01]/5 border border-[#F59F01]/10 rounded-lg px-3 py-1.5">
-                        <p className="text-[10px] text-[#F59F01]/60 font-bold uppercase tracking-widest">Call Amount</p>
-                        <p className="text-sm font-bold text-white">NPR {parseFloat(doc.capital_call_amount).toLocaleString()}</p>
+                  <div className="mt-6 pt-6 border-t border-border-theme/50 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                      <div className="bg-ls-compliment/5 border border-ls-compliment/10 rounded-xl px-5 py-2.5 shadow-inner">
+                        <p className="text-[9px] text-ls-compliment/60 font-black uppercase tracking-[0.2em] mb-1">Call Obligation</p>
+                        <p className="text-sm font-black text-foreground font-mono">NPR {parseFloat(doc.capital_call_amount).toLocaleString()}</p>
                       </div>
-                      <div className="bg-rose-500/5 border border-rose-500/10 rounded-lg px-3 py-1.5">
-                        <p className="text-[10px] text-rose-400/60 font-bold uppercase tracking-widest">Due Date</p>
-                        <p className="text-sm font-bold text-white">{new Date(doc.capital_call_due_date).toLocaleDateString()}</p>
+                      <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl px-5 py-2.5 shadow-inner">
+                        <p className="text-[9px] text-rose-500/60 font-black uppercase tracking-[0.2em] mb-1">Maturity Date</p>
+                        <p className="text-sm font-black text-foreground font-mono">{new Date(doc.capital_call_due_date).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <button className="text-xs text-[#F59F01] font-bold flex items-center gap-2 hover:underline">
-                      Payment Instructions
+                    <button className="text-[10px] text-ls-compliment font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:underline transition-all">
+                      Settlement Protocols
                       <ExternalLink size={12} />
                     </button>
                   </div>

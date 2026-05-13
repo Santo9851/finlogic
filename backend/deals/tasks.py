@@ -34,7 +34,7 @@ from .models import (
     ImmutableAuditEvent,
 )
 from .pdf_utils import generate_capital_account_pdf, upload_pdf_to_b2
-from .mail_utils import send_statement_notification
+from .mail_utils import send_statement_notification, send_capital_call_notification
 from .signals import _log_audit_event
 
 
@@ -1447,3 +1447,27 @@ def generate_ai_spa_draft(project_id, user_id=None):
         project.save(update_fields=['analysis_progress'])
         raise e
 
+
+@shared_task
+def batch_send_capital_call_emails(call_ids):
+    """
+    Task to send capital call emails in the background.
+    """
+    from .models import CapitalCall
+    for call_id in call_ids:
+        try:
+            call = CapitalCall.objects.select_related('lp_commitment__lp_profile__user', 'fund', 'project').get(id=call_id)
+            lp_profile = call.lp_commitment.lp_profile
+            if lp_profile and lp_profile.user.email:
+                send_capital_call_notification(
+                    lp_profile=lp_profile,
+                    fund=call.fund,
+                    project=call.project,
+                    amount_npr=float(call.amount_npr),
+                    due_date=str(call.due_date)
+                )
+                # Update notice_sent_at
+                call.notice_sent_at = timezone.now()
+                call.save(update_fields=['notice_sent_at'])
+        except Exception as e:
+            logger.error(f"Failed to send email for capital call {call_id}: {e}")
