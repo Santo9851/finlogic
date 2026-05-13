@@ -113,7 +113,7 @@ class SuperadminFinalizeInvestmentView(APIView):
         # 2. Capital Call Verification: All calls for this project must be RECEIVED
         pending_calls = CapitalCall.objects.filter(
             project=project,
-            status__in=['PENDING', 'CALLED']
+            status__in=['PENDING', 'CALLED', 'PAID']
         )
         if pending_calls.exists():
             return Response({

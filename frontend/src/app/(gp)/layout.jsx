@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, PieChart, ShieldCheck,
-  UserPlus, LogOut, Menu, X, ChevronDown, Files, User, FileText, Settings, HelpCircle, ArrowLeftRight, Library
+  UserPlus, LogOut, Menu, X, ChevronDown, Files, User, FileText, Settings, HelpCircle, ArrowLeftRight, Library, CircleDollarSign
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
@@ -34,6 +34,7 @@ const NAV = [
       { href: '/gp/compliance', label: 'Compliance' },
     ]
   },
+  { href: '/gp/fund-admin/drawdowns', label: 'Drawdown Management', icon: CircleDollarSign },
   { href: '/gp/fund-admin/documents', label: 'Fund Admin', icon: Files },
   { href: '/gp/ir-documents', label: 'Shareholder IR', icon: FileText },
   { href: '/gp/audit', label: 'Audit Log', icon: ShieldCheck },

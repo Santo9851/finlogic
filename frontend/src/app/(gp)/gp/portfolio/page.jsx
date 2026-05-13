@@ -9,7 +9,8 @@ import {
   ArrowRight,
   PieChart as PieChartIcon,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  CircleDollarSign
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -22,6 +23,14 @@ export default function PortfolioOverview() {
       href: '/gp/portfolio/analytics',
       color: 'bg-blue-500/10 text-blue-400',
       stats: '12 Active Reports'
+    },
+    {
+      title: 'Drawdowns',
+      description: 'Reconcile capital calls, verify LP bank transfers, and update paid-in capital ledgers.',
+      icon: CircleDollarSign,
+      href: '/gp/fund-admin/drawdowns',
+      color: 'bg-ls-compliment/10 text-ls-compliment',
+      stats: 'Awaiting Reconciliation'
     },
     {
       title: 'Waterfall',

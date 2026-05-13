@@ -5,7 +5,7 @@
  * Dashboard for Limited Partners — Institutional Wealth Tracking.
  */
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   PieChart, 
   Wallet, 
@@ -20,7 +20,8 @@ import {
   Calendar,
   ShieldCheck,
   CircleDollarSign,
-  Briefcase
+  Briefcase,
+  Clock
 } from 'lucide-react';
 import api from '@/services/api';
 import { MetricCard } from '@/components/portal/PortalShell';
@@ -154,7 +155,7 @@ export default function LPDashboard() {
               )}
 
               {dashboard?.pending_calls?.length > 0 && (
-                <div className="bg-purple-500/5 border border-purple-500/20 rounded-[2rem] p-8 flex items-center justify-between animate-in slide-in-from-right-8 shadow-xl">
+                <div className="bg-purple-500/5 border border-purple-500/20 rounded-[2rem] p-8 flex flex-col sm:flex-row sm:items-center justify-between animate-in slide-in-from-right-8 shadow-xl gap-6">
                   <div className="flex items-center gap-6">
                     <div className="w-12 h-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-500 shadow-inner">
                       <CircleDollarSign size={24} />
@@ -164,9 +165,25 @@ export default function LPDashboard() {
                       <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mt-1 opacity-60">Active drawdown protocols detected</p>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <p className="text-sm font-black text-foreground uppercase tracking-tighter tabular-nums">रू {parseFloat(dashboard.pending_calls[0].amount_npr).toLocaleString()}</p>
-                    <p className="text-[8px] text-purple-500 font-black uppercase tracking-widest mt-1">Due: {new Date(dashboard.pending_calls[0].due_date).toLocaleDateString()}</p>
+                  
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                    <div className="flex flex-col items-start sm:items-end">
+                      <p className="text-sm font-black text-foreground uppercase tracking-tighter tabular-nums">रू {parseFloat(dashboard.pending_calls[0].amount_npr).toLocaleString()}</p>
+                      <p className={`text-[8px] font-black uppercase tracking-widest mt-1 ${
+                        dashboard.pending_calls[0].status === 'PAID' ? 'text-emerald-500' : 'text-purple-500'
+                      }`}>
+                        {dashboard.pending_calls[0].status === 'PAID' ? 'Awaiting Verification' : `Due: ${new Date(dashboard.pending_calls[0].due_date).toLocaleDateString()}`}
+                      </p>
+                    </div>
+
+                    {dashboard.pending_calls[0].status === 'CALLED' ? (
+                      <LPPaymentNotification call={dashboard.pending_calls[0]} />
+                    ) : (
+                      <div className="px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-2">
+                        <Clock size={14} className="text-emerald-500 animate-pulse" />
+                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Processing...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -368,5 +385,81 @@ export default function LPDashboard() {
         </>
       )}
     </div>
+  );
+}
+
+function LPPaymentNotification({ call }) {
+  const [open, setOpen] = useState(false);
+  const [file, setFile] = useState(null);
+  const queryClient = useQueryClient();
+
+  const notifyMutation = useMutation({
+    mutationFn: async (formData) => {
+      return api.post(`/deals/capital-calls/${call.id}/notify_payment/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+    onSuccess: () => {
+      setOpen(false);
+      queryClient.invalidateQueries(['lp', 'dashboard']);
+    }
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!file) return;
+    const fd = new FormData();
+    fd.append('payment_proof', file);
+    notifyMutation.mutate(fd);
+  };
+
+  return (
+    <>
+      <button 
+        onClick={() => setOpen(true)}
+        className="bg-purple-500 text-white text-[10px] font-black uppercase tracking-widest px-6 py-3 rounded-xl hover:scale-105 transition-all shadow-lg active:scale-95"
+      >
+        Notify Payment
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="relative bg-card border border-border-theme rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-foreground uppercase tracking-tight mb-2">Submit Payment Proof</h3>
+            <p className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-8 opacity-60">Upload bank receipt or transfer confirmation</p>
+
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="space-y-4">
+                <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest">Select Document (PDF/JPG)</label>
+                <input 
+                  type="file" 
+                  onChange={(e) => setFile(e.target.files[0])}
+                  required
+                  className="w-full bg-foreground/5 border border-border-theme p-4 rounded-2xl text-xs focus:ring-2 focus:ring-ls-compliment/20 outline-none"
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button 
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-border-theme text-text-muted hover:bg-foreground/5 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={notifyMutation.isLoading}
+                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-ls-compliment text-white shadow-xl hover:scale-105 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {notifyMutation.isLoading ? <Loader2 className="animate-spin mx-auto" size={16} /> : 'Submit Proof'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

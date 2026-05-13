@@ -668,15 +668,16 @@ class CapitalCallSerializer(serializers.ModelSerializer):
     fund_name = serializers.CharField(source='fund.name', read_only=True)
     project_name = serializers.CharField(source='project.legal_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    lp_commitment_name = serializers.CharField(source='lp_commitment.lp_profile.full_name', read_only=True)
     lp_profile_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = CapitalCall
         fields = (
             'id', 'fund', 'fund_name', 'project', 'project_name', 'lp_commitment',
-            'lp_profile_detail',
+            'lp_commitment_name', 'lp_profile_detail',
             'call_date', 'due_date', 'amount_npr', 'status', 'status_display',
-            'notice_sent_at', 'received_at', 'notes',
+            'notice_sent_at', 'received_at', 'payment_proof', 'notes',
             'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
@@ -734,17 +735,6 @@ class PEFormTemplateSerializer(serializers.ModelSerializer):
 # ---------------------------------------------------------------------------
 # LP Dashboard
 # ---------------------------------------------------------------------------
-
-class CapitalCallSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CapitalCall
-        fields = ('id', 'call_date', 'due_date', 'amount_npr', 'status', 'received_at')
-
-class DistributionSerializer(serializers.ModelSerializer):
-    distribution_type_display = serializers.CharField(source='get_distribution_type_display', read_only=True)
-    class Meta:
-        model = Distribution
-        fields = ('id', 'distribution_date', 'amount_npr', 'distribution_type', 'distribution_type_display')
 
 class LPDashboardFundSerializer(serializers.ModelSerializer):
     """Fund data enriched with the LP's commitment summary."""

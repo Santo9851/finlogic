@@ -19,6 +19,7 @@ from django.urls import reverse
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
 from django.views.decorators.clickjacking import xframe_options_exempt
 from rest_framework import generics, permissions, status, viewsets, parsers
@@ -1374,7 +1375,7 @@ class LPDashboardView(APIView):
             'total_distributed_npr': float(total_distributed),
             'nav_npr': nav,
             'pending_calls': CapitalCallSerializer(
-                CapitalCall.objects.filter(lp_commitment__in=commitments, status='CALLED').select_related('fund'),
+                CapitalCall.objects.filter(lp_commitment__in=commitments, status__in=['CALLED', 'PAID']).select_related('fund'),
                 many=True
             ).data,
         })
@@ -3663,28 +3664,85 @@ class GPCapitalCallBatchView(APIView):
 class CapitalCallViewSet(viewsets.ModelViewSet):
     """
     CRUD for individual capital calls.
-    Enforces audit logging on receipt.
+    Enforces audit logging on receipt and allows LP payment notifications.
     """
     queryset = CapitalCall.objects.select_related('fund', 'project', 'lp_commitment__lp_profile').all()
     serializer_class = CapitalCallSerializer
-    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        fund_id = self.request.query_params.get('fund_id')
-        project_id = self.request.query_params.get('project_id')
         qs = super().get_queryset()
-        if fund_id:
-            qs = qs.filter(fund_id=fund_id)
-        if project_id:
-            qs = qs.filter(project_id=project_id)
+        user = self.request.user
+        
+        # LPs only see their own calls
+        if hasattr(user, 'role') and user.role == 'lp':
+            qs = qs.filter(lp_commitment__lp_profile__user=user)
+        # GP staff can filter by fund/project
+        else:
+            fund_id = self.request.query_params.get('fund_id')
+            project_id = self.request.query_params.get('project_id')
+            if fund_id:
+                qs = qs.filter(fund_id=fund_id)
+            if project_id:
+                qs = qs.filter(project_id=project_id)
         return qs
 
-    @action(detail=True, methods=['post'])
-    def mark_received(self, request, pk=None):
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def notify_payment(self, request, pk=None):
+        """
+        LP endpoint to submit proof of payment.
+        """
         call = self.get_object()
+        # Verify ownership
+        if call.lp_commitment.lp_profile.user != request.user:
+            return Response({"detail": "Permission denied."}, status=403)
+            
+        proof = request.FILES.get('payment_proof')
+        if not proof:
+            return Response({"detail": "Payment proof file is required."}, status=400)
+            
+        call.status = CapitalCall.Status.PAID
+        call.payment_proof = proof
+        call.notes = f"{call.notes}\nPayment notification submitted by LP on {timezone.now()}"
+        call.save()
+        
+        # Log audit
+        ImmutableAuditEvent.objects.create(
+            event_type='CAPITAL_PAID_NOTIFIED',
+            actor=request.user,
+            object_id=call.project.id if call.project else call.fund.id,
+            object_repr=str(call),
+            content_type_label='deals.CapitalCall',
+            payload={'call_id': str(call.id)}
+        )
+        
+        return Response({"status": "Payment notification submitted"})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsGPStaff])
+    def mark_received(self, request, pk=None):
+        """
+        GP endpoint to confirm receipt of funds.
+        Enforces project-level assignment permissions.
+        """
+        call = self.get_object()
+        user = request.user
+        
+        # Superadmin has global access
+        is_super = user.has_role('super_admin')
+        
+        # If call is linked to a project, check assignment
+        if call.project and not is_super:
+            is_owner = call.project.created_by == user
+            is_collab = call.project.collaborators.filter(id=user.id).exists()
+            if not (is_owner or is_collab):
+                return Response(
+                    {"detail": "You are not authorized to reconcile capital for this specific project."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
         call.status = CapitalCall.Status.RECEIVED
         call.received_at = timezone.now()
-        call.notes = f"{call.notes}\nReceived marked by {request.user} on {call.received_at}"
+        call.notes = f"{call.notes}\nReceived marked by {user} on {call.received_at}"
         call.save()
         
         # Update commitment
@@ -3693,10 +3751,45 @@ class CapitalCallViewSet(viewsets.ModelViewSet):
             comm.called_amount_npr += call.amount_npr
             comm.save()
             
+        # --- Send Confirmation Email to LP ---
+        try:
+            lp_user = call.lp_commitment.lp_profile.user
+            subject = f"Capital Receipt Confirmation: {call.fund.name}"
+            
+            # Styled HTML version matching brand colors
+            html_content = f"""
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #100226; color: #ffffff; padding: 40px; border-radius: 12px; border-top: 4px solid #F59F01;">
+                <h2 style="color: #F59F01; margin-top: 0;">Capital Receipt Confirmed</h2>
+                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">Dear {lp_user.first_name},</p>
+                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">This is to formally confirm that we have successfully received your capital contribution for <strong>{call.fund.name}</strong>.</p>
+                
+                <div style="background-color: rgba(245, 159, 1, 0.1); border-left: 3px solid #F59F01; padding: 20px; margin: 25px 0;">
+                    <p style="margin: 0; font-size: 18px; color: #ffffff;"><strong>Amount Received:</strong><br>NPR {float(call.amount_npr):,.2f}</p>
+                    <p style="margin: 8px 0 0 0; font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Transaction Ref: {call.id}</p>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">Thank you for your partnership and your commitment to the fund's growth protocols. Your updated paid-in capital balance is now reflected in your LP dashboard.</p>
+                
+                <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 30px 0;">
+                <p style="font-size: 11px; color: #94a3b8; margin: 0;">&copy; Finlogic Capital Limited. All rights reserved.<br>Kathmandu, Nepal</p>
+            </div>
+            """
+            
+            send_mail(
+                subject=subject,
+                message=f"Capital Receipt Confirmed: NPR {float(call.amount_npr):,.2f}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[lp_user.email],
+                html_message=html_content,
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Failed to send capital confirmation email: {e}")
+            
         # Log audit
         ImmutableAuditEvent.objects.create(
             event_type='CAPITAL_RECEIVED',
-            actor=request.user,
+            actor=user,
             object_id=call.project.id if call.project else call.fund.id,
             object_repr=str(call),
             content_type_label='deals.CapitalCall',

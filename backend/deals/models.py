@@ -570,6 +570,7 @@ class CapitalCall(models.Model):
     class Status(models.TextChoices):
         PENDING = 'PENDING', 'Pending'
         CALLED = 'CALLED', 'Called'
+        PAID = 'PAID', 'Paid (Awaiting Verification)'
         RECEIVED = 'RECEIVED', 'Received'
         DEFAULTED = 'DEFAULTED', 'Defaulted'
 
@@ -597,6 +598,12 @@ class CapitalCall(models.Model):
     )
     notice_sent_at = models.DateTimeField(null=True, blank=True)
     received_at = models.DateTimeField(null=True, blank=True)
+    payment_proof = models.FileField(
+        upload_to='payments/%Y/%m/%d/', 
+        null=True, 
+        blank=True,
+        help_text='LP upload for bank transfer proof'
+    )
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
