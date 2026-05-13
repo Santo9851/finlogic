@@ -9,7 +9,8 @@ from .views import (
     SuperAdminRegulatoryChecklistViewSet,
     SuperAdminConflictOfInterestViewSet,
     SuperAdminAnalyticsViewSet,
-    SuperAdminDealViewSet
+    SuperAdminDealViewSet,
+    SuperAdminValidationViewSet
 )
 
 router = DefaultRouter()
@@ -22,6 +23,7 @@ router.register(r'regulatory-checklists', SuperAdminRegulatoryChecklistViewSet, 
 router.register(r'conflicts-of-interest', SuperAdminConflictOfInterestViewSet, basename='superadmin-conflicts')
 router.register(r'analytics', SuperAdminAnalyticsViewSet, basename='superadmin-analytics')
 router.register(r'deals', SuperAdminDealViewSet, basename='superadmin-deals')
+router.register(r'validations', SuperAdminValidationViewSet, basename='superadmin-validations')
 
 urlpatterns = [
     path('', include(router.urls)),

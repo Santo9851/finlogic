@@ -25,8 +25,10 @@ from .serializers import (
     SuperAdminUserSerializer, 
     SuperAdminFundSerializer,
     SuperAdminPromptSerializer,
-    SuperAdminAuditLogSerializer
+    SuperAdminAuditLogSerializer,
+    SuperAdminValidationSerializer
 )
+from idea_validator.models import IdeaValidationSession
 from deals.serializers import (
     SEBONFilingDeadlineSerializer,
     RegulatoryChecklistSerializer,
@@ -613,3 +615,63 @@ class SuperAdminDealViewSet(viewsets.ModelViewSet):
                 pass
                 
         return Response({"status": "Revision requested. SPA draft reset to DRAFT and GP team notified."})
+
+class SuperAdminValidationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = IdeaValidationSession.objects.all().order_by('-created_at')
+    serializer_class = SuperAdminValidationSerializer
+    permission_classes = [IsSuperAdmin]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['user__email', 'id', 'verdict']
+    ordering_fields = ['created_at', 'updated_at', 'status', 'verdict']
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user_id = self.request.query_params.get('user_id')
+        status_param = self.request.query_params.get('status')
+        verdict = self.request.query_params.get('verdict')
+        date_start = self.request.query_params.get('date_start')
+        date_end = self.request.query_params.get('date_end')
+
+        if user_id: qs = qs.filter(user_id=user_id)
+        if status_param: qs = qs.filter(status=status_param)
+        if verdict: qs = qs.filter(verdict=verdict)
+        if date_start: qs = qs.filter(created_at__date__gte=date_start)
+        if date_end: qs = qs.filter(created_at__date__lte=date_end)
+
+        return qs
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # Log that an admin accessed this validation
+        log_admin_action(
+            request.user, 
+            ImmutableAuditEvent.EventType.RED_TEAM_REPORT_ACCESSED, 
+            instance, 
+            {"action": "view_validation_detail"}
+        )
+        return super().retrieve(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'], url_path='request-raw-report')
+    def request_raw_report(self, request, pk=None):
+        """Triggers the Deep Red-Team analysis on demand."""
+        session = self.get_object()
+        
+        if session.status != IdeaValidationSession.Status.COMPLETED:
+            return Response(
+                {"detail": "Validation must be completed before requesting a Red Team report."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if session.red_team_report:
+            return Response(
+                {"detail": "Red Team report already exists."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Trigger Task
+        from idea_validator.tasks import process_red_team_report
+        process_red_team_report.delay(session.id)
+        
+        log_admin_action(request.user, ImmutableAuditEvent.EventType.RED_TEAM_REPORT_TRIGGERED, session, {"action": "request_red_team_report"})
+        
+        return Response({"status": "processing"})

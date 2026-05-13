@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     'deals',  # PE Deal management
     'superadmin',
     'drf_spectacular',
+    'idea_validator.apps.IdeaValidatorConfig',
 ]
 
 MIDDLEWARE = [

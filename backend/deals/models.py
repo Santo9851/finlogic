@@ -783,6 +783,11 @@ class ImmutableAuditEvent(models.Model):
         COMPLIANCE_CLEARED = 'COMPLIANCE_CLEARED', 'Compliance Gate Cleared'
         COMPLIANCE_RESET = 'COMPLIANCE_RESET', 'Compliance Gate Reset'
         DEAL_APPROVED_FOR_LP = 'DEAL_APPROVED_FOR_LP', 'Deal Approved for LP'
+        # Idea Validator events
+        VALIDATION_SUBMITTED = 'VALIDATION_SUBMITTED', 'Idea Validation Submitted'
+        QUOTA_ADJUSTED = 'QUOTA_ADJUSTED', 'Validator Quota Adjusted'
+        RED_TEAM_REPORT_ACCESSED = 'RED_TEAM_REPORT_ACCESSED', 'Red-Team Report Accessed'
+        RED_TEAM_REPORT_TRIGGERED = 'RED_TEAM_REPORT_TRIGGERED', 'Red-Team Report Triggered'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event_type = models.CharField(max_length=50, choices=EventType.choices)
