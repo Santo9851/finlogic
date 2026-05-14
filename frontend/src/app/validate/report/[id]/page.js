@@ -102,24 +102,25 @@ export default function ValidationReportPage({ params: paramsPromise }) {
     }
   };
 
-  const getSummary = (text, limit = 320) => {
+  const getSummary = (text, limit = 550) => {
     if (!text) return "";
     
     // Specifically target Section 1: The Architect's Verdict
     const verdictMatch = text.match(/1\.\s+\*\*The Architect’s Verdict\*\*([\s\S]*?)(?=2\.\s+\*\*|$)/i);
     let cleanText = verdictMatch ? verdictMatch[1] : text;
 
-    // Remove markdown characters and redundant headers
+    // Remove markdown characters, redundant headers, and the leading '1.'
     cleanText = cleanText
       .replace(/\*This AI-generated educational analysis is provided by Finlogic Capital\. It does not constitute investment advice, a solicitation to invest, or any guarantee of future funding\.\*/g, '')
+      .replace(/^[1.\s]*/, '') // Strip leading '1.' or numbering
       .replace(/The Architect’s Verdict[:\s]*/gi, '')
       .replace(/Verdict[:\s]*(VIABLE|PIVOT REQUIRED|DEAD ON ARRIVAL)[:\s]*/gi, '')
+      .replace(/-{3,}/g, '') // Strip markdown horizontal rules (---)
       .replace(/[#*`_]/g, '') // Strip basic markdown
       .replace(/\[\[.*?\]\]/g, '') // Strip internal placeholders
       .trim();
     
     if (cleanText.length <= limit) return cleanText;
-    // Find last space before limit to avoid cutting words
     const lastSpace = cleanText.lastIndexOf(' ', limit);
     return cleanText.substring(0, lastSpace > 0 ? lastSpace : limit) + "...";
   };
@@ -146,7 +147,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
             const styles = clonedDoc.querySelectorAll('style, link[rel="stylesheet"]');
             styles.forEach(s => s.remove());
 
-            // Inject expanded safe styles for the premium layout
+            // Inject premium PORTRAIT styles
             const safeStyles = clonedDoc.createElement('style');
             safeStyles.innerHTML = `
               * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-print-color-adjust: exact; }
@@ -155,52 +156,50 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                 flex-direction: column !important; 
                 background-color: #100226 !important;
                 color: #FDF6FF !important;
-                padding: 3rem !important;
+                padding: 4rem !important;
                 position: relative !important;
                 width: 1200px !important;
-                height: 630px !important;
+                height: 1500px !important;
               }
-              .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; }
-              .brand-box { display: flex; flex-direction: column; gap: 0.5rem; }
+              .card-header { display: flex; flex-direction: column; gap: 2.5rem; margin-bottom: 3.5rem; }
+              .brand-row { display: flex; justify-content: space-between; align-items: center; }
               .verdict-seal { 
-                padding: 1rem 2rem; 
-                border: 2px solid #F59F01; 
-                border-radius: 1rem; 
-                background: rgba(245, 159, 1, 0.05);
+                padding: 1.25rem 2.5rem; 
+                border: 3px solid #F59F01; 
+                border-radius: 1.25rem; 
+                background: rgba(245, 159, 1, 0.08);
                 text-align: center;
               }
-              .verdict-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; color: #F59F01; margin-bottom: 0.25rem; opacity: 0.8; }
-              .verdict-value { font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
+              .verdict-label { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.4em; color: #F59F01; margin-bottom: 0.5rem; }
+              .verdict-value { font-size: 28px; font-weight: 900; letter-spacing: -0.02em; }
               
-              .card-body { flex: 1; display: flex; flex-direction: column; gap: 2rem; }
-              .report-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5em; color: #F59F01; opacity: 0.6; }
+              .card-body { flex: 1; display: flex; flex-direction: column; gap: 2.5rem; }
+              .section-marker { display: flex; items-center; gap: 1rem; }
+              .marker-line { h-px: 1px; flex: 1; background: rgba(245, 159, 1, 0.3); }
+              .report-title { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.6em; color: #F59F01; }
+              
               .architect-content { 
-                font-size: 20px; 
+                font-size: 34px; 
                 line-height: 1.6; 
                 font-style: italic; 
-                color: rgba(255, 255, 255, 0.9);
-                border-left: 4px solid rgba(245, 159, 1, 0.4);
-                padding-left: 2rem;
+                color: rgba(255, 255, 255, 0.95);
+                border-left: 8px solid #F59F01;
+                padding-left: 3.5rem;
                 margin: 0;
                 display: -webkit-box;
-                -webkit-line-clamp: 5;
+                -webkit-line-clamp: 12;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
               }
               
               .card-footer { 
-                margin-top: 3rem; 
-                padding-top: 2rem; 
+                margin-top: 5rem; 
+                padding-top: 3rem; 
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end;
               }
-              .disclaimer-box { max-width: 70%; }
-              .disclaimer-text { font-size: 9px; line-height: 1.5; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.3; }
-              .meta-text { font-size: 10px; font-weight: 900; letter-spacing: 0.2em; color: #F59F01; }
+              .disclaimer-text { font-size: 11px; line-height: 1.7; text-transform: uppercase; letter-spacing: 0.15em; color: #F59F01; opacity: 0.7; font-weight: 600; }
               
-              .zap-bg { position: absolute; top: -50px; right: -50px; opacity: 0.03; width: 400px; height: 400px; }
+              .zap-bg { position: absolute; bottom: -100px; right: -100px; opacity: 0.02; width: 600px; height: 600px; }
             `;
             clonedDoc.head.appendChild(safeStyles);
           } catch (e) {
@@ -214,7 +213,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
             card.style.visibility = 'visible';
             card.style.position = 'relative';
             card.style.width = '1200px';
-            card.style.height = '630px';
+            card.style.height = '1500px';
           }
         }
       });
@@ -467,58 +466,53 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                 </div>
 
                 <div className="p-8 space-y-8">
-                  {/* Premium Share Card Preview */}
+                  {/* Institutional Portrait Brief Preview */}
                   <div 
                     ref={cardRef}
                     data-share-card
                     style={{ backgroundColor: '#100226', color: '#FDF6FF', borderColor: 'rgba(255,255,255,0.1)' }}
-                    className="aspect-[1.91/1] w-full rounded-[2rem] p-12 flex flex-col justify-between relative overflow-hidden border shadow-2xl"
+                    className="aspect-[1/1.25] w-full max-w-[500px] mx-auto rounded-[3rem] p-12 flex flex-col justify-between relative overflow-hidden border shadow-2xl"
                   >
                     {/* Branded Background Watermark */}
-                    <div className="absolute -right-16 -top-16 opacity-[0.03] zap-bg">
-                      <Zap size={400} style={{ color: '#F59F01' }} />
+                    <div className="absolute -right-20 -bottom-20 opacity-[0.02] zap-bg">
+                      <Zap size={600} style={{ color: '#F59F01' }} />
                     </div>
                     
-                    {/* Header: Logo & Verdict Seal */}
-                    <div className="relative z-10 flex items-start justify-between card-header">
-                      <div className="brand-box">
-                         <FinlogicLogo size={48} darkBg={true} variant="full" />
-                         <div className="mt-4 flex items-center gap-3">
-                            <div className="h-px w-8 bg-ls-compliment/30" />
-                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-ls-compliment">Sovereign Venture Architect</span>
+                    {/* Header: Identity Row */}
+                    <div className="relative z-10 space-y-10 card-header">
+                      <div className="flex items-center justify-between brand-row">
+                         <FinlogicLogo size={56} darkBg={true} variant="full" />
+                         <div 
+                           className="verdict-seal"
+                           style={{ borderColor: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}
+                         >
+                            <div className="verdict-label">Verdict</div>
+                            <div className="verdict-value" style={{ color: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}>
+                               {report.verdict}
+                            </div>
                          </div>
                       </div>
                       
-                      <div 
-                        className="verdict-seal"
-                        style={{ borderColor: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}
-                      >
-                         <div className="verdict-label">Strategic Verdict</div>
-                         <div className="verdict-value" style={{ color: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}>
-                            {report.verdict}
-                         </div>
+                      <div className="flex items-center gap-4 section-marker">
+                         <div className="h-px flex-1 bg-ls-compliment/30 marker-line" />
+                         <span className="text-[10px] font-black uppercase tracking-[0.5em] text-ls-compliment report-title">Sovereign Venture Architect</span>
+                         <div className="h-px flex-1 bg-ls-compliment/30 marker-line" />
                       </div>
                     </div>
 
-                    {/* Body: Architect's Verdict Content */}
-                    <div className="relative z-10 card-body">
-                      <div className="report-title">Architect's Analysis Preview</div>
+                    {/* Body: Pure Strategic Verdict */}
+                    <div className="relative z-10 flex-1 flex flex-col justify-center card-body">
                       <p className="architect-content">
-                        {getSummary(report.report, 450)}
+                        {getSummary(report.report, 500)}
                       </p>
                     </div>
 
-                    {/* Footer: Institutional Disclaimer & Meta */}
+                    {/* Footer: Branded Disclaimer */}
                     <div className="relative z-10 card-footer">
-                      <div className="disclaimer-box">
-                         <p className="disclaimer-text">
-                            THIS IS AN AI-GENERATED STRATEGIC ANALYSIS BY FINLOGIC CAPITAL. IT DOES NOT CONSTITUTE FINANCIAL OR INVESTMENT ADVICE. 
-                            CONFIDENTIAL EDUCATIONAL DOCUMENT • VERIFIED VIA SOVEREIGN VENTURE ARCHITECT
-                         </p>
-                      </div>
-                      <div className="meta-text">
-                         FINLOGIC.CO • {new Date().getFullYear()}
-                      </div>
+                      <p className="disclaimer-text" style={{ color: '#F59F01' }}>
+                        THIS IS AN AI-GENERATED STRATEGIC ANALYSIS BY FINLOGIC CAPITAL. IT DOES NOT CONSTITUTE FINANCIAL OR INVESTMENT ADVICE. 
+                        CONFIDENTIAL EDUCATIONAL DOCUMENT • VERIFIED VIA SOVEREIGN VENTURE ARCHITECT
+                      </p>
                     </div>
                   </div>
 

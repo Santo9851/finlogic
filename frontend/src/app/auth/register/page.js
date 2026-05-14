@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Mail, Lock, User, Phone, Briefcase, TrendingUp } from 'lucide-react';
+import { Loader2, Mail, Lock, User, Phone, Briefcase, TrendingUp, Github, Linkedin, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import FinlogicLogo from '@/components/FinlogicLogo';
 import { useTheme } from 'next-themes';
@@ -17,7 +17,7 @@ const registerSchema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
   phone: z.string().optional(),
-  role: z.enum(['entrepreneur', 'investor'], { required_error: 'Please select a role' }),
+  role: z.enum(['entrepreneur', 'investor', 'gp_investor', 'reader', 'admin', 'super_admin'], { required_error: 'Please select a role' }),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   password_confirm: z.string(),
 }).refine(data => data.password === data.password_confirm, {
@@ -26,48 +26,40 @@ const registerSchema = z.object({
 });
 
 export default function RegisterPage() {
-  const { register: registerUser } = useAuth();
+  const { user, authLoading, register: registerUser } = useAuth();
   const router = useRouter();
   const { theme, resolvedTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('');
-
   const isDark = resolvedTheme === 'dark';
 
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/wisdom-hub'); // Redirect to dashboard or home if already logged in
+    }
+  }, [user, authLoading, router]);
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(registerSchema) });
+  } = useForm({ 
+    resolver: zodResolver(registerSchema),
+    mode: 'onBlur' 
+  });
+
+  const selectedRole = watch('role');
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     const result = await registerUser(data);
     
     if (result.success) {
-      if (result.status === 202) {
-        toast.success('Role request submitted!', {
-          description: result.message || 'An administrator will review your request to add this role to your account.',
-          duration: 6000,
-        });
-        setTimeout(() => router.push('/auth/login'), 2000);
-      } else {
-        // Success but login might have failed because of is_approved=False
-        toast.success('Account created!', {
-          description: 'Your account is pending admin approval. You will receive an email once an administrator reviews your request.',
-          duration: 10000,
-        });
-        setTimeout(() => router.push('/auth/login'), 3000);
-      }
+      router.push('/auth/register/success');
     } else {
       // If result.error contains the "pending approval" message, it means registration worked but login didn't
       if (result.error?.includes('pending admin approval')) {
-        toast.success('Account created!', {
-          description: 'Your account is pending admin approval. You will be able to login once an administrator reviews your request.',
-          duration: 10000,
-        });
-        setTimeout(() => router.push('/auth/login'), 3000);
+        router.push('/auth/register/success');
       } else {
         toast.error(result.error || 'Registration failed.');
       }
@@ -75,12 +67,8 @@ export default function RegisterPage() {
     }
   };
 
-  const handleRoleSelect = (role) => {
-    setSelectedRole(role);
-    setValue('role', role, { shouldValidate: true });
-  };
 
-  const inputClass = "block w-full pl-10 pr-3 py-2.5 bg-foreground/5 border border-border-theme rounded-xl text-foreground placeholder-text-muted/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors theme-transition";
+  const inputClass = "block w-full pl-10 pr-3 py-2.5 bg-foreground/5 border border-border-theme rounded-xl text-foreground placeholder-text-muted/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors theme-transition dark:bg-card";
 
   return (
     <div className="min-h-screen bg-abstract-gradient flex flex-col items-center justify-center p-4 py-12 theme-transition">
@@ -95,50 +83,39 @@ export default function RegisterPage() {
           <p className="text-text-muted">Join the Finlogic Capital platform</p>
         </div>
 
-        {/* Role Selector */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            type="button"
-            onClick={() => handleRoleSelect('entrepreneur')}
-            className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all theme-transition ${
-              selectedRole === 'entrepreneur'
-                ? 'border-[#F59F01] bg-[#F59F01]/10 shadow-lg shadow-[#F59F01]/10'
-                : 'border-border-theme bg-card hover:border-[#F59F01]/30'
-            }`}
-          >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedRole === 'entrepreneur' ? 'bg-[#F59F01]/20' : 'bg-foreground/5'}`}>
-              <Briefcase size={22} className={selectedRole === 'entrepreneur' ? 'text-[#F59F01]' : 'text-text-muted'} />
-            </div>
-            <div className="text-center">
-              <p className={`font-semibold ${selectedRole === 'entrepreneur' ? 'text-[#F59F01]' : 'text-text-muted'}`}>Entrepreneur</p>
-              <p className="text-xs text-text-muted mt-0.5">Submit projects for funding</p>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => handleRoleSelect('investor')}
-            className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all theme-transition ${
-              selectedRole === 'investor'
-                ? 'border-[#F59F01] bg-[#F59F01]/10 shadow-lg shadow-[#F59F01]/10'
-                : 'border-border-theme bg-card hover:border-[#F59F01]/30'
-            }`}
-          >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${selectedRole === 'investor' ? 'bg-[#F59F01]/20' : 'bg-foreground/5'}`}>
-              <TrendingUp size={22} className={selectedRole === 'investor' ? 'text-[#F59F01]' : 'text-text-muted'} />
-            </div>
-            <div className="text-center">
-              <p className={`font-semibold ${selectedRole === 'investor' ? 'text-[#F59F01]' : 'text-text-muted'}`}>Investor</p>
-              <p className="text-xs text-text-muted mt-0.5">Discover vetted opportunities</p>
-            </div>
-          </button>
-        </div>
-        {errors.role && <p className="text-sm text-red-500 dark:text-red-400 text-center -mt-3 mb-4">{errors.role.message}</p>}
+        {/* Role cards removed - replaced by dropdown in form */}
 
         {/* Form Card */}
         <div className="glass-card rounded-2xl p-8 relative overflow-hidden theme-transition">
           <div className="absolute top-0 right-0 w-40 h-40 bg-[#F59F01]/5 rounded-full blur-3xl" />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative z-10">
+            <div>
+              <label className="block text-sm font-medium text-text-muted mb-1.5">I am a...</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
+                  {selectedRole === 'investor' ? <TrendingUp size={16}/> : <Briefcase size={16}/>}
+                </div>
+                <select 
+                  {...register('role')} 
+                  className={`${inputClass} appearance-none`}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select your role</option>
+                  <option value="entrepreneur" className="bg-card text-foreground">Entrepreneur</option>
+                  <option value="investor" className="bg-card text-foreground">Investor (LP Investor)</option>
+                  <option value="gp_investor" className="bg-card text-foreground">GP Investor (GP Shareholder)</option>
+                  <option value="reader" className="bg-card text-foreground">Reader</option>
+                  <option value="admin" className="bg-card text-foreground">Admin (GP Staff)</option>
+                  <option value="super_admin" className="bg-card text-foreground">Super Admin (GP Senior Staff)</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-text-muted">
+                  <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                </div>
+              </div>
+              {errors.role && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{errors.role.message}</p>}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-text-muted mb-1.5">First Name</label>
@@ -201,7 +178,31 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center relative z-10">
+          <div className="mt-8 relative z-10">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border-theme"></div></div>
+              <div className="relative flex justify-center text-sm"><span className="px-2 bg-card text-text-muted">Or continue with</span></div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => toast.info('Social sign-on coming soon')}
+                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-border-theme bg-foreground/5 hover:bg-foreground/10 transition-colors text-sm font-medium"
+              >
+                <Github size={18} /> GitHub
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.info('Social sign-on coming soon')}
+                className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-border-theme bg-foreground/5 hover:bg-foreground/10 transition-colors text-sm font-medium"
+              >
+                <Linkedin size={18} className="text-[#0077b5]" /> LinkedIn
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center relative z-10">
             <p className="text-sm text-text-muted">
               Already have an account?{' '}
               <Link href="/auth/login" className="font-semibold text-foreground hover:text-[#F59F01] transition-colors">

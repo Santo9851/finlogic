@@ -63,7 +63,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
-    role = serializers.ChoiceField(choices=[User.Role.ENTREPRENEUR, User.Role.INVESTOR], write_only=True) # Only allow specific roles
+    role = serializers.ChoiceField(
+        choices=User.Role.choices + [('gp_investor', 'GP Investor')], 
+        write_only=True
+    ) # Allow all roles including gp_investor which is mentioned in help_text
 
     email = serializers.EmailField(write_only=True) # Override to remove model validation for uniqueness check here
 

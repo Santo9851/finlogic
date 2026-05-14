@@ -19,12 +19,18 @@ const loginSchema = z.object({
 });
 
 function LoginContent() {
-  const { login } = useAuth();
+  const { user, authLoading, login } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme, resolvedTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const returnUrl = searchParams.get('returnUrl');
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/wisdom-hub');
+    }
+  }, [user, authLoading, router]);
 
   const isDark = resolvedTheme === 'dark';
 
