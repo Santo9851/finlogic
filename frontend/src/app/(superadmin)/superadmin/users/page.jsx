@@ -22,8 +22,10 @@ import {
   ShieldAlert,
   Fingerprint,
   Users as UsersIcon,
-  ChevronRight
+  ChevronRight,
+  ArrowUpRight
 } from 'lucide-react';
+import Link from 'next/link';
 import api from '@/services/api';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
@@ -243,6 +245,12 @@ export default function SuperAdminUsersPage() {
                       >
                         <Edit size={18} />
                       </button>
+                      <Link 
+                        href={`/superadmin/users/${user.id}`}
+                        className="p-3 bg-foreground/5 text-text-muted/20 hover:text-purple-500 hover:bg-purple-500/10 rounded-xl transition-all shadow-sm active:scale-95 border border-border-theme/50"
+                      >
+                        <ArrowUpRight size={18} />
+                      </Link>
                     </div>
                   </td>
                 </tr>

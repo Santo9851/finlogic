@@ -30,8 +30,9 @@ export default function Header() {
 
   const navLinks = [
     { name: 'Home', href: '/' },
+    { name: 'Idea Validator', href: '/validate' },
     { name: 'About Us', href: '/about' },
-    { name: 'Investment Philosophy', href: '/philosophy' },
+    { name: 'Philosophy', href: '/philosophy' },
     { name: 'Insights', href: '/insights' },
     { name: 'Contact', href: '/contact' },
   ];
@@ -96,8 +97,8 @@ export default function Header() {
           ))}
           {!user && (
             <>
-              <Link href="/entrepreneurs" className={`text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass}`}>For Entrepreneurs</Link>
-              <Link href="/investors" className={`text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass}`}>For Investors</Link>
+              <Link href="/for-entrepreneurs" className={`text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass}`}>For Entrepreneurs</Link>
+              <Link href="/for-investors" className={`text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass}`}>For Investors</Link>
             </>
           )}
         </nav>
@@ -264,14 +265,14 @@ export default function Header() {
               ) : (
                 <>
                   <Link 
-                    href="/entrepreneurs" 
+                    href="/for-entrepreneurs" 
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`text-xl font-black uppercase tracking-tight transition-all ${accentTextClass}`}
                   >
                     For Entrepreneurs
                   </Link>
                   <Link 
-                    href="/investors" 
+                    href="/for-investors" 
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`text-xl font-black uppercase tracking-tight transition-all ${accentTextClass}`}
                   >

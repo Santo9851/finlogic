@@ -60,19 +60,14 @@
     background: radial-gradient(circle at top left, var(--color-ls-supporting), transparent),
                 radial-gradient(circle at bottom right, var(--color-ls-primary-fixed), transparent),
                 var(--background);
+    opacity: 0.05;
   }
 
-  .dark .bg-abstract-gradient {
-    background: radial-gradient(circle at top left, var(--color-ls-supporting), transparent),
-                radial-gradient(circle at bottom right, var(--color-ls-primary-fixed), transparent),
-                var(--background);
-  }
-  
-  /* Light mode version for abstract gradient override */
   :root:not(.dark) .bg-abstract-gradient {
-    background: radial-gradient(circle at top left, rgba(58, 49, 83, 0.05), transparent),
-                radial-gradient(circle at bottom right, rgba(245, 159, 1, 0.05), transparent),
+    background: radial-gradient(circle at top left, rgba(58, 49, 83, 0.1), transparent),
+                radial-gradient(circle at bottom right, rgba(245, 159, 1, 0.1), transparent),
                 var(--background);
+    opacity: 0.1;
   }
   
   .glass-card {

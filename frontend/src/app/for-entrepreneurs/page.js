@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ChevronDown, 
@@ -19,6 +19,7 @@ import {
   BookOpen
 } from "lucide-react";
 import Link from "next/link";
+import { useTheme } from "next-themes";
 
 const benefits = [
   {
@@ -131,7 +132,7 @@ function FAQItem({ question, answer }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="border-b border-ls-supporting/20 last:border-0">
+    <div className="border-b border-border-theme last:border-0">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full py-6 flex items-center justify-between text-left group"
@@ -139,7 +140,7 @@ function FAQItem({ question, answer }) {
         <span className="text-lg font-semibold group-hover:text-ls-compliment transition-colors">{question}</span>
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
-          className="text-ls-white/40"
+          className="text-text-muted"
         >
           <ChevronDown className="w-5 h-5" />
         </motion.div>
@@ -152,7 +153,7 @@ function FAQItem({ question, answer }) {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <p className="pb-6 text-ls-white/60 leading-relaxed">
+            <p className="pb-6 text-text-muted leading-relaxed">
               {answer}
             </p>
           </motion.div>
@@ -163,11 +164,21 @@ function FAQItem({ question, answer }) {
 }
 
 export default function EntrepreneursPage() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const isDark = resolvedTheme === "dark";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
   return (
-    <div className="bg-ls-primary text-ls-white min-h-screen">
+    <div className="bg-background text-foreground min-h-screen theme-transition">
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 overflow-hidden">
-        <div className="absolute inset-0 bg-abstract-gradient opacity-20 pointer-events-none" />
+        <div className="absolute inset-0 bg-abstract-gradient pointer-events-none" />
         <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -180,7 +191,7 @@ export default function EntrepreneursPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-bold mb-8"
+            className="text-5xl md:text-7xl font-black mb-8 leading-tight tracking-tighter"
           >
             We back visionary founders. <br className="hidden md:block" />
             <span className="text-ls-compliment">By Invitation Only.</span>
@@ -189,7 +200,7 @@ export default function EntrepreneursPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl text-ls-white/70 max-w-2xl mx-auto mb-12"
+            className="text-xl text-text-muted max-w-2xl mx-auto mb-12"
           >
             If you're building a business that others overlook, we want to hear from you.
           </motion.p>
@@ -199,18 +210,18 @@ export default function EntrepreneursPage() {
              transition={{ delay: 0.3 }}
           >
             <Link 
-              href="/contact"
-              className="inline-block rounded-full bg-ls-up px-10 py-5 text-lg font-bold text-ls-primary transition-all hover:scale-105 hover:bg-ls-up/90 active:scale-95 shadow-lg shadow-ls-up/20"
+              href="/validate"
+              className="inline-block rounded-full bg-ls-compliment px-10 py-5 text-lg font-bold text-ls-primary transition-all hover:scale-105 shadow-lg shadow-ls-compliment/20"
             >
-              Contact Us to Learn More
+              Start Your Free Idea Analysis
             </Link>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-ls-white/30 mt-4">Public applications are currently closed</p>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-text-muted mt-4">Takes approximately 20 minutes</p>
           </motion.div>
         </div>
       </section>
 
       {/* Why Apply Section */}
-      <section className="py-24 border-y border-ls-supporting/10">
+      <section className="py-24 border-y border-border-theme">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="text-3xl font-bold mb-16 text-center">Why Apply to Finlogic?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -218,13 +229,13 @@ export default function EntrepreneursPage() {
               <motion.div
                 key={i}
                 whileHover={{ y: -5 }}
-                className="glass-card p-8 rounded-2xl"
+                className="bg-card border border-border-theme p-8 rounded-[2rem] shadow-sm hover:shadow-xl transition-all"
               >
                 <div className="mb-6 p-4 bg-ls-compliment/5 rounded-xl inline-block">
                   {benefit.icon}
                 </div>
                 <h3 className="text-xl font-bold mb-4">{benefit.title}</h3>
-                <p className="text-ls-white/60 leading-relaxed text-sm">
+                <p className="text-text-muted leading-relaxed text-sm">
                   {benefit.description}
                 </p>
               </motion.div>
@@ -234,21 +245,21 @@ export default function EntrepreneursPage() {
       </section>
 
       {/* Screening Criteria Section */}
-      <section className="py-24 bg-ls-supporting/5">
+      <section className="py-24 bg-card/50">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">Our Screening Criteria</h2>
-          <p className="text-ls-white/50 mb-16">We evaluate every opportunity through the lens of our five pillars.</p>
+          <p className="text-text-muted mb-16">We evaluate every opportunity through the lens of our five pillars.</p>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {criteria.map((c, i) => (
               <motion.div
                 key={i}
-                className="glass-card p-8 rounded-2xl flex flex-col items-center group"
+                className="bg-card border border-border-theme p-8 rounded-2xl flex flex-col items-center group hover:border-ls-compliment transition-colors"
               >
                 <div className="mb-6 transform transition-transform group-hover:scale-110">
                   {c.icon}
                 </div>
                 <h3 className="text-lg font-bold mb-4 leading-tight">{c.title}</h3>
-                <p className="text-xs text-ls-white/50 leading-relaxed">{c.description}</p>
+                <p className="text-xs text-text-muted leading-relaxed">{c.description}</p>
               </motion.div>
             ))}
           </div>
@@ -261,7 +272,7 @@ export default function EntrepreneursPage() {
           <h2 className="text-3xl font-bold mb-20 text-center">How It Works</h2>
           <div className="relative">
             {/* Timeline Line */}
-            <div className="absolute left-8 lg:left-1/2 top-0 bottom-0 w-px bg-ls-compliment/20 hidden sm:block" />
+            <div className="absolute left-8 lg:left-1/2 top-0 bottom-0 w-px bg-border-theme hidden sm:block" />
 
             <div className="space-y-16">
               {steps.map((step, index) => (
@@ -273,7 +284,7 @@ export default function EntrepreneursPage() {
                   className={`relative flex items-center ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}
                 >
                   <div className="w-full lg:w-1/2 flex items-center lg:px-12">
-                     <div className={`p-8 lg:p-10 rounded-3xl glass-card transition-all hover:border-ls-compliment/40 w-full`}>
+                     <div className={`p-8 lg:p-10 rounded-3xl bg-card border border-border-theme transition-all hover:border-ls-compliment/40 w-full shadow-sm`}>
                         <div className="flex items-center mb-6">
                            <span className="text-4xl font-black text-ls-compliment/20 mr-4">{step.id}</span>
                            <div className="p-3 bg-ls-compliment/10 rounded-lg text-ls-compliment">
@@ -281,10 +292,10 @@ export default function EntrepreneursPage() {
                            </div>
                         </div>
                         <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
-                        <p className="text-ls-white/60 leading-relaxed">{step.description}</p>
+                        <p className="text-text-muted leading-relaxed">{step.description}</p>
                      </div>
                   </div>
-                  <div className="absolute left-8 lg:left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-ls-compliment border-4 border-ls-primary hidden sm:block shadow-[0_0_15px_rgba(245,159,1,0.5)]" />
+                  <div className="absolute left-8 lg:left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-ls-compliment border-4 border-background hidden sm:block shadow-[0_0_15px_rgba(245,159,1,0.5)]" />
                   <div className="hidden lg:block w-1/2" />
                 </motion.div>
               ))}
@@ -294,12 +305,12 @@ export default function EntrepreneursPage() {
       </section>
 
       {/* Educational Resources Section */}
-      <section className="py-24 border-t border-ls-supporting/10 bg-abstract-gradient opacity-90">
+      <section className="py-24 border-t border-border-theme bg-ls-compliment/[0.02]">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="glass-card p-12 md:p-20 rounded-[3rem] text-center max-w-5xl mx-auto flex flex-col items-center">
+          <div className="bg-card border border-border-theme p-12 md:p-20 rounded-[3rem] text-center max-w-5xl mx-auto flex flex-col items-center shadow-xl">
             <BookOpen className="w-16 h-16 text-ls-compliment mb-8" />
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Educational Resources Teaser</h2>
-            <p className="text-lg text-ls-white/70 mb-10 leading-relaxed">
+            <h2 className="text-3xl md:text-4xl font-black mb-6">Educational Resources Teaser</h2>
+            <p className="text-lg text-text-muted mb-10 leading-relaxed">
               Prepare a compelling submission with our free courses in the Wisdom Hub. Learn how to articulate your vision, build a sustainable business model, and more.
             </p>
             <Link href="/insights" className="flex items-center text-ls-compliment font-bold text-lg hover:translate-x-2 transition-transform">
@@ -322,15 +333,15 @@ export default function EntrepreneursPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-24 bg-ls-supporting/5 text-center">
+      <section className="py-24 bg-card text-center border-t border-border-theme">
         <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="text-3xl font-bold mb-8">Ready to Scale Honestly?</h2>
-          <p className="text-ls-white/60 mb-12 max-w-xl mx-auto">We currently accept submissions on an invitation-only basis. If you'd like to join our network, please reach out.</p>
+          <h2 className="text-3xl font-black mb-8 tracking-tight">Ready to Scale Honestly?</h2>
+          <p className="text-text-muted mb-12 max-w-xl mx-auto">Validate your vision across our institutional framework and prepare for institutional-grade growth.</p>
           <Link 
-            href="/contact"
-            className="inline-block rounded-full bg-ls-up px-12 py-5 text-xl font-bold text-ls-primary hover:scale-105 transition-all shadow-xl shadow-ls-up/20"
+            href="/validate"
+            className="inline-block rounded-full bg-ls-compliment px-12 py-5 text-xl font-bold text-ls-primary hover:scale-105 transition-all shadow-xl shadow-ls-compliment/20"
           >
-            Get in Touch
+            Launch Validator
           </Link>
         </div>
       </section>

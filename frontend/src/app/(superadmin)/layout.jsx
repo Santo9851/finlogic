@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Users, Briefcase, ShieldCheck,
   Activity, BookOpen, LogOut, Menu, X, ChevronDown, FileText, BarChart3, User, Library, ArrowLeftRight,
-  CircleDollarSign, ChevronRight
+  CircleDollarSign, ChevronRight, FileSearch
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
@@ -29,6 +29,7 @@ const NAV = [
   { href: '/superadmin/audit', label: 'Audit Logs', icon: Activity },
   { href: '/superadmin/compliance', label: 'Compliance', icon: ShieldCheck },
   { href: '/superadmin/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/superadmin/validations', label: 'Validator', icon: FileSearch },
 ];
 
 function Sidebar({ collapsed, onClose }) {

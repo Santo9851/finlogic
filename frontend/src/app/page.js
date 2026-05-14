@@ -33,7 +33,7 @@ const HERO_SLIDES = [
     subtitle: "Built on a foundation of trust, shared values, and long-term alignment to create enduring success.",
     primaryCTA: "Partner With Us",
     secondaryCTA: "Contact Us",
-    primaryHref: "/investors",
+    primaryHref: "/for-investors",
     secondaryHref: "/contact",
     accent: "bg-ls-up",
     visual: <FluidHarmony />

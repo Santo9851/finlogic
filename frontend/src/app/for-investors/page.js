@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   BarChart3,
@@ -16,7 +16,7 @@ import {
   FileText
 } from "lucide-react";
 import Link from "next/link";
-
+import { useTheme } from "next-themes";
 import { contactService } from "@/services/contact";
 import { toast } from "sonner";
 
@@ -79,7 +79,14 @@ const investmentSteps = [
 ];
 
 export default function InvestorsPage() {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const isDark = resolvedTheme === "dark";
   const [formStatus, setFormStatus] = useState("idle");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,11 +118,13 @@ export default function InvestorsPage() {
     }
   };
 
+  if (!mounted) return null;
+
   return (
-    <div className="bg-ls-primary text-ls-white min-h-screen">
+    <div className="bg-background text-foreground min-h-screen theme-transition">
       {/* Hero Section */}
       <section className="relative pt-32 pb-24 overflow-hidden">
-        <div className="absolute inset-0 bg-abstract-gradient opacity-20 pointer-events-none" />
+        <div className="absolute inset-0 bg-abstract-gradient pointer-events-none" />
         <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -127,7 +136,7 @@ export default function InvestorsPage() {
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-bold mb-8 max-w-5xl mx-auto leading-tight"
+            className="text-5xl md:text-7xl font-black mb-8 max-w-5xl mx-auto leading-tight tracking-tighter"
           >
             Partner with us to access <br className="hidden md:block" />
             <span className="text-ls-compliment">exclusive, high‑potential deals.</span>
@@ -136,7 +145,7 @@ export default function InvestorsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-xl text-ls-white/70 max-w-2xl mx-auto mb-12"
+            className="text-xl text-text-muted max-w-2xl mx-auto mb-12"
           >
             Finlogic Capital offers a differentiated investment opportunity rooted in a proven, insight‑driven philosophy.
           </motion.p>
@@ -146,10 +155,13 @@ export default function InvestorsPage() {
             transition={{ delay: 0.2 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <button className="w-full sm:w-auto rounded-full bg-ls-white text-ls-primary px-10 py-4 font-bold transition-all hover:bg-ls-white/90 active:scale-95">
+            <Link 
+              href="/auth/login"
+              className="w-full sm:w-auto rounded-full bg-foreground text-background px-10 py-4 font-bold transition-all hover:bg-ls-compliment hover:text-ls-primary active:scale-95 text-center"
+            >
               Investor Login
-            </button>
-            <a href="#request-access" className="w-full sm:w-auto rounded-full border border-ls-compliment text-ls-compliment px-10 py-4 font-bold transition-all hover:bg-ls-compliment hover:text-ls-primary">
+            </Link>
+            <a href="#request-access" className="w-full sm:w-auto rounded-full border border-ls-compliment text-ls-compliment px-10 py-4 font-bold transition-all hover:bg-ls-compliment hover:text-ls-primary text-center">
               Request Access
             </a>
           </motion.div>
@@ -157,7 +169,7 @@ export default function InvestorsPage() {
       </section>
 
       {/* Why Invest Section */}
-      <section className="py-24 border-y border-ls-supporting/10">
+      <section className="py-24 border-y border-border-theme">
         <div className="container mx-auto px-4 lg:px-8">
           <h2 className="text-3xl font-bold mb-16 text-center">Why Invest With Finlogic?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
@@ -165,11 +177,11 @@ export default function InvestorsPage() {
               <motion.div
                 key={i}
                 whileHover={{ y: -5 }}
-                className="glass-card p-8 rounded-2xl h-full flex flex-col"
+                className="bg-card border border-border-theme p-8 rounded-2xl h-full flex flex-col hover:shadow-xl transition-all"
               >
                 <div className="mb-6 text-ls-compliment">{benefit.icon}</div>
                 <h3 className="text-lg font-bold mb-3 leading-tight">{benefit.title}</h3>
-                <p className="text-sm text-ls-white/50 leading-relaxed">{benefit.description}</p>
+                <p className="text-sm text-text-muted leading-relaxed">{benefit.description}</p>
               </motion.div>
             ))}
           </div>
@@ -177,7 +189,7 @@ export default function InvestorsPage() {
       </section>
 
       {/* Track Record Section */}
-      <section className="py-24 bg-ls-supporting/5 overflow-hidden">
+      <section className="py-24 bg-card/30 overflow-hidden">
         <div className="container mx-auto px-4 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-16">Our Proven Track Record</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
@@ -192,7 +204,7 @@ export default function InvestorsPage() {
               >
                 <div className="text-4xl md:text-5xl font-black text-ls-compliment mb-2">{stat.value}</div>
                 <div className="text-lg font-bold mb-2">{stat.label}</div>
-                <div className="text-xs text-ls-white/40 uppercase tracking-widest">{stat.description}</div>
+                <div className="text-xs text-text-muted uppercase tracking-widest">{stat.description}</div>
               </motion.div>
             ))}
           </div>
@@ -205,15 +217,15 @@ export default function InvestorsPage() {
           <h2 className="text-3xl font-bold mb-20 text-center">Investment Process</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
             {/* Connector Line for Desktop */}
-            <div className="absolute top-1/4 left-0 right-0 h-px bg-ls-compliment/20 hidden lg:block" />
+            <div className="absolute top-1/4 left-0 right-0 h-px bg-border-theme hidden lg:block" />
 
             {investmentSteps.map((step, i) => (
               <div key={i} className="relative z-10 text-center group">
-                <div className="w-16 h-16 rounded-2xl bg-ls-primary border border-ls-supporting/30 flex items-center justify-center mx-auto mb-8 transition-all group-hover:border-ls-compliment group-hover:shadow-[0_0_20px_rgba(245,159,1,0.2)]">
+                <div className="w-16 h-16 rounded-2xl bg-card border border-border-theme flex items-center justify-center mx-auto mb-8 transition-all group-hover:border-ls-compliment group-hover:shadow-lg">
                   <div className="text-ls-compliment">{step.icon}</div>
                 </div>
                 <h3 className="text-xl font-bold mb-4">0{i + 1}. {step.title}</h3>
-                <p className="text-sm text-ls-white/60 leading-relaxed">{step.description}</p>
+                <p className="text-sm text-text-muted leading-relaxed">{step.description}</p>
               </div>
             ))}
           </div>
@@ -221,12 +233,12 @@ export default function InvestorsPage() {
       </section>
 
       {/* Educational Resources Section */}
-      <section className="py-24 bg-ls-supporting/5">
+      <section className="py-24 border-t border-border-theme bg-ls-secondary/[0.02]">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-16 glass-card p-12 lg:p-16 rounded-[2rem]">
+          <div className="flex flex-col lg:flex-row items-center gap-16 bg-card border border-border-theme p-12 lg:p-16 rounded-[3rem] shadow-xl">
             <div className="w-full lg:w-3/5">
-              <h2 className="text-3xl font-bold mb-6 italic text-ls-compliment">Educational Resources for Investors</h2>
-              <p className="text-lg text-ls-white/70 mb-10">
+              <h2 className="text-3xl font-black mb-6 text-ls-compliment italic">Educational Resources for Investors</h2>
+              <p className="text-lg text-text-muted mb-10 leading-relaxed">
                 Access exclusive white papers, tailored webinars, and quarterly market insights designed for institutional and sophisticated individual investors. Stay ahead with our unique perspective on frontier markets.
               </p>
               <Link href="/insights" className="inline-flex items-center text-ls-compliment font-bold hover:translate-x-2 transition-transform">
@@ -234,11 +246,11 @@ export default function InvestorsPage() {
               </Link>
             </div>
             <div className="w-full lg:w-2/5 grid grid-cols-2 gap-4">
-              <div className="p-6 bg-white/5 rounded-xl text-center flex flex-col items-center">
+              <div className="p-6 bg-background rounded-2xl border border-border-theme text-center flex flex-col items-center shadow-sm">
                 <FileText className="w-8 h-8 mb-4 text-ls-secondary" />
                 <span className="text-xs font-bold uppercase tracking-tighter">White Papers</span>
               </div>
-              <div className="p-6 bg-white/5 rounded-xl text-center flex flex-col items-center">
+              <div className="p-6 bg-background rounded-2xl border border-border-theme text-center flex flex-col items-center shadow-sm">
                 <TrendingUp className="w-8 h-8 mb-4 text-ls-up" />
                 <span className="text-xs font-bold uppercase tracking-tighter">Market Reports</span>
               </div>
@@ -251,34 +263,34 @@ export default function InvestorsPage() {
       <section id="request-access" className="py-24">
         <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Request Information</h2>
-            <p className="text-ls-white/50">Interested in learning more? Fill out the form below, and our specialized investor relations team will reach out.</p>
+            <h2 className="text-3xl font-black mb-4 tracking-tight">Request Information</h2>
+            <p className="text-text-muted">Interested in learning more? Fill out the form below, and our specialized investor relations team will reach out.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="glass-card p-8 md:p-12 rounded-3xl space-y-6">
+          <form onSubmit={handleSubmit} className="bg-card border border-border-theme p-8 md:p-12 rounded-[3rem] space-y-6 shadow-2xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Name</label>
-                <input name="name" required type="text" placeholder="John Doe" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
+                <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Name</label>
+                <input name="name" required type="text" placeholder="John Doe" className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Email</label>
-                <input name="email" required type="email" placeholder="john@company.com" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
+                <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Email</label>
+                <input name="email" required type="email" placeholder="john@company.com" className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Institution (Optional)</label>
-              <input name="institution" type="text" placeholder="e.g. Acme Family Office" className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
+              <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Institution (Optional)</label>
+              <input name="institution" type="text" placeholder="e.g. Acme Family Office" className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-ls-white/40 uppercase tracking-widest pl-2">Message</label>
-              <textarea name="message" required rows={4} placeholder="I am interested in learning about upcoming co-investment vehicles..." className="w-full bg-ls-primary border border-ls-supporting/30 rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors resize-none"></textarea>
+              <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Message</label>
+              <textarea name="message" required rows={4} placeholder="I am interested in learning about upcoming co-investment vehicles..." className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors resize-none"></textarea>
             </div>
 
             <button
               disabled={formStatus !== "idle"}
               type="submit"
-              className="w-full rounded-xl bg-ls-compliment text-ls-primary font-bold py-5 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 flex items-center justify-center"
+              className="w-full rounded-full bg-ls-compliment text-ls-primary font-black py-5 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 flex items-center justify-center shadow-lg shadow-ls-compliment/20"
             >
               {formStatus === "idle" && "Send Message"}
               {formStatus === "submitting" && (

@@ -56,7 +56,7 @@ export default function Cliffhanger({ teaserBullets, title, seriesSlug, ctaType 
             </Link>
           ) : (
             <Link 
-              href="/investors"
+              href="/for-investors"
               className="px-10 py-4 rounded-full bg-[#F59F01] text-[#100226] font-black text-sm hover:scale-105 transition-transform flex items-center justify-center gap-2"
             >
               Subscribe to Read <ArrowRight size={16} />
