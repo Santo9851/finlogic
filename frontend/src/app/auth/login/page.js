@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 function LoginContent() {
-  const { user, authLoading, login } = useAuth();
+  const { user, authLoading, login, getDashboardUrl } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme, resolvedTheme } = useTheme();
@@ -28,9 +28,10 @@ function LoginContent() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push('/wisdom-hub');
+      const destination = getDashboardUrl();
+      router.push(destination);
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, getDashboardUrl]);
 
   const isDark = resolvedTheme === 'dark';
 
@@ -55,25 +56,8 @@ function LoginContent() {
         return;
       }
 
-      // 2. Otherwise, use role-based redirect map
-      const roles = result.user.roles || '';
-      const roleList = Array.isArray(roles) 
-        ? roles 
-        : roles.split(',').map(r => r.trim()).filter(Boolean);
-
-      const REDIRECT_MAP = {
-        super_admin: '/superadmin/dashboard',
-        admin: '/gp/dashboard',
-        gp_investor: '/gp-investor/dashboard',
-        investor: '/lp/dashboard',
-        entrepreneur: '/entrepreneur/dashboard',
-      };
-
-      // Priority order for multi-role users
-      const priorityOrder = ['super_admin', 'admin', 'gp_investor', 'investor', 'entrepreneur'];
-      const targetRole = priorityOrder.find(r => roleList.includes(r));
-      
-      const destination = REDIRECT_MAP[targetRole] || '/';
+      // 2. Otherwise, use role-based redirect
+      const destination = getDashboardUrl();
       router.push(destination);
     } else {
       toast.error(result.error);

@@ -117,6 +117,17 @@ export const AuthProvider = ({ children }) => {
   const isGPInvestor = useCallback(() => hasRole('gp_investor'), [hasRole]);
   const isEntrepreneur = useCallback(() => hasRole('entrepreneur'), [hasRole]);
 
+  /** Returns the appropriate dashboard URL based on user roles. */
+  const getDashboardUrl = useCallback(() => {
+    const roles = getRoleList();
+    if (roles.includes('super_admin')) return '/superadmin/dashboard';
+    if (roles.includes('admin')) return '/gp/dashboard';
+    if (roles.includes('gp_investor')) return '/gp-investor/dashboard';
+    if (roles.includes('investor')) return '/lp/dashboard';
+    if (roles.includes('entrepreneur')) return '/entrepreneur/dashboard';
+    return '/wisdom-hub'; // Fallback for other roles like 'reader'
+  }, [getRoleList]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -127,6 +138,7 @@ export const AuthProvider = ({ children }) => {
         authLoading,
         // Role helpers
         getRoleList,
+        getDashboardUrl,
         hasRole,
         hasAnyRole,
         isGPStaff,
@@ -139,5 +151,6 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
 
 export const useAuth = () => useContext(AuthContext);

@@ -26,7 +26,7 @@ const registerSchema = z.object({
 });
 
 export default function RegisterPage() {
-  const { user, authLoading, register: registerUser } = useAuth();
+  const { user, authLoading, register: registerUser, getDashboardUrl } = useAuth();
   const router = useRouter();
   const { theme, resolvedTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
@@ -34,9 +34,10 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push('/wisdom-hub'); // Redirect to dashboard or home if already logged in
+      const destination = getDashboardUrl();
+      router.push(destination); 
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, getDashboardUrl]);
   const {
     register,
     handleSubmit,

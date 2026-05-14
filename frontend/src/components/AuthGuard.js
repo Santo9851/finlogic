@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function AuthGuard({ children, allowedRoles = [] }) {
-  const { user, authLoading } = useAuth();
+  const { user, authLoading, getDashboardUrl } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -18,17 +18,12 @@ export default function AuthGuard({ children, allowedRoles = [] }) {
         const hasAccess = allowedRoles.some(role => userRoles.includes(role));
         
         if (!hasAccess) {
-          // Redirect based on priority
-          if (userRoles.includes('super_admin')) router.push('/superadmin/dashboard');
-          else if (userRoles.includes('admin')) router.push('/gp/dashboard');
-          else if (userRoles.includes('entrepreneur')) router.push('/entrepreneur/dashboard');
-          else if (userRoles.includes('investor')) router.push('/lp/dashboard');
-          else if (userRoles.includes('gp_investor')) router.push('/gp-investor/dashboard');
-          else router.push('/');
+          const destination = getDashboardUrl();
+          router.push(destination);
         }
       }
     }
-  }, [user, authLoading, router, pathname, allowedRoles]);
+  }, [user, authLoading, router, pathname, allowedRoles, getDashboardUrl]);
 
   if (authLoading) {
     return (
