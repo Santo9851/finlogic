@@ -21,9 +21,9 @@ export default function FinlogicLogo({
   const violet      = "#5B2FD4";
   const gold        = "#F59F01";
   
-  // Use CSS variables for the wordmark to ensure theme awareness
-  const wordPrimary   = "var(--foreground)";
-  const wordSecondary = "var(--text-muted)";
+  // Handle explicit background variants
+  const wordPrimary   = darkBg ? "#FFFFFF" : "var(--foreground)";
+  const wordSecondary = darkBg ? "rgba(255,255,255,0.6)" : "var(--text-muted)";
 
   return (
     <span className={className}>

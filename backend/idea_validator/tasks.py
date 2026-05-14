@@ -27,10 +27,18 @@ def process_polished_report(session_id):
         user_prompt = user_prompt_template.replace("[[CONTEXT]]", context)
         report_text = ai_client.call_gemini(system_prompt, user_prompt)
         
-        # Extract Verdict
-        verdict = "PIVOT REQUIRED"
-        if "VIABLE" in report_text[:1000].upper(): verdict = "VIABLE"
-        elif "DEAD ON ARRIVAL" in report_text[:1000].upper(): verdict = "DEAD ON ARRIVAL"
+        # Extract Verdict with better accuracy
+        verdict = "PIVOT REQUIRED" # Default
+        report_head = report_text[:1200].upper()
+        
+        # Priority: Exact match with label "VERDICT:"
+        if "VERDICT: VIABLE" in report_head: verdict = "VIABLE"
+        elif "VERDICT: PIVOT REQUIRED" in report_head: verdict = "PIVOT REQUIRED"
+        elif "VERDICT: DEAD ON ARRIVAL" in report_head: verdict = "DEAD ON ARRIVAL"
+        # Fallback to general presence if label not found exactly
+        elif "DEAD ON ARRIVAL" in report_head: verdict = "DEAD ON ARRIVAL"
+        elif "PIVOT REQUIRED" in report_head: verdict = "PIVOT REQUIRED"
+        elif "VIABLE" in report_head: verdict = "VIABLE"
         
         session.polished_report = report_text
         session.verdict = verdict
@@ -48,8 +56,18 @@ def process_polished_report(session_id):
             session.status = IdeaValidationSession.Status.FAILED
             session.progress_text = f"Error: {str(e)}"
             session.save()
-        except:
-            pass
+            
+            # Refund quota on failure
+            from .logic import adjust_quota
+            adjust_quota(
+                user=session.user, 
+                change_amount=1, 
+                admin_user=None, 
+                note=f"Automatic refund: AI analysis failed for session {session.id}"
+            )
+            logger.info(f"Refunded quota for user {session.user.email} due to task failure.")
+        except Exception as refund_err:
+            logger.error(f"Failed to refund quota for session {session_id}: {str(refund_err)}")
 
 @shared_task(name="idea_validator.process_red_team_report")
 def process_red_team_report(session_id):

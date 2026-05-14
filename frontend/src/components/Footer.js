@@ -33,7 +33,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="w-full bg-card py-12 text-foreground lg:py-20 border-t border-border-theme theme-transition">
+    <footer className="w-full bg-card py-12 text-foreground lg:py-20 border-t border-border-theme theme-transition print:hidden">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-3">
           {/* Brand & Tagline */}

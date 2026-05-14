@@ -162,15 +162,29 @@ class IdeaValidationSessionViewSet(viewsets.ModelViewSet):
             session.progress_text = "Analysis queued"
             session.save()
             
-            # Log submission
+            # Log submission record (use get_or_create to prevent IntegrityError on retries)
             from .models import ValidationSubmissionLog
-            ValidationSubmissionLog.objects.create(session=session)
+            ValidationSubmissionLog.objects.get_or_create(session=session)
             
             # Trigger Asynchronous AI Analysis (Requirement: Automatic)
+            # We use on_commit to ensure the task is only queued AFTER the DB transaction is successful
             from .tasks import process_polished_report
-            process_polished_report.delay(session.id)
+            def trigger_analysis():
+                try:
+                    process_polished_report.delay(session.id)
+                except Exception as e:
+                    # If we can't even queue the task (e.g. Redis down), fail gracefully and refund
+                    from .models import IdeaValidationSession
+                    from .logic import adjust_quota
+                    s = IdeaValidationSession.objects.get(id=session.id)
+                    s.status = IdeaValidationSession.Status.FAILED
+                    s.progress_text = f"Queueing failed: {str(e)}"
+                    s.save()
+                    adjust_quota(s.user, 1, None, f"Refund: Task queueing failed ({str(e)})")
 
-            # Log submission
+            transaction.on_commit(trigger_analysis)
+
+            # Log audit event
             from .logic import log_audit_event
             from deals.models import ImmutableAuditEvent
             log_audit_event(
@@ -269,16 +283,16 @@ class IdeaValidationSessionViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='share', permission_classes=[permissions.AllowAny])
     def public_share(self, request, pk=None):
-        """Minimal branded share data for public viewing."""
+        """Full branded share data for public viewing."""
         session = get_object_or_404(IdeaValidationSession, id=pk)
         
         if session.status != IdeaValidationSession.Status.COMPLETED:
             return Response({"detail": "This validation is not yet public."}, status=status.HTTP_404_NOT_FOUND)
             
-        # Return only safe, branded excerpt fields
+        # Return full report for public viewing
         return Response({
             "id": session.id,
             "verdict": session.verdict,
             "created_at": session.created_at,
-            "excerpt": session.polished_report[:500] if session.polished_report else ""
+            "report": session.polished_report or ""
         })

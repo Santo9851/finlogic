@@ -57,17 +57,16 @@
   }
 
   .bg-abstract-gradient {
-    background: radial-gradient(circle at top left, var(--color-ls-supporting), transparent),
-                radial-gradient(circle at bottom right, var(--color-ls-primary-fixed), transparent),
-                var(--background);
-    opacity: 0.05;
+    background: var(--background);
+    background-image: 
+      radial-gradient(circle at top left, rgba(58, 49, 83, 0.05), transparent),
+      radial-gradient(circle at bottom right, rgba(16, 2, 38, 0.05), transparent);
   }
 
   :root:not(.dark) .bg-abstract-gradient {
-    background: radial-gradient(circle at top left, rgba(58, 49, 83, 0.1), transparent),
-                radial-gradient(circle at bottom right, rgba(245, 159, 1, 0.1), transparent),
-                var(--background);
-    opacity: 0.1;
+    background-image: 
+      radial-gradient(circle at top left, rgba(58, 49, 83, 0.1), transparent),
+      radial-gradient(circle at bottom right, rgba(245, 159, 1, 0.1), transparent);
   }
   
   .glass-card {
@@ -151,4 +150,64 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--card-border) transparent;
+}
+/* ── Premium Branded Print Styles ────────────────────────────────────────── */
+@media print {
+  :root {
+    --background: #100226 !important;
+    --foreground: #FDF6FF !important;
+    --text-primary: #FDF6FF !important;
+    --text-muted: rgba(253, 246, 255, 0.6) !important;
+    --card-bg: #1a0a33 !important;
+    --card-border: rgba(245, 159, 1, 0.2) !important;
+    --color-ls-compliment: #F59F01 !important;
+  }
+
+  body {
+    background-color: #100226 !important;
+    color: #FDF6FF !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure cards and sections keep their background and borders */
+  .bg-card, .bg-background, .bg-ls-primary {
+    background-color: var(--card-bg) !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  .border, .border-border-theme {
+    border-color: var(--card-border) !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Typography for print */
+  h1, h2, h3, h4, strong {
+    color: #F59F01 !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  p, li {
+    color: #FDF6FF !important;
+    opacity: 0.9 !important;
+  }
+
+  /* Force background colors in PDF */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Page breaks */
+  .article-body h2, .article-body h3 {
+    page-break-after: avoid;
+  }
+  
+  .bg-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
 }

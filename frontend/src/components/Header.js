@@ -76,7 +76,7 @@ export default function Header() {
   const accentBadgeGradient = isDark ? "from-ls-compliment to-yellow-200" : "from-ls-secondary to-blue-300";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border-theme bg-background/80 backdrop-blur-md text-foreground theme-transition">
+    <header className="sticky top-0 z-50 w-full border-b border-border-theme bg-background/80 backdrop-blur-md text-foreground theme-transition print:hidden">
       <div className="container mx-auto flex h-20 items-center justify-between px-4 lg:px-8">
         {/* Logo */}
         <Link href="/" className="flex items-center group" aria-label="Finlogic Capital Home">

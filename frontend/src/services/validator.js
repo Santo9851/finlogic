@@ -13,7 +13,8 @@ export const validatorService = {
 
   listSessions: async () => {
     const response = await api.get('/idea-validator/sessions/');
-    return response.data;
+    // Handle both paginated and non-paginated responses
+    return Array.isArray(response.data) ? response.data : (response.data.results || []);
   },
 
   getSession: async (id) => {

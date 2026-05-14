@@ -28,6 +28,7 @@ import AuthGuard from '@/components/AuthGuard';
 import { validatorService } from '@/services/validator';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
+import FinlogicLogo from '@/components/FinlogicLogo';
 
 export default function ValidationReportPage({ params: paramsPromise }) {
   const params = use(paramsPromise);
@@ -101,13 +102,26 @@ export default function ValidationReportPage({ params: paramsPromise }) {
     }
   };
 
-  const getSummary = (text) => {
+  const getSummary = (text, limit = 320) => {
     if (!text) return "";
-    // Remove disclaimer if exists
-    const cleanText = text.replace(/\*This AI-generated educational analysis is provided by Finlogic Capital. It does not constitute investment advice, a solicitation to invest, or any guarantee of future funding.\*/g, '').trim();
-    // Get first few sentences
-    const sentences = cleanText.split(/[.!?]/).filter(s => s.trim().length > 10).slice(0, 3);
-    return sentences.join('. ') + '.';
+    
+    // Specifically target Section 1: The Architect's Verdict
+    const verdictMatch = text.match(/1\.\s+\*\*The Architect’s Verdict\*\*([\s\S]*?)(?=2\.\s+\*\*|$)/i);
+    let cleanText = verdictMatch ? verdictMatch[1] : text;
+
+    // Remove markdown characters and redundant headers
+    cleanText = cleanText
+      .replace(/\*This AI-generated educational analysis is provided by Finlogic Capital\. It does not constitute investment advice, a solicitation to invest, or any guarantee of future funding\.\*/g, '')
+      .replace(/The Architect’s Verdict[:\s]*/gi, '')
+      .replace(/Verdict[:\s]*(VIABLE|PIVOT REQUIRED|DEAD ON ARRIVAL)[:\s]*/gi, '')
+      .replace(/[#*`_]/g, '') // Strip basic markdown
+      .replace(/\[\[.*?\]\]/g, '') // Strip internal placeholders
+      .trim();
+    
+    if (cleanText.length <= limit) return cleanText;
+    // Find last space before limit to avoid cutting words
+    const lastSpace = cleanText.lastIndexOf(' ', limit);
+    return cleanText.substring(0, lastSpace > 0 ? lastSpace : limit) + "...";
   };
 
   const handleShare = async () => {
@@ -118,17 +132,102 @@ export default function ValidationReportPage({ params: paramsPromise }) {
     if (!cardRef.current) return;
     setIsCapturing(true);
     try {
+      // Standardize the capture environment
       const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#100226', // ls-primary
+        backgroundColor: '#100226',
         scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        imageTimeout: 15000, // Increase timeout for images
+        onclone: (clonedDoc) => {
+          // NUCLEAR OPTION: Remove ALL existing style/link tags to stop the crash
+          try {
+            const styles = clonedDoc.querySelectorAll('style, link[rel="stylesheet"]');
+            styles.forEach(s => s.remove());
+
+            // Inject expanded safe styles for the premium layout
+            const safeStyles = clonedDoc.createElement('style');
+            safeStyles.innerHTML = `
+              * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-print-color-adjust: exact; }
+              [data-share-card] { 
+                display: flex !important; 
+                flex-direction: column !important; 
+                background-color: #100226 !important;
+                color: #FDF6FF !important;
+                padding: 3rem !important;
+                position: relative !important;
+                width: 1200px !important;
+                height: 630px !important;
+              }
+              .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; }
+              .brand-box { display: flex; flex-direction: column; gap: 0.5rem; }
+              .verdict-seal { 
+                padding: 1rem 2rem; 
+                border: 2px solid #F59F01; 
+                border-radius: 1rem; 
+                background: rgba(245, 159, 1, 0.05);
+                text-align: center;
+              }
+              .verdict-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; color: #F59F01; margin-bottom: 0.25rem; opacity: 0.8; }
+              .verdict-value { font-size: 24px; font-weight: 900; letter-spacing: -0.02em; }
+              
+              .card-body { flex: 1; display: flex; flex-direction: column; gap: 2rem; }
+              .report-title { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5em; color: #F59F01; opacity: 0.6; }
+              .architect-content { 
+                font-size: 20px; 
+                line-height: 1.6; 
+                font-style: italic; 
+                color: rgba(255, 255, 255, 0.9);
+                border-left: 4px solid rgba(245, 159, 1, 0.4);
+                padding-left: 2rem;
+                margin: 0;
+                display: -webkit-box;
+                -webkit-line-clamp: 5;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+              }
+              
+              .card-footer { 
+                margin-top: 3rem; 
+                padding-top: 2rem; 
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+              }
+              .disclaimer-box { max-width: 70%; }
+              .disclaimer-text { font-size: 9px; line-height: 1.5; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.3; }
+              .meta-text { font-size: 10px; font-weight: 900; letter-spacing: 0.2em; color: #F59F01; }
+              
+              .zap-bg { position: absolute; top: -50px; right: -50px; opacity: 0.03; width: 400px; height: 400px; }
+            `;
+            clonedDoc.head.appendChild(safeStyles);
+          } catch (e) {
+            console.warn("Style isolation failed:", e);
+          }
+
+          const card = clonedDoc.querySelector('[data-share-card]');
+          if (card) {
+            card.style.transform = 'none';
+            card.style.display = 'flex';
+            card.style.visibility = 'visible';
+            card.style.position = 'relative';
+            card.style.width = '1200px';
+            card.style.height = '630px';
+          }
+        }
       });
+      
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
       const link = document.createElement('a');
       link.download = `finlogic-validation-${id}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = dataUrl;
       link.click();
       toast.success("Share card downloaded!");
     } catch (err) {
-      toast.error("Failed to generate share card.");
+      console.error("Capture error:", err);
+      toast.error("Format error detected. Please use the 'Copy Link' option for the best sharing experience.");
     } finally {
       setIsCapturing(false);
     }
@@ -160,13 +259,22 @@ export default function ValidationReportPage({ params: paramsPromise }) {
         {/* Header */}
         <div className="bg-background/80 backdrop-blur-xl border-b border-border-theme sticky top-0 z-50 print:hidden">
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
-            <Link 
-              href="/validate"
-              className="flex items-center space-x-2 text-text-muted hover:text-ls-compliment transition-colors group"
-            >
-              <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
-              <span className="font-bold uppercase tracking-widest text-xs">Back to Validator</span>
-            </Link>
+            <div className="flex items-center space-x-6">
+              <Link 
+                href="/validate"
+                className="flex items-center space-x-2 text-text-muted hover:text-ls-compliment transition-colors group"
+              >
+                <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                <span className="font-bold uppercase tracking-widest text-xs">Back</span>
+              </Link>
+              <Link 
+                href="/validate/history"
+                className="flex items-center space-x-2 text-text-muted hover:text-ls-compliment transition-colors group border-l border-border-theme pl-6"
+              >
+                <Clock className="w-4 h-4" />
+                <span className="font-bold uppercase tracking-widest text-xs">View History</span>
+              </Link>
+            </div>
 
             <div className="flex items-center space-x-4">
               <button 
@@ -263,10 +371,30 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                 </div>
 
                 {/* Analysis Content */}
-                <div className="prose dark:prose-invert prose-ls max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:text-text-muted prose-p:leading-relaxed prose-li:text-text-muted prose-strong:text-ls-compliment bg-card border border-border-theme rounded-[3rem] p-12 lg:p-20 shadow-xl print:shadow-none print:border-none print:p-0">
+                <div className="prose dark:prose-invert article-body max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:text-text-muted prose-p:leading-relaxed prose-li:text-text-muted prose-strong:text-ls-compliment bg-card border border-border-theme rounded-[3rem] p-12 lg:p-20 shadow-xl print:shadow-none print:border-none print:p-0">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {report.report}
+                    {report.report?.replace(/\*This AI-generated educational analysis is provided by Finlogic Capital\. It does not constitute investment advice, a solicitation to invest, or any guarantee of future funding\.\*/g, '').trim()}
                   </ReactMarkdown>
+                </div>
+
+                {/* Print Only Footer - Branded Disclaimer */}
+                <div className="hidden print:block mt-32 pt-12 border-t border-border-theme/30 text-center space-y-4 page-break-before-always">
+                  <div className="flex items-center justify-center space-x-3 mb-6">
+                    <FinlogicLogo size={32} darkBg={true} />
+                    <span className="text-lg font-black tracking-[0.2em] text-ls-compliment">FINLOGIC CAPITAL</span>
+                  </div>
+                  <p className="text-[11px] text-text-muted leading-relaxed max-w-4xl mx-auto uppercase tracking-[0.15em] opacity-60">
+                    This strategic validation report is a confidential AI-generated educational analysis. 
+                    It is intended for informational purposes only and does not constitute financial, legal, 
+                    or investment advice by Finlogic Capital Limited or its affiliates.
+                  </p>
+                  <div className="pt-6 flex items-center justify-center space-x-10 text-[10px] text-text-muted/40 uppercase tracking-widest">
+                    <span>Generated: {new Date().toLocaleDateString()}</span>
+                    <span>•</span>
+                    <span>Verified via Sovereign Venture Architect</span>
+                    <span>•</span>
+                    <span>© {new Date().getFullYear()} Finlogic Capital</span>
+                  </div>
                 </div>
 
                 {/* Risk Panel Teaser */}
@@ -339,40 +467,57 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                 </div>
 
                 <div className="p-8 space-y-8">
-                  {/* Share Card Preview */}
+                  {/* Premium Share Card Preview */}
                   <div 
                     ref={cardRef}
-                    className="aspect-[1.91/1] w-full bg-ls-primary rounded-2xl p-8 flex flex-col justify-between relative overflow-hidden text-ls-white"
+                    data-share-card
+                    style={{ backgroundColor: '#100226', color: '#FDF6FF', borderColor: 'rgba(255,255,255,0.1)' }}
+                    className="aspect-[1.91/1] w-full rounded-[2rem] p-12 flex flex-col justify-between relative overflow-hidden border shadow-2xl"
                   >
-                    {/* Branded Background */}
-                    <div className="absolute top-0 right-0 p-12 opacity-10">
-                      <Zap className="w-40 h-40 text-ls-compliment" />
+                    {/* Branded Background Watermark */}
+                    <div className="absolute -right-16 -top-16 opacity-[0.03] zap-bg">
+                      <Zap size={400} style={{ color: '#F59F01' }} />
                     </div>
                     
-                    <div className="relative z-10 flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                           <Sparkles className="w-4 h-4 text-ls-compliment" />
-                           <span className="text-[10px] font-black uppercase tracking-[0.2em]">Finlogic AI</span>
-                        </div>
-                        <h4 className="text-2xl font-black">Idea Validated</h4>
+                    {/* Header: Logo & Verdict Seal */}
+                    <div className="relative z-10 flex items-start justify-between card-header">
+                      <div className="brand-box">
+                         <FinlogicLogo size={48} darkBg={true} variant="full" />
+                         <div className="mt-4 flex items-center gap-3">
+                            <div className="h-px w-8 bg-ls-compliment/30" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-ls-compliment">Sovereign Venture Architect</span>
+                         </div>
                       </div>
-                      <div className={`px-4 py-2 rounded-lg border text-xs font-black tracking-widest ${getVerdictStyles(report.verdict)} bg-transparent`}>
-                        {report.verdict}
+                      
+                      <div 
+                        className="verdict-seal"
+                        style={{ borderColor: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}
+                      >
+                         <div className="verdict-label">Strategic Verdict</div>
+                         <div className="verdict-value" style={{ color: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}>
+                            {report.verdict}
+                         </div>
                       </div>
                     </div>
 
-                    <div className="relative z-10">
-                      <p className="text-sm italic line-clamp-3 opacity-70 mb-4 leading-relaxed">
-                        "{getSummary(report.report)}"
+                    {/* Body: Architect's Verdict Content */}
+                    <div className="relative z-10 card-body">
+                      <div className="report-title">Architect's Analysis Preview</div>
+                      <p className="architect-content">
+                        {getSummary(report.report, 450)}
                       </p>
-                      <div className="flex items-center justify-between border-t border-white/10 pt-4">
-                        <div className="text-[8px] uppercase tracking-widest opacity-40">
-                          Validate your own idea at finlogiccapital.com
-                        </div>
-                        <div className="text-[10px] font-bold text-ls-compliment">
-                          FINLOGIC CAPITAL
-                        </div>
+                    </div>
+
+                    {/* Footer: Institutional Disclaimer & Meta */}
+                    <div className="relative z-10 card-footer">
+                      <div className="disclaimer-box">
+                         <p className="disclaimer-text">
+                            THIS IS AN AI-GENERATED STRATEGIC ANALYSIS BY FINLOGIC CAPITAL. IT DOES NOT CONSTITUTE FINANCIAL OR INVESTMENT ADVICE. 
+                            CONFIDENTIAL EDUCATIONAL DOCUMENT • VERIFIED VIA SOVEREIGN VENTURE ARCHITECT
+                         </p>
+                      </div>
+                      <div className="meta-text">
+                         FINLOGIC.CO • {new Date().getFullYear()}
                       </div>
                     </div>
                   </div>

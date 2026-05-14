@@ -4,15 +4,29 @@ import { AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 async function getShareData(id) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  // For Server Components, we might need the internal Docker service name
+  let apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  
+  // If we're on the server and using Docker, 'localhost' won't work.
+  // We try 'backend' as a fallback host.
+  if (typeof window === 'undefined') {
+    apiUrl = apiUrl.replace('localhost', 'backend');
+  }
+
+  // Ensure no double slashes and correct path
+  const cleanApiUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+
   try {
-    const res = await fetch(`${apiUrl}/idea-validator/sessions/${id}/share/`, {
-      next: { revalidate: 3600 } // Cache for 1 hour
+    const res = await fetch(`${cleanApiUrl}/idea-validator/sessions/${id}/share/`, {
+      next: { revalidate: 3600 } 
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`Share data fetch failed for ${id}: ${res.status}`);
+      return null;
+    }
     return res.json();
   } catch (err) {
-    console.error("Fetch error:", err);
+    console.error("Fetch error in getShareData:", err);
     return null;
   }
 }
@@ -31,7 +45,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: `Institutional Validation: ${data.verdict}`,
       description: data.excerpt?.substring(0, 160),
-      images: [`/api/og?id=${id}`],
+      images: [`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/og?id=${id}`],
     },
   };
 }

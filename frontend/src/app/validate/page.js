@@ -211,11 +211,11 @@ export default function IdeaValidatorPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
                       <button 
                         onClick={startNewValidation}
                         disabled={quota?.remaining_validations <= 0}
-                        className={`flex items-center space-x-3 px-10 py-5 rounded-full font-bold transition-all ${
+                        className={`w-full sm:w-auto flex items-center justify-center space-x-3 px-10 py-5 rounded-full font-bold transition-all ${
                           quota?.remaining_validations > 0 
                           ? 'bg-ls-compliment text-ls-primary hover:scale-105 shadow-lg shadow-ls-compliment/20' 
                           : 'bg-border-theme text-text-muted cursor-not-allowed'
@@ -224,6 +224,14 @@ export default function IdeaValidatorPage() {
                         <span>Start New Analysis</span>
                         <ArrowRight className="w-5 h-5" />
                       </button>
+
+                      <Link 
+                        href="/validate/history"
+                        className="w-full sm:w-auto flex items-center justify-center space-x-3 px-10 py-5 rounded-full font-bold border border-border-theme hover:bg-card transition-all"
+                      >
+                        <Clock className="w-5 h-5" />
+                        <span>View History</span>
+                      </Link>
                     </div>
                   </>
                 ) : (
@@ -340,9 +348,16 @@ export default function IdeaValidatorPage() {
               </div>
               
               <div className="flex items-center space-x-4">
+                <Link 
+                  href="/validate/history"
+                  className="px-4 py-2 rounded-full border border-border-theme text-[10px] font-black uppercase tracking-widest hover:bg-card transition-all flex items-center gap-2"
+                >
+                  <Clock size={12} />
+                  History
+                </Link>
                 <button 
                   onClick={() => setLang(l => l === 'en' ? 'ne' : 'en')}
-                  className="px-4 py-2 rounded-full border border-border-theme text-xs font-bold uppercase tracking-widest hover:bg-card transition-all"
+                  className="px-4 py-2 rounded-full border border-border-theme text-[10px] font-black uppercase tracking-widest hover:bg-card transition-all"
                 >
                   {lang === 'en' ? 'नेपाली' : 'English'}
                 </button>
