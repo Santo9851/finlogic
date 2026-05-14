@@ -36,11 +36,11 @@ export async function generateMetadata({ params }) {
   const data = await getShareData(id);
   
   if (!data) {
-    return { title: 'Finlogic Idea Validator' };
+    return { title: 'Archival Registry | Finlogic Capital' };
   }
   
   return {
-    title: `Finlogic Idea Validator | Verdict: ${data.verdict}`,
+    title: `Dossier: ${data.verdict} | Sovereign Venture Architect`,
     description: data.excerpt?.substring(0, 160) || "Analyze your business idea through the Finlogic Sovereign Venture Architect.",
     openGraph: {
       title: `Institutional Validation: ${data.verdict}`,
@@ -56,17 +56,38 @@ export default async function PublicSharePage({ params }) {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-[#05010d] flex flex-col items-center justify-center text-center p-6 space-y-8">
-        <div className="w-20 h-20 rounded-full bg-ls-secondary/10 flex items-center justify-center text-ls-secondary">
-          <AlertTriangle size={40} />
+      <div className="min-h-screen bg-[#05010d] text-[#f8fafc] flex flex-col items-center justify-center text-center p-8 relative overflow-hidden">
+        {/* Institutional Background Grid */}
+        <div className="absolute inset-0 pointer-events-none opacity-[0.03] z-0">
+          <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#F59F01 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
         </div>
-        <div className="space-y-4">
-          <h1 className="text-3xl font-black uppercase tracking-tight">Record Unavailable</h1>
-          <p className="text-text-muted max-w-md mx-auto">This validation record has either been retracted or is restricted for internal review only.</p>
+
+        <div className="relative z-10 max-w-xl space-y-12">
+          <div className="w-24 h-24 border border-ls-secondary/30 bg-ls-secondary/5 flex items-center justify-center text-ls-secondary mx-auto">
+            <AlertTriangle size={48} />
+          </div>
+          
+          <div className="space-y-6">
+            <h1 className="text-4xl font-serif font-light tracking-tight uppercase">Registry Entry <br /> Restricted</h1>
+            <p className="text-ls-white/40 leading-relaxed font-serif italic text-lg">
+              The requested validation dossier has either been retracted from the public registry 
+              or is restricted for internal review only.
+            </p>
+          </div>
+
+          <div className="pt-8 flex justify-center">
+            <Link 
+              href="/" 
+              className="px-12 py-5 bg-ls-compliment text-ls-primary font-bold text-[10px] uppercase tracking-[0.3em] transition-all hover:bg-ls-white"
+            >
+               Return to Registry Command
+            </Link>
+          </div>
+          
+          <div className="pt-12 text-[10px] font-mono text-ls-white/10 uppercase tracking-[0.4em]">
+            REF: FC-AUTH-RSTR-{id.substring(0, 8).toUpperCase()}
+          </div>
         </div>
-        <Link href="/" className="px-10 py-4 bg-ls-compliment text-ls-primary font-bold rounded-full uppercase tracking-widest text-xs transition-all hover:scale-105">
-           Return to Finlogic Home
-        </Link>
       </div>
     );
   }

@@ -9,7 +9,7 @@ import {
   ChevronRight,
   LayoutGrid
 } from "lucide-react";
-import { fetchSeriesList, fetchWisdomHubDashboard, PILLAR_COLORS } from "@/services/insights";
+import { fetchSeriesList, fetchWisdomHubDashboard, PILLAR_COLORS, normaliseList } from "@/services/insights";
 
 export default function WisdomHubSeriesPage() {
   const [seriesList, setSeriesList] = useState([]);
@@ -23,7 +23,7 @@ export default function WisdomHubSeriesPage() {
           fetchSeriesList(),
           fetchWisdomHubDashboard()
         ]);
-        setSeriesList(list);
+        setSeriesList(normaliseList(list));
         setDashboardData(dashboard);
       } catch (e) {
         console.error("Failed to load series list", e);
@@ -35,18 +35,22 @@ export default function WisdomHubSeriesPage() {
   }, []);
 
   if (loading) return (
-    <div className="bg-background min-h-screen pt-32 px-4 flex justify-center theme-transition">
-      <div className="w-full max-w-4xl space-y-4 animate-pulse">
-        <div className="h-10 w-48 bg-foreground/5 rounded-full" />
-        <div className="h-64 bg-foreground/5 rounded-[3rem]" />
-        <div className="h-64 bg-foreground/5 rounded-[3rem]" />
+    <div className="bg-background min-h-screen pt-40 px-4 flex justify-center theme-transition">
+      <div className="w-full max-w-5xl space-y-12">
+        <div className="h-10 w-48 bg-foreground/5 animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border-theme border border-border-theme">
+          <div className="h-80 bg-card animate-pulse" />
+          <div className="h-80 bg-card animate-pulse" />
+        </div>
       </div>
     </div>
   );
 
   // Map progress from dashboard data to series list
+  const inProgressList = normaliseList(dashboardData?.in_progress_series);
+  
   const mergedSeries = seriesList.map(s => {
-    const inProgress = dashboardData?.in_progress_series.find(ips => ips.slug === s.slug);
+    const inProgress = inProgressList.find(ips => ips.slug === s.slug);
     if (inProgress) return inProgress;
     
     return {
@@ -58,24 +62,24 @@ export default function WisdomHubSeriesPage() {
   });
 
   return (
-    <div className="bg-background text-foreground min-h-screen pb-24 theme-transition">
-      <div className="container mx-auto px-4 pt-32 max-w-5xl">
+    <div className="bg-background text-foreground min-h-screen pb-32 theme-transition selection:bg-ls-compliment/30 font-sans">
+      <div className="container mx-auto px-4 lg:px-8 pt-40 max-w-5xl">
         
-        <Link href="/wisdom-hub" className="inline-flex items-center gap-2 text-text-muted hover:text-[#F59F01] text-sm transition-colors mb-10 font-bold uppercase tracking-widest">
-          <ArrowLeft size={15} /> Back to Library
+        <Link href="/wisdom-hub" className="inline-flex items-center gap-4 text-text-muted hover:text-ls-compliment text-[10px] font-bold uppercase tracking-[0.4em] transition-all mb-16">
+          <ArrowLeft size={14} /> Back to Registry
         </Link>
 
-        <header className="mb-16">
-          <div className="flex items-center gap-3 mb-4 text-[#F59F01] text-[10px] font-black uppercase tracking-[0.2em]">
-            <BookOpen size={14} /> Knowledge Hub
+        <header className="mb-20 space-y-6">
+          <div className="flex items-center gap-4 text-ls-compliment text-[10px] font-bold uppercase tracking-[0.5em]">
+            <BookOpen size={14} /> Knowledge Sequence Registry
           </div>
-          <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight">Series Directory</h1>
-          <p className="text-text-muted max-w-2xl leading-relaxed text-lg font-medium">
-            Browse our curated series on venture capital, growth equity, and private market dynamics.
+          <h1 className="text-5xl md:text-7xl font-serif font-light leading-tight">Series <span className="italic">Directory</span></h1>
+          <p className="text-xl text-text-muted max-w-2xl leading-relaxed font-serif font-light italic">
+            A curated ledger of venture capital, growth equity, and private market dynamics—architected for institutional mastery.
           </p>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border-theme border border-border-theme">
           {mergedSeries.map((series, i) => {
             const color = PILLAR_COLORS[series.pillar?.toLowerCase()] || "#F59F01";
             const isStarted = series.progress_percent > 0;
@@ -91,45 +95,47 @@ export default function WisdomHubSeriesPage() {
               >
                 <Link 
                   href={`/insights/series/${series.slug}`}
-                  className="group block p-8 rounded-[2.5rem] bg-background border border-border-theme hover:border-[#F59F01]/30 transition-all h-full flex flex-col shadow-xl hover:shadow-2xl theme-transition"
+                  className="group block p-12 bg-card hover:bg-ls-primary transition-all h-full flex flex-col theme-transition"
                 >
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full border shadow-sm"
-                          style={{ background: `${color}10`, color, borderColor: `${color}30` }}>
+                  <div className="flex items-center justify-between mb-8">
+                    <span className="text-[9px] font-bold uppercase tracking-[0.3em] border-l-2 pl-3"
+                          style={{ borderLeftColor: color }}>
                       {series.pillar}
                     </span>
-                    <LayoutGrid size={18} className="text-text-muted/20 group-hover:text-[#F59F01] transition-colors" />
+                    <span className="text-[9px] font-mono opacity-30 group-hover:text-ls-white/30 tracking-widest">SEQ-ID: 0{series.id}</span>
                   </div>
 
-                  <h3 className="text-2xl font-black text-foreground mb-4 group-hover:text-[#F59F01] transition-colors">
+                  <h3 className="text-3xl font-serif font-light text-foreground group-hover:text-ls-white mb-6 group-hover:text-ls-compliment transition-colors leading-tight">
                     {series.title}
                   </h3>
-                  <p className="text-sm text-text-muted leading-relaxed mb-10 flex-grow line-clamp-2 font-medium">
+                  <p className="text-text-muted group-hover:text-ls-white/60 leading-relaxed mb-12 flex-grow line-clamp-3 font-serif font-light italic">
                     {series.description}
                   </p>
 
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-text-muted/40">
-                        {isFinished ? "Completed" : isStarted ? "In Progress" : "Not Started"}
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-end text-[9px] font-bold uppercase tracking-[0.3em]">
+                      <div className="text-text-muted group-hover:text-ls-white/40">
+                        Status: <span className={isFinished ? "text-ls-up" : isStarted ? "text-ls-compliment" : ""}>
+                          {isFinished ? "Archived" : isStarted ? "Synchronizing" : "Pending Audit"}
+                        </span>
                       </div>
-                      <div className="text-sm font-black text-[#F59F01]">
+                      <div className="text-ls-compliment">
                         {series.progress_percent}%
                       </div>
                     </div>
-                    <div className="h-2 w-full bg-foreground/5 rounded-full overflow-hidden border border-border-theme/50">
+                    <div className="h-0.5 w-full bg-border-theme group-hover:bg-ls-white/10 overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         whileInView={{ width: `${series.progress_percent}%` }}
-                        className="h-full bg-gradient-to-r from-[#F59F01] to-[#F59F01]/50"
+                        className="h-full bg-ls-compliment"
                       />
                     </div>
                     <div className="flex items-center justify-between pt-2">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-text-muted/60">
-                        {series.total_count} Modules
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted/60 group-hover:text-ls-white/30">
+                        {series.total_count} Strategic Units
                       </span>
-                      <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-[#F59F01] group-hover:gap-2 transition-all">
-                        {isStarted ? "Continue" : "Start Learning"} <ChevronRight size={12} />
+                      <span className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.3em] text-ls-compliment group-hover:text-ls-white transition-all">
+                        {isStarted ? "Resume Sequence" : "Initiate Mastery"} <ChevronRight size={14} />
                       </span>
                     </div>
                   </div>

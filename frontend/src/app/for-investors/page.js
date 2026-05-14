@@ -13,7 +13,8 @@ import {
   MessageSquare,
   ChevronRight,
   TrendingUp,
-  FileText
+  FileText,
+  ArrowRight
 } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
@@ -24,27 +25,27 @@ const investorBenefits = [
   {
     title: "Differentiated Deal Flow",
     description: "Our unconventional vision uncovers opportunities others miss in overlooked markets.",
-    icon: <Globe className="w-6 h-6 text-ls-compliment" />,
+    icon: <Globe className="w-6 h-6" />,
   },
   {
     title: "Rigorous Due Diligence",
     description: "Our deep insight framework minimizes risk and uncovers hidden value.",
-    icon: <ShieldCheck className="w-6 h-6 text-ls-compliment" />,
+    icon: <ShieldCheck className="w-6 h-6" />,
   },
   {
-    title: "Experienced Team",
+    title: "Experienced Leadership",
     description: "Decades of combined experience across private equity, finance, and emerging markets.",
-    icon: <Users className="w-6 h-6 text-ls-compliment" />,
+    icon: <Users className="w-6 h-6" />,
   },
   {
     title: "Alignment of Interests",
     description: "We co-invest alongside our LPs and prioritise long-term value creation.",
-    icon: <Handshake className="w-6 h-6 text-ls-compliment" />,
+    icon: <Handshake className="w-6 h-6" />,
   },
   {
     title: "Transparent Partnership",
     description: "Regular communication, detailed reporting, and a commitment to harmony.",
-    icon: <RefreshCw className="w-6 h-6 text-ls-compliment" />,
+    icon: <RefreshCw className="w-6 h-6" />,
   },
 ];
 
@@ -57,23 +58,27 @@ const trackRecord = [
 
 const investmentSteps = [
   {
+    id: "01",
     title: "Partnership Discussion",
-    description: "We get to know you and your investment goals through personalized consultation.",
+    description: "Personalized consultation to align investment goals with our strategic framework.",
     icon: <MessageSquare className="w-6 h-6" />,
   },
   {
+    id: "02",
     title: "Commitment",
-    description: "You commit capital to our core fund or a specialized co-investment vehicle.",
+    description: "Capital commitment to our core fund or specialized co-investment vehicles.",
     icon: <ShieldCheck className="w-6 h-6" />,
   },
   {
-    title: "Deal Flow",
-    description: "You receive priority access to curated, standard-compliant investment opportunities.",
+    id: "03",
+    title: "Access Deal Flow",
+    description: "Priority access to curated, institutionally-compliant investment opportunities.",
     icon: <PieChart className="w-6 h-6" />,
   },
   {
+    id: "04",
     title: "Reporting",
-    description: "We provide quarterly updates, annual meetings, and transparent performance data.",
+    description: "Quarterly updates, annual meetings, and transparent performance transparency.",
     icon: <BarChart3 className="w-6 h-6" />,
   },
 ];
@@ -81,7 +86,6 @@ const investmentSteps = [
 export default function InvestorsPage() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const isDark = resolvedTheme === "dark";
   const [formStatus, setFormStatus] = useState("idle");
 
   useEffect(() => {
@@ -121,189 +125,197 @@ export default function InvestorsPage() {
   if (!mounted) return null;
 
   return (
-    <div className="bg-background text-foreground min-h-screen theme-transition">
+    <div className="bg-background text-foreground min-h-screen theme-transition font-sans">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-24 overflow-hidden">
-        <div className="absolute inset-0 bg-abstract-gradient pointer-events-none" />
-        <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="inline-block px-4 py-1 rounded-full border border-ls-compliment/30 text-ls-compliment text-sm font-bold uppercase tracking-widest mb-6"
-          >
-            For Institutional & Private Investors
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-black mb-8 max-w-5xl mx-auto leading-tight tracking-tighter"
-          >
-            Partner with us to access <br className="hidden md:block" />
-            <span className="text-ls-compliment">exclusive, high‑potential deals.</span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-xl text-text-muted max-w-2xl mx-auto mb-12"
-          >
-            Finlogic Capital offers a differentiated investment opportunity rooted in a proven, insight‑driven philosophy.
-          </motion.p>
+      <section className="relative pt-40 pb-32 overflow-hidden bg-ls-primary text-ls-white">
+        <div className="absolute inset-0 z-0 opacity-40 grayscale mix-blend-luminosity">
+          <img src="/images/redesign/leadership.png" className="w-full h-full object-cover" alt="Investors Hero" />
+          <div className="absolute inset-0 bg-ls-primary/80" />
+        </div>
+        
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            className="max-w-5xl space-y-10"
           >
-            <Link 
-              href="/auth/login"
-              className="w-full sm:w-auto rounded-full bg-foreground text-background px-10 py-4 font-bold transition-all hover:bg-ls-compliment hover:text-ls-primary active:scale-95 text-center"
-            >
-              Investor Login
-            </Link>
-            <a href="#request-access" className="w-full sm:w-auto rounded-full border border-ls-compliment text-ls-compliment px-10 py-4 font-bold transition-all hover:bg-ls-compliment hover:text-ls-primary text-center">
-              Request Access
-            </a>
+            <span className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">For Institutional & Private Investors</span>
+            <h1 className="text-6xl md:text-8xl font-serif font-light leading-tight">Sophisticated <br /> Capital <br /> Deployment</h1>
+            <p className="text-xl text-ls-white/70 max-w-2xl leading-relaxed md:text-2xl font-light">
+              Partner with Nepal's premier institutional-grade private equity firm to access exclusive, visionary deal flow.
+            </p>
+            <div className="pt-8 flex flex-col sm:flex-row gap-6">
+              <Link 
+                href="/auth/login"
+                className="inline-flex items-center justify-center rounded-none bg-ls-compliment px-12 py-6 text-xs font-bold text-ls-primary uppercase tracking-[0.3em] hover:bg-ls-white transition-all"
+              >
+                Investor Portal Access
+              </Link>
+              <a href="#request-access" className="flex items-center text-ls-white/40 text-[10px] uppercase tracking-[0.2em] border-b border-ls-white/20 pb-1 hover:text-ls-compliment hover:border-ls-compliment transition-all">
+                Request Onboarding
+              </a>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Why Invest Section */}
-      <section className="py-24 border-y border-border-theme">
+      {/* Why Invest Section - Grid */}
+      <section className="py-32 lg:py-48">
         <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="text-3xl font-bold mb-16 text-center">Why Invest With Finlogic?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+           <div className="grid grid-cols-1 lg:grid-cols-12 gap-20 items-end mb-24">
+              <div className="lg:col-span-6 space-y-6">
+                <span className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">The Finlogic Edge</span>
+                <h2 className="text-5xl md:text-7xl font-serif font-light leading-tight">Institutional <br /> Discipline</h2>
+              </div>
+              <div className="lg:col-span-6">
+                <p className="text-xl text-text-muted leading-relaxed font-light">
+                  We bridge the gap between high-potential frontier markets and global institutional standards, ensuring every investment undergoes rigorous institutional scrutiny.
+                </p>
+              </div>
+           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {investorBenefits.map((benefit, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -5 }}
-                className="bg-card border border-border-theme p-8 rounded-2xl h-full flex flex-col hover:shadow-xl transition-all"
-              >
-                <div className="mb-6 text-ls-compliment">{benefit.icon}</div>
-                <h3 className="text-lg font-bold mb-3 leading-tight">{benefit.title}</h3>
-                <p className="text-sm text-text-muted leading-relaxed">{benefit.description}</p>
-              </motion.div>
+              <div key={i} className="border border-border-theme p-12 transition-all hover:bg-ls-primary hover:text-ls-white group">
+                <div className="mb-10 text-ls-compliment opacity-60 group-hover:opacity-100 transition-opacity">
+                  {benefit.icon}
+                </div>
+                <h3 className="text-2xl font-serif font-light mb-6">{benefit.title}</h3>
+                <p className="text-text-muted group-hover:text-ls-white/60 transition-colors leading-relaxed">
+                  {benefit.description}
+                </p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Track Record Section */}
-      <section className="py-24 bg-card/30 overflow-hidden">
-        <div className="container mx-auto px-4 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-16">Our Proven Track Record</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+      {/* Track Record - Minimalist Editorial */}
+      <section className="py-32 bg-ls-primary text-ls-white">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
             {trackRecord.map((stat, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="p-8"
+                className="space-y-4"
               >
-                <div className="text-4xl md:text-5xl font-black text-ls-compliment mb-2">{stat.value}</div>
-                <div className="text-lg font-bold mb-2">{stat.label}</div>
-                <div className="text-xs text-text-muted uppercase tracking-widest">{stat.description}</div>
+                <div className="text-sm font-bold text-ls-compliment uppercase tracking-widest opacity-60">{stat.label}</div>
+                <div className="text-6xl md:text-7xl font-serif font-light">{stat.value}</div>
+                <div className="text-xs text-ls-white/40 uppercase tracking-[0.2em]">{stat.description}</div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Investment Process Section */}
-      <section className="py-24">
+      {/* Investment Process - Steps */}
+      <section className="py-32 lg:py-48">
         <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="text-3xl font-bold mb-20 text-center">Investment Process</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 relative">
-            {/* Connector Line for Desktop */}
-            <div className="absolute top-1/4 left-0 right-0 h-px bg-border-theme hidden lg:block" />
+          <div className="mb-24 space-y-6">
+             <span className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Lifecycle</span>
+             <h2 className="text-5xl font-serif font-light">Investor Journey</h2>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
             {investmentSteps.map((step, i) => (
-              <div key={i} className="relative z-10 text-center group">
-                <div className="w-16 h-16 rounded-2xl bg-card border border-border-theme flex items-center justify-center mx-auto mb-8 transition-all group-hover:border-ls-compliment group-hover:shadow-lg">
-                  <div className="text-ls-compliment">{step.icon}</div>
+              <div key={i} className="space-y-8 group">
+                <div className="flex items-center space-x-6">
+                   <span className="text-xs font-bold text-ls-compliment tracking-widest">{step.id}</span>
+                   <div className="h-px w-full bg-border-theme group-hover:bg-ls-compliment transition-all" />
                 </div>
-                <h3 className="text-xl font-bold mb-4">0{i + 1}. {step.title}</h3>
-                <p className="text-sm text-text-muted leading-relaxed">{step.description}</p>
+                <div className="space-y-4">
+                   <h3 className="text-2xl font-serif font-light group-hover:text-ls-compliment transition-colors">{step.title}</h3>
+                   <p className="text-text-muted leading-relaxed font-light">{step.description}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Educational Resources Section */}
-      <section className="py-24 border-t border-border-theme bg-ls-secondary/[0.02]">
+      {/* Investor Resources CTA */}
+      <section className="py-32 bg-ls-supporting/5">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-16 bg-card border border-border-theme p-12 lg:p-16 rounded-[3rem] shadow-xl">
-            <div className="w-full lg:w-3/5">
-              <h2 className="text-3xl font-black mb-6 text-ls-compliment italic">Educational Resources for Investors</h2>
-              <p className="text-lg text-text-muted mb-10 leading-relaxed">
-                Access exclusive white papers, tailored webinars, and quarterly market insights designed for institutional and sophisticated individual investors. Stay ahead with our unique perspective on frontier markets.
+          <div className="flex flex-col lg:flex-row items-center gap-20">
+            <div className="w-full lg:w-1/2 space-y-10">
+              <span className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Market Intelligence</span>
+              <h2 className="text-5xl font-serif font-light leading-tight">Insight-Driven <br /> Reporting</h2>
+              <p className="text-xl text-text-muted leading-relaxed font-light">
+                Access exclusive white papers and quarterly market reports. Our research provides a unique perspective on emerging market dynamics and cross-border opportunities.
               </p>
-              <Link href="/insights" className="inline-flex items-center text-ls-compliment font-bold hover:translate-x-2 transition-transform">
-                Explore Resources <ChevronRight className="ml-2 w-5 h-5" />
+              <Link href="/insights" className="inline-flex items-center space-x-4 text-ls-primary font-bold uppercase tracking-widest text-xs group">
+                <span>View All Intelligence</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-2" />
               </Link>
             </div>
-            <div className="w-full lg:w-2/5 grid grid-cols-2 gap-4">
-              <div className="p-6 bg-background rounded-2xl border border-border-theme text-center flex flex-col items-center shadow-sm">
-                <FileText className="w-8 h-8 mb-4 text-ls-secondary" />
-                <span className="text-xs font-bold uppercase tracking-tighter">White Papers</span>
+            <div className="w-full lg:w-1/2 grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div className="border border-border-theme p-12 bg-background hover:border-ls-compliment transition-all group">
+                <FileText className="w-10 h-10 mb-8 text-ls-primary group-hover:text-ls-compliment transition-colors" />
+                <h4 className="text-lg font-serif font-light">Institutional <br /> White Papers</h4>
               </div>
-              <div className="p-6 bg-background rounded-2xl border border-border-theme text-center flex flex-col items-center shadow-sm">
-                <TrendingUp className="w-8 h-8 mb-4 text-ls-up" />
-                <span className="text-xs font-bold uppercase tracking-tighter">Market Reports</span>
+              <div className="border border-border-theme p-12 bg-background hover:border-ls-compliment transition-all group">
+                <TrendingUp className="w-10 h-10 mb-8 text-ls-primary group-hover:text-ls-compliment transition-colors" />
+                <h4 className="text-lg font-serif font-light">Quarterly Market <br /> Performance</h4>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Contact Form Section */}
-      <section id="request-access" className="py-24">
-        <div className="container mx-auto px-4 lg:px-8 max-w-4xl">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-black mb-4 tracking-tight">Request Information</h2>
-            <p className="text-text-muted">Interested in learning more? Fill out the form below, and our specialized investor relations team will reach out.</p>
+      {/* Onboarding Request Section */}
+      <section id="request-access" className="py-32 lg:py-48">
+        <div className="container mx-auto px-4 lg:px-8 max-w-5xl">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
+             <div className="lg:col-span-5 space-y-8">
+                <span className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Engagement</span>
+                <h2 className="text-5xl font-serif font-light leading-tight">Request <br /> Onboarding</h2>
+                <p className="text-lg text-text-muted font-light leading-relaxed">
+                   To access our detailed portfolio analytics and upcoming co-investment vehicles, please submit a formal onboarding request.
+                </p>
+             </div>
+             <div className="lg:col-span-7">
+                <form onSubmit={handleSubmit} className="space-y-10">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                     <div className="space-y-4">
+                       <label className="text-[10px] font-bold text-ls-compliment uppercase tracking-[0.4em]">Full Name</label>
+                       <input name="name" required type="text" placeholder="Your Name" className="w-full bg-transparent border-b border-border-theme py-4 outline-none focus:border-ls-compliment transition-all text-xl font-light" />
+                     </div>
+                     <div className="space-y-4">
+                       <label className="text-[10px] font-bold text-ls-compliment uppercase tracking-[0.4em]">Email Address</label>
+                       <input name="email" required type="email" placeholder="john@institution.com" className="w-full bg-transparent border-b border-border-theme py-4 outline-none focus:border-ls-compliment transition-all text-xl font-light" />
+                     </div>
+                   </div>
+                   <div className="space-y-4">
+                     <label className="text-[10px] font-bold text-ls-compliment uppercase tracking-[0.4em]">Institution (LPs / Family Offices)</label>
+                     <input name="institution" type="text" placeholder="Entity Name" className="w-full bg-transparent border-b border-border-theme py-4 outline-none focus:border-ls-compliment transition-all text-xl font-light" />
+                   </div>
+                   <div className="space-y-4">
+                     <label className="text-[10px] font-bold text-ls-compliment uppercase tracking-[0.4em]">Strategic Interest</label>
+                     <textarea name="message" required rows={4} placeholder="Describe your investment objectives..." className="w-full bg-transparent border border-border-theme p-6 outline-none focus:border-ls-compliment transition-all text-xl font-light resize-none leading-relaxed"></textarea>
+                   </div>
+
+                   <button
+                     disabled={formStatus !== "idle"}
+                     type="submit"
+                     className="w-full bg-ls-primary py-8 text-ls-white font-bold uppercase tracking-[0.4em] text-xs hover:bg-ls-compliment hover:text-ls-primary transition-all disabled:opacity-50 shadow-2xl"
+                   >
+                     {formStatus === "idle" && "Submit Formal Request"}
+                     {formStatus === "submitting" && "Transmitting..."}
+                     {formStatus === "success" && "Transmission Complete"}
+                   </button>
+                   {formStatus === "success" && (
+                     <p className="text-center text-ls-compliment font-bold text-sm uppercase tracking-widest animate-pulse">Request Transmitted Successfully.</p>
+                   )}
+                </form>
+             </div>
           </div>
-
-          <form onSubmit={handleSubmit} className="bg-card border border-border-theme p-8 md:p-12 rounded-[3rem] space-y-6 shadow-2xl">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Name</label>
-                <input name="name" required type="text" placeholder="John Doe" className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Email</label>
-                <input name="email" required type="email" placeholder="john@company.com" className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Institution (Optional)</label>
-              <input name="institution" type="text" placeholder="e.g. Acme Family Office" className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors" />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs font-black text-text-muted uppercase tracking-widest pl-2">Message</label>
-              <textarea name="message" required rows={4} placeholder="I am interested in learning about upcoming co-investment vehicles..." className="w-full bg-background border border-border-theme rounded-xl px-6 py-4 outline-none focus:border-ls-compliment transition-colors resize-none"></textarea>
-            </div>
-
-            <button
-              disabled={formStatus !== "idle"}
-              type="submit"
-              className="w-full rounded-full bg-ls-compliment text-ls-primary font-black py-5 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 flex items-center justify-center shadow-lg shadow-ls-compliment/20"
-            >
-              {formStatus === "idle" && "Send Message"}
-              {formStatus === "submitting" && (
-                <div className="w-6 h-6 border-4 border-ls-primary/30 border-t-ls-primary rounded-full animate-spin"></div>
-              )}
-              {formStatus === "success" && "Message Sent Successfully!"}
-            </button>
-            {formStatus === "success" && (
-              <p className="text-center text-ls-up font-medium text-sm">Thank you. We will be in touch within 24 hours.</p>
-            )}
-          </form>
         </div>
       </section>
+
     </div>
   );
 }

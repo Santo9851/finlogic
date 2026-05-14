@@ -33,24 +33,24 @@ export default function SeriesLandingPage({ params }) {
   }, [slug]);
 
   if (loading) return (
-    <div className="bg-background min-h-screen pt-32 flex justify-center theme-transition">
-      <div className="animate-pulse space-y-6 w-full max-w-4xl px-4">
-        <div className="h-6 w-24 bg-foreground/5 rounded-full" />
-        <div className="h-16 w-3/4 bg-foreground/5 rounded-2xl" />
-        <div className="h-48 w-full bg-foreground/5 rounded-[3rem]" />
+    <div className="bg-background min-h-screen pt-40 flex justify-center theme-transition">
+      <div className="animate-pulse space-y-12 w-full max-w-5xl px-4">
+        <div className="h-10 w-48 bg-foreground/5" />
+        <div className="h-32 w-3/4 bg-foreground/5" />
+        <div className="h-80 w-full bg-foreground/5 border border-border-theme" />
       </div>
     </div>
   );
 
   if (error || !series) return (
     <div className="bg-background min-h-screen flex items-center justify-center theme-transition">
-      <div className="text-center space-y-6">
-        <div className="w-20 h-20 bg-foreground/5 rounded-[2rem] flex items-center justify-center mx-auto border border-border-theme">
-          <BookOpen size={32} className="text-text-muted/20" />
+      <div className="text-center space-y-10">
+        <div className="w-24 h-24 border border-border-theme flex items-center justify-center mx-auto opacity-20">
+          <BookOpen size={40} />
         </div>
-        <div>
-          <p className="text-text-muted font-bold uppercase tracking-widest text-[10px] mb-4">Series not found.</p>
-          <Link href="/insights/articles" className="text-[#F59F01] font-black uppercase tracking-widest text-xs hover:underline">← Back to Articles</Link>
+        <div className="space-y-6">
+          <p className="text-text-muted font-bold uppercase tracking-[0.4em] text-[10px]">Sequence Registry Error</p>
+          <Link href="/insights" className="text-ls-compliment font-bold uppercase tracking-[0.4em] text-[10px] border-b border-ls-compliment pb-2">Back to Intelligence Hub</Link>
         </div>
       </div>
     </div>
@@ -62,57 +62,64 @@ export default function SeriesLandingPage({ params }) {
   const progressPercent = articles.length > 0 ? (completedCount / articles.length) * 100 : 0;
 
   return (
-    <div className="bg-background text-foreground min-h-screen pb-24 theme-transition">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none">
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#F59F01]/5 blur-[120px] rounded-full -mr-40 -mt-40 opacity-50" />
-          <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#0B6EC3]/5 blur-[120px] rounded-full -ml-40 -mb-40 opacity-30" />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10 max-w-5xl text-center">
-          <Link href="/insights/articles" className="inline-flex items-center gap-2 text-text-muted hover:text-[#F59F01] text-[10px] font-black uppercase tracking-widest transition-all mb-8">
-            <ArrowLeft size={15} /> Back to Insights
+    <div className="bg-background text-foreground min-h-screen pb-32 theme-transition selection:bg-ls-compliment/30 font-sans">
+      
+      {/* Hero Section - Institutional Dossier */}
+      <section className="relative pt-40 pb-24 border-b border-border-theme">
+        <div className="container mx-auto px-4 lg:px-8 relative z-10 max-w-6xl">
+          
+          <Link href="/insights" className="inline-flex items-center gap-4 text-text-muted hover:text-ls-compliment text-[10px] font-bold uppercase tracking-[0.4em] transition-all mb-16">
+            <ArrowLeft size={14} /> Back to Registry
           </Link>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
-          >
-            <span className="inline-block px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-sm border"
-              style={{ background: `${color}10`, color, borderColor: `${color}20` }}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-20 items-end">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-8"
             >
-              Educational Series
-            </span>
-            <h1 className="text-4xl md:text-7xl font-black mb-8 leading-tight tracking-tight uppercase">{series.title}</h1>
-            <p className="text-lg md:text-xl text-text-muted max-w-3xl mx-auto leading-relaxed mb-10 font-medium">
-              {series.description}
-            </p>
+              <div className="flex items-center gap-4 text-ls-compliment text-[10px] font-bold uppercase tracking-[0.5em]">
+                <BookOpen size={14} /> Knowledge Sequence Registry
+              </div>
+              <h1 className="text-5xl md:text-8xl font-serif font-light leading-[1.1] tracking-tight">
+                {series.title.split(' ').map((word, i) => i === 0 ? <span key={i}>{word} </span> : <span key={i} className="italic">{word} </span>)}
+              </h1>
+              <p className="text-xl md:text-2xl text-text-muted max-w-3xl leading-relaxed font-serif font-light italic">
+                {series.description}
+              </p>
+            </motion.div>
 
-            {/* Progress Bar (Visible if user is logged in) */}
+            {/* Progress Minimalist Frame */}
             {user && (
-              <div className="max-w-md mx-auto bg-card rounded-[2rem] p-8 border border-border-theme shadow-2xl theme-transition">
-                <div className="flex justify-between items-end mb-4">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted/40">Your Learning Path</span>
-                  <span className="text-sm font-black text-[#F59F01]">{completedCount} / {articles.length} Completed</span>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-card border border-border-theme p-10 space-y-8 theme-transition shadow-2xl relative overflow-hidden group"
+              >
+                <div className="absolute top-0 right-0 w-24 h-24 bg-ls-compliment/5 blur-[40px] rounded-full -mr-12 -mt-12 pointer-events-none" />
+                <div className="flex justify-between items-end text-[9px] font-bold uppercase tracking-[0.3em]">
+                  <span className="text-text-muted group-hover:text-ls-white/40">Sequence Ingestion</span>
+                  <span className="text-ls-compliment">{completedCount} / {articles.length} Units</span>
                 </div>
-                <div className="h-3 w-full bg-foreground/5 rounded-full overflow-hidden border border-border-theme shadow-inner">
+                <div className="h-0.5 w-full bg-border-theme group-hover:bg-ls-white/10 overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPercent}%` }}
-                    className="h-full bg-gradient-to-r from-[#F59F01] to-[#F59F01]/50 shadow-[0_0_12px_rgba(245,159,1,0.3)]"
+                    className="h-full bg-ls-compliment shadow-[0_0_12px_rgba(245,159,1,0.3)] transition-all duration-1000"
                   />
                 </div>
-              </div>
+                <div className="text-[9px] font-bold text-text-muted/40 uppercase tracking-widest text-center">
+                  Registry Status: {progressPercent === 100 ? "Mastery Achieved" : "Synchronizing..."}
+                </div>
+              </motion.div>
             )}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Article List */}
-      <section className="container mx-auto px-4 max-w-4xl">
-        <div className="space-y-6">
+      {/* Article List - Archival Sequence Ledger */}
+      <section className="container mx-auto px-4 lg:px-8 max-w-6xl mt-24">
+        <div className="grid grid-cols-1 gap-px bg-border-theme border border-border-theme">
           {articles.sort((a,b) => a.article_number - b.article_number).map((art, i) => {
             const isLocked = art.access_level === 'cliffhanger';
             const isCompleted = art.is_completed;
@@ -127,46 +134,46 @@ export default function SeriesLandingPage({ params }) {
               >
                 <Link 
                   href={`/insights/articles/${art.slug}`}
-                  className="group block relative p-6 rounded-[2rem] bg-card border border-border-theme hover:border-[#F59F01]/30 hover:bg-[#F59F01]/5 transition-all shadow-lg hover:shadow-2xl theme-transition"
+                  className="group block relative p-12 bg-card hover:bg-ls-primary transition-all theme-transition"
                 >
-                  <div className="flex items-center gap-8">
-                    {/* Number Circle */}
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 font-black text-xl transition-all border shadow-inner
-                      ${isCompleted ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-foreground/5 text-text-muted/20 border-border-theme group-hover:bg-[#F59F01]/20 group-hover:text-[#F59F01] group-hover:border-[#F59F01]/30'}
+                  <div className="flex items-center gap-12">
+                    {/* Number Unit */}
+                    <div className={`w-16 h-16 border flex items-center justify-center flex-shrink-0 font-serif text-2xl transition-all
+                      ${isCompleted ? 'bg-ls-up/10 text-ls-up border-ls-up/20' : 'bg-foreground/5 text-text-muted/20 border-border-theme group-hover:bg-ls-white/10 group-hover:text-ls-compliment group-hover:border-ls-white/20'}
                     `}>
-                      {isCompleted ? <CheckCircle2 size={28} /> : art.article_number}
+                      {isCompleted ? <CheckCircle2 size={32} /> : i + 1}
                     </div>
 
-                    <div className="flex-grow min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-lg font-black text-foreground group-hover:text-[#F59F01] transition-colors truncate tracking-tight uppercase">
+                    <div className="flex-grow min-w-0 space-y-4">
+                      <div className="flex flex-wrap items-center gap-6">
+                        <h3 className="text-2xl md:text-3xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors leading-tight">
                           {art.title}
                         </h3>
                         {art.is_free && (
-                          <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm">
-                            Free
+                          <span className="text-[9px] font-bold uppercase tracking-[0.3em] px-4 py-1.5 border border-ls-up/20 text-ls-up shadow-sm">
+                            Open Access
                           </span>
                         )}
                         {isLocked && !user && (
-                          <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-foreground/5 text-text-muted/60 border border-border-theme flex items-center gap-1.5 shadow-sm">
-                            <Lock size={10} /> Account Required
+                          <span className="text-[9px] font-bold uppercase tracking-[0.3em] px-4 py-1.5 border border-border-theme group-hover:border-ls-white/20 text-text-muted/40 group-hover:text-ls-white/40 flex items-center gap-3">
+                            <Lock size={12} /> Institutional Credential Required
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest text-text-muted/40">
-                        <span className="flex items-center gap-2"><Clock size={14} /> {art.read_time || '5 min read'}</span>
-                        {art.pillar && <span className="flex items-center gap-2"><BookOpen size={14} /> {art.pillar}</span>}
+                      <div className="flex items-center gap-8 text-[9px] font-bold uppercase tracking-[0.4em] text-text-muted/40 group-hover:text-ls-white/20">
+                        <span className="flex items-center gap-3"><Clock size={14} /> {art.read_time || '5 MIN READ'}</span>
+                        <span className="text-ls-compliment group-hover:text-ls-white/40 opacity-40">LEDGER-ID: 0{art.id}</span>
                       </div>
                     </div>
 
                     <div className="flex-shrink-0">
                       {isLocked && !user ? (
-                        <div className="w-12 h-12 rounded-2xl border border-border-theme flex items-center justify-center text-text-muted/20 bg-foreground/[0.02]">
-                          <Lock size={18} />
+                        <div className="w-14 h-14 border border-border-theme group-hover:border-ls-white/20 flex items-center justify-center text-text-muted/20 bg-foreground/[0.02]">
+                          <Lock size={20} />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-2xl bg-[#F59F01] flex items-center justify-center text-ls-primary-fixed shadow-xl shadow-[#F59F01]/20 transform group-hover:scale-110 transition-all active:scale-95">
-                          <Play size={20} className="ml-1 fill-current" />
+                        <div className="w-14 h-14 bg-ls-compliment group-hover:bg-ls-white flex items-center justify-center text-ls-primary shadow-xl shadow-ls-compliment/10 transform transition-all active:scale-95">
+                          <Play size={24} className="ml-1 fill-current" />
                         </div>
                       )}
                     </div>
@@ -177,22 +184,24 @@ export default function SeriesLandingPage({ params }) {
           })}
         </div>
 
-        {/* Footer CTA */}
+        {/* Footer CTA - Institutional Enrollment */}
         {!user && (
-          <div className="mt-20 text-center p-16 rounded-[4rem] bg-card border border-border-theme shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] relative overflow-hidden theme-transition">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-[#F59F01]/5 blur-[80px] rounded-full -mr-20 -mt-20" />
+          <div className="mt-32 p-20 border border-border-theme bg-card text-center relative overflow-hidden theme-transition">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-ls-compliment/5 blur-[80px] rounded-full -mr-20 -mt-20 opacity-50" />
             
-            <div className="relative z-10 space-y-6">
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight uppercase">Unlock the Full Series</h2>
-              <p className="text-text-muted max-w-md mx-auto leading-relaxed font-medium">
-                Join thousands of investors and entrepreneurs gaining an edge with our deep-dive institutional research.
+            <div className="relative z-10 space-y-10">
+              <h2 className="text-4xl md:text-5xl font-serif font-light text-foreground tracking-tight leading-tight uppercase">
+                Unlock the Full <span className="italic">Sequence</span>
+              </h2>
+              <p className="text-xl text-text-muted max-w-xl mx-auto leading-relaxed font-serif font-light italic">
+                Enlist alongside institutional wealth managers and elite founders to gain full access to our deep-market strategic dossiers.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-                <Link href="/auth/register" className="px-12 py-5 rounded-[1.5rem] bg-[#F59F01] text-ls-primary-fixed font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-2xl shadow-[#F59F01]/30 active:scale-95">
-                  Create Free Account
+              <div className="flex flex-col sm:flex-row gap-6 justify-center pt-8">
+                <Link href="/auth/register" className="px-12 py-6 bg-ls-compliment text-ls-primary font-bold text-[10px] uppercase tracking-[0.5em] hover:bg-ls-white transition-all shadow-xl">
+                  Enlist for Access
                 </Link>
-                <Link href="/auth/login" className="px-12 py-5 rounded-[1.5rem] bg-foreground/5 border border-border-theme text-foreground font-black text-xs uppercase tracking-widest hover:bg-foreground/10 transition-all active:scale-95">
-                  Sign In
+                <Link href="/auth/login" className="px-12 py-6 border border-border-theme text-foreground font-bold text-[10px] uppercase tracking-[0.5em] hover:bg-ls-primary hover:text-ls-white transition-all">
+                  Credential Sign-In
                 </Link>
               </div>
             </div>

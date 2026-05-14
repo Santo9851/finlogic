@@ -10,7 +10,7 @@ import {
 import Link from 'next/link';
 import FinlogicLogo from '@/components/FinlogicLogo';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+// import remarkGfm from 'remark-gfm';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
@@ -38,80 +38,104 @@ export default function PublicShareContent({ data }) {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4 py-20 lg:p-12 selection:bg-ls-compliment selection:text-ls-primary theme-transition">
+    <div className="min-h-screen dark:bg-[#100226] bg-[#fdf6ff] dark:text-[#f8fafc] text-[#100226] flex flex-col items-center p-4 py-24 lg:p-12 selection:bg-ls-compliment selection:text-ls-primary theme-transition relative overflow-hidden">
+      {/* Institutional Background Grid */}
+      <div className="fixed inset-0 pointer-events-none dark:opacity-[0.03] opacity-[0.08] z-0">
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#F59F01 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      </div>
+
       {/* Theme Toggle for Public Viewers */}
-      <div className="fixed top-6 right-6 z-[60]">
+      <div className="fixed top-8 right-8 z-[60]">
         <ThemeToggle />
       </div>
 
-      {/* Dynamic Background Elements */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-ls-compliment/5 blur-[150px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-ls-primary/20 blur-[150px] rounded-full" />
-      </div>
-
-      <div className="w-full max-w-4xl relative z-10 space-y-12">
-        {/* Hero Section */}
-        <div className="bg-card border border-border-theme rounded-[3rem] p-10 lg:p-16 shadow-2xl relative overflow-hidden group">
+      <div className="w-full max-w-4xl relative z-10 space-y-16">
+        {/* Institutional Dossier Header */}
+        <div className="dark:bg-[#100226] bg-white border dark:border-ls-white/10 border-ls-primary/10 p-12 lg:p-20 shadow-2xl relative overflow-hidden group">
           {/* Branded Watermark */}
-          <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none transition-transform duration-[3s] group-hover:scale-110 group-hover:rotate-12">
-            <Zap className="w-64 h-64 text-ls-compliment" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.02] pointer-events-none transition-transform duration-[5s] group-hover:scale-110">
+            <Zap className="w-[800px] h-[800px] text-ls-compliment" />
           </div>
 
-          <div className="relative z-10 space-y-12">
-            {/* Logo & Category */}
-            <div className="flex items-center justify-between">
-              <FinlogicLogo size={36} darkBg={isDark} />
-              <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-ls-compliment bg-ls-compliment/10 px-4 py-2 rounded-full border border-ls-compliment/20 backdrop-blur-sm">
-                 <Globe size={12} /> Institutional Insight
+          <div className="relative z-10 space-y-16">
+            {/* Logo & Registry Label */}
+            <div className="flex items-center justify-between border-b border-ls-white/10 pb-10">
+              <FinlogicLogo size={48} darkBg={true} variant="full" />
+              <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] text-ls-compliment bg-ls-compliment/5 px-6 py-3 border border-ls-compliment/20">
+                 <Globe size={14} /> Public Registry Access
               </div>
             </div>
 
             {/* Title & Verdict */}
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-text-muted opacity-40 uppercase">The Sovereign Venture Architect Presents</p>
-                <h1 className="text-4xl lg:text-5xl font-black tracking-tight text-foreground uppercase leading-none">Strategic Validation</h1>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-end">
+              <div className="space-y-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-ls-compliment opacity-60">Sovereign Venture Architect</p>
+                <h1 className="text-5xl lg:text-7xl font-serif font-light tracking-tight leading-none">Strategic <br /> Validation</h1>
               </div>
               
-              <div className={`inline-flex items-center gap-4 px-10 py-5 rounded-[2rem] border-2 shadow-[0_0_40px_-10px] transition-all duration-700 ${getVerdictStyles(data.verdict)}`}>
-                 {data.verdict === 'VIABLE' ? <CheckCircle2 size={32} /> : <AlertTriangle size={32} />}
-                 <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Architect's Verdict</span>
-                    <span className="text-3xl font-black tracking-tighter leading-none mt-1">{data.verdict}</span>
-                 </div>
+              <div className="flex flex-col items-start lg:items-end gap-6">
+                <div className={`inline-flex items-center gap-6 px-12 py-6 border transition-all duration-1000 ${getVerdictStyles(data.verdict)}`}>
+                   <div className="text-right">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-50 mb-2">Analysis Verdict</div>
+                      <div className="text-4xl font-serif font-light tracking-widest leading-none" style={{ fontFamily: '"Playfair Display", serif' }}>
+                        {data.verdict}
+                      </div>
+                   </div>
+                   {data.verdict === 'VIABLE' ? <CheckCircle2 size={40} className="opacity-80" /> : <AlertTriangle size={40} className="opacity-80" />}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Full Report Content */}
-        <div className="prose dark:prose-invert article-body max-w-none prose-headings:font-black prose-headings:tracking-tight prose-p:text-text-muted prose-p:leading-relaxed prose-li:text-text-muted prose-strong:text-ls-compliment bg-card border border-border-theme rounded-[3rem] p-10 lg:p-20 shadow-2xl">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {data.report?.replace(/\*This AI-generated educational analysis is provided by Finlogic Capital\. It does not constitute investment advice, a solicitation to invest, or any guarantee of future funding\.\*/g, '').trim()}
-          </ReactMarkdown>
+        {/* Intelligence Content */}
+        <div className="dark:bg-[#100226] bg-white border dark:border-ls-white/10 border-ls-primary/10 p-12 lg:p-24 shadow-2xl relative">
+          {/* Document Corners */}
+          <div className="absolute top-0 left-0 w-8 h-8 border-t border-l border-ls-compliment/30" />
+          <div className="absolute top-0 right-0 w-8 h-8 border-t border-r border-ls-compliment/30" />
+          <div className="absolute bottom-0 left-0 w-8 h-8 border-b border-l border-ls-compliment/30" />
+          <div className="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-ls-compliment/30" />
+
+          <div className="space-y-16">
+            {/* Executive Summary for Public View */}
+            <div className="p-10 bg-ls-compliment/5 border border-ls-compliment/20 italic text-2xl font-serif font-light dark:text-ls-white/70 text-ls-primary/70 leading-relaxed relative summary-markdown">
+              <span className="absolute -top-3 left-8 px-3 dark:bg-[#100226] bg-white text-[10px] font-bold uppercase tracking-[0.4em] text-ls-compliment">Architect's Strategic Summary</span>
+              <ReactMarkdown>
+                {data.excerpt || (data.polished_report ? data.polished_report.substring(0, 500) + "..." : "Analyzing the core strategic vectors of this venture vision...")}
+              </ReactMarkdown>
+            </div>
+
+            <div className="article-body selection:bg-ls-compliment/20">
+              <ReactMarkdown>
+                {data.polished_report?.replace(/\*This AI-generated educational analysis is provided by Finlogic Capital\. It does not constitute investment advice, a solicitation to invest, or any guarantee of future funding\.\*/g, '').trim()}
+              </ReactMarkdown>
+            </div>
+          </div>
         </div>
 
         {/* Footer / CTA */}
-        <div className="w-full max-w-2xl mx-auto pt-12 space-y-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-             <div className="text-[9px] font-black uppercase tracking-[0.3em] text-text-muted/40">
-                Validated on {new Date(data.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+        <div className="w-full max-w-3xl mx-auto pt-20 space-y-12">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-10">
+             <div className="space-y-2">
+                <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-ls-compliment/60">Registry Reference</div>
+                <div className="text-xs font-mono text-ls-white/30 uppercase tracking-[0.2em]">
+                  Validated: {new Date(data.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </div>
              </div>
              <Link 
                 href="/validate"
-                className="flex items-center gap-3 bg-ls-compliment text-ls-primary px-10 py-4 rounded-full font-black text-xs uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl shadow-ls-compliment/20 group"
+                className="flex items-center gap-4 bg-ls-compliment text-ls-primary px-12 py-5 font-bold text-xs uppercase tracking-[0.3em] transition-all hover:bg-ls-white hover:text-ls-primary active:scale-95 shadow-2xl shadow-ls-compliment/10 group"
              >
-                Validate Your Own Idea
-                <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+                Initiate New Validation
+                <ChevronRight size={18} className="transition-transform group-hover:translate-x-2" />
              </Link>
           </div>
 
-          {/* Disclaimer */}
-          <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] text-center">
-             <p className="text-[9px] text-text-muted/40 uppercase leading-relaxed tracking-widest">
-                This is an AI-generated educational analysis by Finlogic Capital. 
-                It does not constitute investment advice, a solicitation to invest, or any guarantee of funding.
+          {/* Institutional Disclaimer */}
+          <div className="p-10 border border-ls-white/5 bg-ls-white/[0.01] text-center">
+             <p className="text-[10px] text-ls-white/20 uppercase leading-loose tracking-[0.25em] max-w-2xl mx-auto">
+                This document is a confidential AI-generated strategic analysis produced by the Finlogic Sovereign Venture Architect. 
+                It does not constitute financial, legal, or investment advice, nor does it represent a guarantee of institutional funding.
              </p>
           </div>
         </div>

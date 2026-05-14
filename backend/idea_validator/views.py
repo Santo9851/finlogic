@@ -294,5 +294,5 @@ class IdeaValidationSessionViewSet(viewsets.ModelViewSet):
             "id": session.id,
             "verdict": session.verdict,
             "created_at": session.created_at,
-            "report": session.polished_report or ""
+            "polished_report": session.polished_report or ""
         })

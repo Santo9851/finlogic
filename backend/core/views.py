@@ -614,6 +614,13 @@ class ArticleViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         qs = Article.objects.filter(is_published=True).select_related('author')
 
+        # Logic: Exclude articles that belong to a series from general lists
+        # (Research Papers section / Home page) to prevent duplication.
+        # They should only be accessible via the Series detail or their direct slug.
+        include_series = self.request.query_params.get('include_series', '')
+        if self.action == 'list' and include_series not in ('1', 'true'):
+            qs = qs.filter(series__isnull=True)
+
         search = self.request.query_params.get('search', '').strip()
         if search:
             qs = qs.filter(

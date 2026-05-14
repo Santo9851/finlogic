@@ -2,13 +2,13 @@
 
 import { useState, useEffect, use, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ChevronLeft, 
-  Download, 
-  Share2, 
-  RefreshCcw, 
-  Clock, 
-  CheckCircle2, 
+import {
+  ChevronLeft,
+  Download,
+  Share2,
+  RefreshCcw,
+  Clock,
+  CheckCircle2,
   AlertTriangle,
   FileText,
   Sparkles,
@@ -41,7 +41,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
   const [loading, setLoading] = useState(true);
   const [polling, setPolling] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const [showShareModal, setShowShareModal] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -104,7 +104,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
 
   const getSummary = (text, limit = 550) => {
     if (!text) return "";
-    
+
     // Specifically target Section 1: The Architect's Verdict
     const verdictMatch = text.match(/1\.\s+\*\*The Architect’s Verdict\*\*([\s\S]*?)(?=2\.\s+\*\*|$)/i);
     let cleanText = verdictMatch ? verdictMatch[1] : text;
@@ -119,7 +119,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
       .replace(/[#*`_]/g, '') // Strip basic markdown
       .replace(/\[\[.*?\]\]/g, '') // Strip internal placeholders
       .trim();
-    
+
     if (cleanText.length <= limit) return cleanText;
     const lastSpace = cleanText.lastIndexOf(' ', limit);
     return cleanText.substring(0, lastSpace > 0 ? lastSpace : limit) + "...";
@@ -217,7 +217,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
           }
         }
       });
-      
+
       const dataUrl = canvas.toDataURL('image/png', 1.0);
       const link = document.createElement('a');
       link.download = `finlogic-validation-${id}.png`;
@@ -259,14 +259,14 @@ export default function ValidationReportPage({ params: paramsPromise }) {
         <div className="bg-background/80 backdrop-blur-xl border-b border-border-theme sticky top-0 z-50 print:hidden">
           <div className="container mx-auto px-4 py-6 flex items-center justify-between">
             <div className="flex items-center space-x-6">
-              <Link 
+              <Link
                 href="/validate"
                 className="flex items-center space-x-2 text-text-muted hover:text-ls-compliment transition-colors group"
               >
                 <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
                 <span className="font-bold uppercase tracking-widest text-xs">Back</span>
               </Link>
-              <Link 
+              <Link
                 href="/validate/history"
                 className="flex items-center space-x-2 text-text-muted hover:text-ls-compliment transition-colors group border-l border-border-theme pl-6"
               >
@@ -276,13 +276,13 @@ export default function ValidationReportPage({ params: paramsPromise }) {
             </div>
 
             <div className="flex items-center space-x-4">
-              <button 
+              <button
                 onClick={handleShare}
                 className="p-2 rounded-full border border-border-theme hover:bg-card transition-all text-text-muted"
               >
                 <Share2 className="w-5 h-5" />
               </button>
-              <button 
+              <button
                 onClick={handlePrint}
                 className="flex items-center space-x-2 bg-foreground text-background px-6 py-2 rounded-full font-bold hover:bg-ls-compliment hover:text-ls-primary transition-all"
               >
@@ -296,7 +296,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto space-y-12">
             {polling ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-[3rem] bg-card border border-border-theme p-12 lg:p-20 text-center space-y-8"
@@ -310,7 +310,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                 <div className="space-y-4">
                   <h2 className="text-4xl font-black">Architecting Your Analysis</h2>
                   <p className="text-xl text-text-muted max-w-lg mx-auto">
-                    The Sovereign Venture Architect is currently dismantling your submission 
+                    The Sovereign Venture Architect is currently dismantling your submission
                     to find the core truth. This takes a few minutes.
                   </p>
                 </div>
@@ -327,7 +327,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                 <AlertTriangle className="w-16 h-16 text-ls-secondary mx-auto" />
                 <h2 className="text-3xl font-black text-ls-secondary">Analysis Interrupted</h2>
                 <p className="text-text-muted max-w-md mx-auto">{session.progress_text}</p>
-                <button 
+                <button
                   onClick={() => window.location.reload()}
                   className="px-8 py-3 rounded-full bg-ls-secondary text-white font-bold"
                 >
@@ -335,7 +335,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                 </button>
               </div>
             ) : report ? (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 className="space-y-12"
@@ -383,8 +383,8 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                     <span className="text-lg font-black tracking-[0.2em] text-ls-compliment">FINLOGIC CAPITAL</span>
                   </div>
                   <p className="text-[11px] text-text-muted leading-relaxed max-w-4xl mx-auto uppercase tracking-[0.15em] opacity-60">
-                    This strategic validation report is a confidential AI-generated educational analysis. 
-                    It is intended for informational purposes only and does not constitute financial, legal, 
+                    This strategic validation report is a confidential AI-generated educational analysis.
+                    It is intended for informational purposes only and does not constitute financial, legal,
                     or investment advice by Finlogic Capital Limited or its affiliates.
                   </p>
                   <div className="pt-6 flex items-center justify-center space-x-10 text-[10px] text-text-muted/40 uppercase tracking-widest">
@@ -403,22 +403,22 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                     <h3 className="text-xl font-bold">Constructive Risk Assessment</h3>
                   </div>
                   <p className="text-text-muted">
-                    Your analysis identifies several key structural and operational risks. 
-                    Refer to the <strong>Strategic Validation (SWOT)</strong> section above for a detailed breakdown 
+                    Your analysis identifies several key structural and operational risks.
+                    Refer to the <strong>Strategic Validation (SWOT)</strong> section above for a detailed breakdown
                     of threats that require your immediate leadership attention.
                   </p>
                 </div>
 
                 {/* Footer Navigation */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8 print:hidden">
-                  <Link 
+                  <Link
                     href="/validate"
                     className="flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-ls-compliment text-ls-primary font-bold hover:scale-105 transition-all"
                   >
                     <span>Analyze Another Idea</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
-                  <Link 
+                  <Link
                     href="/validate/history"
                     className="flex items-center justify-center space-x-2 px-8 py-4 rounded-full border border-border-theme font-bold hover:bg-card transition-all"
                   >
@@ -445,14 +445,14 @@ export default function ValidationReportPage({ params: paramsPromise }) {
         <AnimatePresence>
           {showShareModal && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowShareModal(false)}
                 className="absolute inset-0 bg-background/80 backdrop-blur-sm"
               />
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -467,7 +467,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
 
                 <div className="p-8 space-y-8">
                   {/* Institutional Portrait Brief Preview */}
-                  <div 
+                  <div
                     ref={cardRef}
                     data-share-card
                     style={{ backgroundColor: '#100226', color: '#FDF6FF', borderColor: 'rgba(255,255,255,0.1)' }}
@@ -477,26 +477,26 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                     <div className="absolute -right-20 -bottom-20 opacity-[0.02] zap-bg">
                       <Zap size={600} style={{ color: '#F59F01' }} />
                     </div>
-                    
+
                     {/* Header: Identity Row */}
                     <div className="relative z-10 space-y-10 card-header">
                       <div className="flex items-center justify-between brand-row">
-                         <FinlogicLogo size={56} darkBg={true} variant="full" />
-                         <div 
-                           className="verdict-seal"
-                           style={{ borderColor: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}
-                         >
-                            <div className="verdict-label">Verdict</div>
-                            <div className="verdict-value" style={{ color: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}>
-                               {report.verdict}
-                            </div>
-                         </div>
+                        <FinlogicLogo size={56} darkBg={true} variant="full" />
+                        <div
+                          className="verdict-seal"
+                          style={{ borderColor: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}
+                        >
+                          <div className="verdict-label">Verdict</div>
+                          <div className="verdict-value" style={{ color: report.verdict === 'VIABLE' ? '#16c784' : '#F59F01' }}>
+                            {report.verdict}
+                          </div>
+                        </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-4 section-marker">
-                         <div className="h-px flex-1 bg-ls-compliment/30 marker-line" />
-                         <span className="text-[10px] font-black uppercase tracking-[0.5em] text-ls-compliment report-title">Sovereign Venture Architect</span>
-                         <div className="h-px flex-1 bg-ls-compliment/30 marker-line" />
+                        <div className="h-px flex-1 bg-ls-compliment/30 marker-line" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.5em] text-ls-compliment report-title">Sovereign Venture Architect</span>
+                        <div className="h-px flex-1 bg-ls-compliment/30 marker-line" />
                       </div>
                     </div>
 
@@ -510,14 +510,14 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                     {/* Footer: Branded Disclaimer */}
                     <div className="relative z-10 card-footer">
                       <p className="disclaimer-text" style={{ color: '#F59F01' }}>
-                        THIS IS AN AI-GENERATED STRATEGIC ANALYSIS BY FINLOGIC CAPITAL. IT DOES NOT CONSTITUTE FINANCIAL OR INVESTMENT ADVICE. 
+                        THIS IS AN AI-GENERATED STRATEGIC ANALYSIS BY FINLOGIC CAPITAL. IT DOES NOT CONSTITUTE FINANCIAL OR INVESTMENT ADVICE.
                         CONFIDENTIAL EDUCATIONAL DOCUMENT • VERIFIED VIA SOVEREIGN VENTURE ARCHITECT
                       </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <button 
+                    <button
                       onClick={downloadShareCard}
                       disabled={isCapturing}
                       className="flex items-center justify-center space-x-2 bg-ls-compliment text-ls-primary px-6 py-4 rounded-xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
@@ -525,7 +525,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                       {isCapturing ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                       <span>Download PNG</span>
                     </button>
-                    <button 
+                    <button
                       onClick={copyPublicLink}
                       className="flex items-center justify-center space-x-2 border border-border-theme px-6 py-4 rounded-xl font-bold hover:bg-background transition-all"
                     >
@@ -533,7 +533,7 @@ export default function ValidationReportPage({ params: paramsPromise }) {
                       <span>{copied ? "Copied!" : "Copy Link"}</span>
                     </button>
                   </div>
-                  
+
                   <p className="text-[10px] text-center text-text-muted">
                     Public links only show the verdict card, not your full strategic analysis.
                   </p>

@@ -211,3 +211,6 @@ body {
     break-inside: avoid;
   }
 }
+.font-serif {
+  font-family: "Playfair Display", serif;
+}

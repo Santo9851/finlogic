@@ -19,7 +19,7 @@ export default function GPInvestorMeetingsPage() {
       title: 'Q1 2081/82 Performance Briefing',
       date: 'May 15, 2026',
       time: '10:00 AM - 11:30 AM',
-      type: 'Video Call',
+      type: 'VIDEO_PROTOCOL',
       host: 'Sagar Rana (Managing Partner)',
       status: 'SCHEDULED'
     },
@@ -28,7 +28,7 @@ export default function GPInvestorMeetingsPage() {
       title: 'Investment Committee Review: Project Solar-X',
       date: 'June 02, 2026',
       time: '2:00 PM - 3:30 PM',
-      type: 'Video Call',
+      type: 'BOARD_SESSION',
       host: 'Bikash Koirala (Investment Director)',
       status: 'PENDING'
     }
@@ -40,97 +40,112 @@ export default function GPInvestorMeetingsPage() {
       title: 'Annual Shareholder Meeting FY 2080/81',
       date: 'March 20, 2026',
       duration: '1h 45m',
-      category: 'Annual General Meeting'
+      category: 'AGM_ARCHIVE'
     },
     {
       id: 102,
       title: 'Monthly Portfolio Update - February 2026',
       date: 'Feb 28, 2026',
       duration: '45m',
-      category: 'Portfolio Review'
+      category: 'STRATEGIC_REVIEW'
     }
   ];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Investor Briefings & Meetings</h1>
-        <p className="text-white/50 mt-1">Join live discussions, review upcoming committee meetings, and access past recordings.</p>
+    <div className="space-y-20 animate-in fade-in duration-1000 pb-32 max-w-7xl mx-auto">
+      {/* Header - Institutional Schedule */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 border-b border-border-theme pb-12">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 text-ls-compliment text-[10px] font-bold uppercase tracking-[0.5em]">
+            <Calendar size={14} /> Strategic Briefing Schedule
+          </div>
+          <h1 className="text-5xl md:text-7xl font-serif font-light text-foreground tracking-tight leading-tight">
+            Session <span className="italic">Calendar</span>
+          </h1>
+          <p className="text-xl text-text-muted font-serif font-light italic max-w-xl">
+            Live strategic discussions, institutional committee reviews, and secure archival of historical briefings.
+          </p>
+        </div>
+        <div className="flex items-center gap-6 px-10 py-5 bg-border-theme/20 border border-border-theme shadow-sm">
+           <div className="space-y-1 text-right">
+             <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.3em]">Schedule Identifier</p>
+             <p className="text-[9px] text-text-muted/40 font-bold uppercase tracking-widest font-mono">SESSIONS-2075-PROT</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Upcoming */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar size={18} className="text-[#16c784]" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-widest">Upcoming Calls</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+        {/* Upcoming Sessions Ledger */}
+        <div className="lg:col-span-2 space-y-12">
+          <div className="flex items-center gap-4 border-l-2 border-ls-compliment pl-6">
+            <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.5em]">Active Mandates</h2>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-8">
             {upcomingMeetings.map(mtg => (
-              <div key={mtg.id} className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:border-[#16c784]/30 transition-all group">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="px-2 py-0.5 bg-[#16c784]/15 text-[#16c784] text-[9px] font-bold rounded uppercase tracking-tighter">
+              <div key={mtg.id} className="bg-card border border-border-theme hover:border-ls-compliment/40 p-10 shadow-2xl group transition-all duration-700 relative overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-12">
+                  <div className="space-y-6 flex-1 min-w-0">
+                    <div className="flex items-center gap-6">
+                      <span className="px-4 py-1.5 border border-ls-compliment/30 bg-ls-compliment/5 text-ls-compliment text-[9px] font-bold uppercase tracking-[0.3em] font-mono">
                         {mtg.type}
                       </span>
-                      <h3 className="text-white font-bold">{mtg.title}</h3>
+                      <h3 className="text-3xl font-serif font-light text-foreground group-hover:text-ls-compliment transition-all uppercase tracking-tight truncate">{mtg.title}</h3>
                     </div>
                     
-                    <div className="flex flex-wrap items-center gap-6">
-                      <div className="flex items-center gap-2 text-white/40">
-                        <Clock size={14} />
-                        <span className="text-[10px] font-medium">{mtg.date} • {mtg.time}</span>
+                    <div className="flex flex-wrap items-center gap-12">
+                      <div className="flex items-center gap-3 text-text-muted/40 group-hover:text-text-muted/60 transition-all font-mono text-[9px] font-bold uppercase tracking-[0.2em]">
+                        <Clock size={12} className="text-ls-compliment" />
+                        <span>{mtg.date} • {mtg.time}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-white/40">
+                      <div className="flex items-center gap-3 text-text-muted/40 group-hover:text-text-muted/60 transition-all font-serif italic text-[13px]">
                         <User size={14} />
-                        <span className="text-[10px] font-medium">{mtg.host}</span>
+                        <span>{mtg.host}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <button className="bg-white text-black hover:bg-[#16c784] hover:text-black px-6 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+                  <button className="bg-ls-primary text-ls-white hover:bg-ls-white hover:text-ls-primary px-10 py-5 text-[10px] font-bold uppercase tracking-[0.4em] transition-all shadow-xl shadow-ls-primary/10 flex items-center gap-4 shrink-0">
                     <Video size={16} />
-                    Join Briefing
+                    Initiate Briefing
                   </button>
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="p-6 rounded-2xl bg-[#16c784]/5 border border-[#16c784]/20 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-[#16c784]/10 flex items-center justify-center text-[#16c784]">
-                <Phone size={20} />
+          <div className="p-10 bg-ls-compliment/5 border border-ls-compliment/20 flex flex-col md:flex-row items-center justify-between gap-10 group hover:bg-ls-compliment/10 transition-all duration-700">
+            <div className="flex items-start gap-8">
+              <div className="w-14 h-14 border border-ls-compliment/40 flex items-center justify-center text-ls-compliment bg-ls-compliment/5">
+                <Phone size={24} />
               </div>
-              <div>
-                <p className="text-sm font-bold text-white">Need a one-on-one?</p>
-                <p className="text-[10px] text-white/40">Request a private review with the Managing Partners.</p>
+              <div className="space-y-2">
+                <p className="text-lg font-serif font-light text-foreground uppercase tracking-tight leading-none">Bilateral Consultations</p>
+                <p className="text-[10px] text-text-muted uppercase tracking-[0.3em] font-bold">Request private strategic review with managing partners.</p>
               </div>
             </div>
-            <button className="text-[10px] font-bold text-[#16c784] uppercase tracking-widest px-4 py-2 hover:bg-[#16c784]/10 rounded-lg transition-all">
-              Request Call
+            <button className="text-[10px] font-bold text-ls-compliment border border-ls-compliment/40 px-10 py-4 uppercase tracking-[0.4em] hover:bg-ls-compliment hover:text-ls-primary transition-all shadow-lg">
+              Secure Appointment
             </button>
           </div>
         </div>
 
-        {/* Right: Recordings */}
-        <div className="space-y-6">
-          <div className="flex items-center gap-2 mb-4">
-            <PlayCircle size={18} className="text-white/40" />
-            <h2 className="text-sm font-bold text-white uppercase tracking-widest">Past Briefings</h2>
+        {/* Archival Vault */}
+        <div className="space-y-12">
+          <div className="flex items-center gap-4 border-l-2 border-border-theme pl-6">
+            <h2 className="text-[10px] font-bold text-text-muted uppercase tracking-[0.5em]">Session Vault</h2>
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5">
+          <div className="bg-card border border-border-theme shadow-2xl overflow-hidden divide-y divide-border-theme">
             {pastRecordings.map(rec => (
-              <div key={rec.id} className="p-4 hover:bg-white/[0.02] transition-colors group">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <h4 className="text-xs font-bold text-white mb-1 group-hover:text-[#16c784] transition-colors">{rec.title}</h4>
-                    <p className="text-[10px] text-white/30 uppercase tracking-tighter">{rec.date} • {rec.duration}</p>
+              <div key={rec.id} className="p-8 hover:bg-ls-primary group transition-all duration-500 cursor-pointer">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="space-y-3">
+                    <h4 className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-all uppercase tracking-tight truncate leading-none">{rec.title}</h4>
+                    <p className="text-[9px] text-text-muted/40 group-hover:text-ls-white/30 uppercase tracking-[0.3em] font-bold font-mono">{rec.date} • {rec.duration}</p>
+                    <p className="text-[8px] text-ls-compliment/40 group-hover:text-ls-compliment font-bold uppercase tracking-[0.5em] pt-1">{rec.category}</p>
                   </div>
-                  <button className="p-2 text-white/20 hover:text-white transition-colors">
+                  <button className="p-3 border border-border-theme text-text-muted/20 group-hover:text-ls-white group-hover:border-ls-white/20 transition-all hover:bg-ls-white/10">
                     <Download size={14} />
                   </button>
                 </div>
@@ -138,11 +153,13 @@ export default function GPInvestorMeetingsPage() {
             ))}
           </div>
 
-          <div className="bg-gradient-to-br from-[#16c784]/10 to-transparent border border-white/5 rounded-2xl p-6 text-center">
-            <Video className="mx-auto text-white/20 mb-3" size={32} />
-            <p className="text-xs text-white/60 leading-relaxed italic">
-              "We maintain full transparency with our shareholders. Monthly call recordings are available for 24 months."
+          <div className="bg-ls-primary p-10 shadow-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-ls-compliment/10 blur-[50px] rounded-full -mr-12 -mt-12 pointer-events-none" />
+            <Video className="text-ls-compliment/40 mb-6 group-hover:text-ls-compliment transition-all" size={32} />
+            <p className="text-base font-serif italic text-ls-white/60 leading-relaxed mb-6">
+              "Archival records maintained for 24 months per institutional transparency protocols."
             </p>
+            <div className="text-[8px] text-ls-white/20 font-bold uppercase tracking-[0.5em]">VAULT_STATUS: SECURE</div>
           </div>
         </div>
       </div>

@@ -25,7 +25,7 @@ import { useTheme } from "next-themes";
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.finlogiccapital.com";
 
 function Skeleton({ className = "" }) {
-  return <div className={`animate-pulse bg-foreground/5 rounded-lg ${className}`} />;
+  return <div className={`animate-pulse dark:bg-ls-white/5 bg-ls-primary/5 rounded-none ${className}`} />;
 }
 
 function ReadingProgress({ color }) {
@@ -48,7 +48,7 @@ function ReadingProgress({ color }) {
 function RelatedCard({ article }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const defaultAccent = isDark ? "#F59F01" : "#0B6EC3";
+  const defaultAccent = "#F59F01";
   const color = PILLAR_COLORS[article.pillar?.toLowerCase()] || defaultAccent;
   const date = article.published_at
     ? new Date(article.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
@@ -56,17 +56,17 @@ function RelatedCard({ article }) {
 
   return (
     <Link href={`/insights/articles/${article.slug}`}
-      className={`group flex gap-4 p-4 rounded-2xl border border-border-theme hover:border-foreground/20 hover:bg-foreground/[0.02] transition-all theme-transition shadow-sm`}
+      className={`group flex gap-6 p-6 rounded-none border dark:border-ls-white/5 border-ls-primary/5 hover:border-ls-compliment/30 hover:bg-ls-compliment/[0.02] transition-all theme-transition shadow-sm`}
     >
       {article.featured_image && (
-        <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-inner">
-          <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+        <div className="w-24 h-24 rounded-none overflow-hidden flex-shrink-0 border dark:border-ls-white/5 border-ls-primary/5 shadow-inner">
+          <img src={article.featured_image} alt={article.title} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
         </div>
       )}
-      <div className="min-w-0 space-y-1">
-        <span className="text-[9px] font-black uppercase tracking-[0.2em]" style={{ color }}>{article.pillar}</span>
-        <h4 className="font-black text-foreground text-xs leading-tight group-hover:text-[#F59F01] transition-colors line-clamp-2 uppercase tracking-tight">{article.title}</h4>
-        <p className="text-text-muted/40 text-[9px] font-bold uppercase tracking-widest">{date}</p>
+      <div className="min-w-0 space-y-2">
+        <span className="text-[9px] font-bold uppercase tracking-[0.4em]" style={{ color }}>{article.pillar}</span>
+        <h4 className="font-serif font-light dark:text-[#f8fafc] text-[#100226] text-sm leading-snug group-hover:text-ls-compliment transition-colors line-clamp-2">{article.title}</h4>
+        <p className="dark:text-ls-white/20 text-ls-primary/30 text-[9px] font-mono uppercase tracking-[0.2em]">{date}</p>
       </div>
     </Link>
   );
@@ -211,23 +211,32 @@ export default function ArticleDetailPage({ params }) {
   const shareLI = () => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`, "_blank");
 
   if (error) return (
-    <div className="bg-background text-foreground min-h-screen flex items-center justify-center theme-transition">
-      <div className="text-center p-12 bg-card border border-border-theme rounded-[3rem]">
-        <h3 className="text-2xl font-black mb-4 uppercase tracking-tight">Intelligence Not Found</h3>
-        <p className="text-text-muted mb-8 font-medium">The requested research paper is no longer in the public repository.</p>
-        <Link href="/insights/articles" className={`px-8 py-3 rounded-2xl ${isDark ? 'bg-[#F59F01]' : 'bg-[#0B6EC3]'} text-white text-[10px] font-black uppercase tracking-widest shadow-xl`}>← Return to Catalog</Link>
+    <div className="dark:bg-[#100226] bg-[#fdf6ff] dark:text-[#f8fafc] text-[#100226] min-h-screen flex items-center justify-center theme-transition relative overflow-hidden">
+      <div className="fixed inset-0 pointer-events-none dark:opacity-[0.03] opacity-[0.08] z-0">
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#F59F01 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      </div>
+      <div className="relative z-10 text-center p-20 border dark:border-ls-white/10 border-ls-primary/10 dark:bg-[#100226] bg-white shadow-2xl max-w-2xl">
+        <h3 className="text-4xl font-serif font-light mb-6 uppercase tracking-tight">Intelligence <br /> Not Found</h3>
+        <p className="dark:text-ls-white/40 text-ls-primary/40 mb-12 font-serif italic text-lg">The requested research paper is no longer in the public registry or is restricted for internal review.</p>
+        <Link href="/insights/articles" className="inline-block px-12 py-5 bg-ls-compliment text-ls-primary text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-ls-primary hover:text-white transition-all">← Return to Catalog</Link>
       </div>
     </div>
   );
 
   return (
-    <div className="bg-background text-foreground min-h-screen theme-transition selection:bg-[#F59F01]/30">
+    <div className="dark:bg-[#100226] bg-[#fdf6ff] dark:text-[#f8fafc] text-[#100226] min-h-screen theme-transition selection:bg-ls-compliment/30 relative overflow-hidden">
+      {/* Institutional Background Grid */}
+      <div className="fixed inset-0 pointer-events-none dark:opacity-[0.03] opacity-[0.08] z-0">
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(#F59F01 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
+      </div>
+
       <ReadingProgress color={accentColor} />
 
       {/* Mobile TOC floating button */}
       {!loading && headings.length > 0 && (
         <button onClick={() => setTocOpen(true)}
-          className={`lg:hidden fixed bottom-8 right-8 z-[90] flex items-center gap-3 px-6 py-4 rounded-2xl ${isDark ? 'bg-[#F59F01] text-ls-primary-fixed' : 'bg-[#0B6EC3] text-white'} font-black text-[10px] uppercase tracking-widest shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] hover:scale-105 active:scale-95 transition-all`}
+          className={`lg:hidden fixed bottom-8 right-8 z-[90] flex items-center gap-3 px-8 py-5 rounded-none border dark:border-ls-white/10 border-ls-primary/10 dark:bg-[#100226] bg-white text-ls-compliment font-bold text-[10px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all`}
         >
           <List size={18} strokeWidth={3} /> Contents
         </button>
@@ -241,19 +250,19 @@ export default function ArticleDetailPage({ params }) {
         articleRef={articleRef}
       />
 
-      <div className="container mx-auto px-4 lg:px-8 pt-32 pb-32 max-w-7xl">
+      <div className="container mx-auto px-4 lg:px-12 pt-40 pb-40 max-w-7xl relative z-10">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-16">
-          <Link href="/insights/articles" className="inline-flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-text-muted hover:text-[#F59F01] transition-all">
+          <Link href="/insights/articles" className="inline-flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.4em] dark:text-ls-white/40 text-ls-primary/40 hover:text-ls-compliment transition-all">
             <ArrowLeft size={16} /> Back to Catalog
           </Link>
           
           {!loading && article?.series_info && (
-            <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted opacity-40">
-              <Link href={`/insights/series/${article.series_info.slug}`} className="hover:text-foreground transition-all">
+            <div className="flex items-center gap-6 px-8 py-3 border dark:border-ls-white/10 border-ls-primary/10 dark:bg-ls-white/5 bg-ls-primary/5 text-[10px] font-bold uppercase tracking-[0.4em]">
+              <Link href={`/insights/series/${article.series_info.slug}`} className="dark:text-ls-white/40 text-ls-primary/40 hover:text-ls-compliment transition-all">
                 {article.series_info.title}
               </Link>
-              <span className="w-1.5 h-1.5 rounded-full bg-border-theme" />
-              <span className={isDark ? "text-[#F59F01]" : "text-[#0B6EC3]"}>Chapter {article.article_number}</span>
+              <div className="w-px h-4 bg-ls-compliment/20" />
+              <span className="text-ls-compliment">Chapter {article.article_number}</span>
             </div>
           )}
         </div>
@@ -266,35 +275,35 @@ export default function ArticleDetailPage({ params }) {
                 <Skeleton className="h-6 w-32" /><Skeleton className="h-20 w-full" /><Skeleton className="h-10 w-4/5" />
               </div>
             ) : (
-              <header className="mb-16">
-                <div className="flex items-center gap-4 mb-8">
-                  <span className="inline-block px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em]"
-                    style={{ background: `${color}15`, color }}
+              <header className="mb-24">
+                <div className="flex items-center gap-6 mb-12">
+                  <span className="inline-block px-6 py-2 border text-[10px] font-bold uppercase tracking-[0.4em]"
+                    style={{ borderColor: `${color}30`, background: `${color}05`, color }}
                   >
                     {PILLAR_LABELS[article.pillar?.toLowerCase()] || article.pillar}
                   </span>
                   {article.is_completed && (
-                    <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
-                      <CheckCircle2 size={12} /> Completed
+                    <span className="inline-flex items-center gap-2 px-6 py-2 border border-emerald-500/20 bg-emerald-500/5 text-emerald-500 text-[10px] font-bold uppercase tracking-[0.4em]">
+                      <CheckCircle2 size={12} /> Completed Analysis
                     </span>
                   )}
                 </div>
                 
-                <h1 className="text-4xl md:text-7xl font-black leading-[0.95] tracking-tighter mb-8 text-foreground uppercase">{article.title}</h1>
+                <h1 className="text-5xl md:text-8xl font-serif font-light leading-[1.1] tracking-tight mb-12 dark:text-[#f8fafc] text-[#100226]">{article.title}</h1>
                 
                 {article.excerpt && (
-                  <p className="text-xl md:text-2xl text-text-muted leading-relaxed mb-12 border-l-[6px] pl-8 font-medium italic opacity-80" style={{ borderColor: `${color}30` }}>
+                  <p className="text-2xl md:text-3xl dark:text-ls-white/60 text-ls-primary/60 leading-relaxed mb-16 border-l-2 pl-12 font-serif font-light italic" style={{ borderColor: `${color}30` }}>
                     {article.excerpt}
                   </p>
                 )}
 
-                <div className="flex flex-wrap items-center justify-between border-y border-border-theme py-8 gap-8">
-                  <div className="flex flex-wrap items-center gap-10 text-[10px] font-black uppercase tracking-[0.2em]">
-                    <span className="flex items-center gap-3 text-foreground">
-                      <User size={16} className="text-text-muted opacity-40" /> {article.author_name || "Research Team"}
+                <div className="flex flex-wrap items-center justify-between border-y dark:border-ls-white/10 border-ls-primary/10 py-10 gap-8">
+                  <div className="flex flex-wrap items-center gap-12 text-[10px] font-bold uppercase tracking-[0.3em]">
+                    <span className="flex items-center gap-4 dark:text-[#f8fafc] text-[#100226]">
+                      <User size={16} className="dark:text-ls-white/20 text-ls-primary/20" /> {article.author_name || "Research Team"}
                     </span>
-                    {displayDate && <span className="flex items-center gap-3 text-text-muted"><Calendar size={16} className="opacity-40" /> {displayDate}</span>}
-                    {article.read_time && <span className="flex items-center gap-3 text-text-muted"><Clock size={16} className="opacity-40" /> {article.read_time}</span>}
+                    {displayDate && <span className="flex items-center gap-4 dark:text-ls-white/40 text-ls-primary/40"><Calendar size={16} className="opacity-40" /> {displayDate}</span>}
+                    {article.read_time && <span className="flex items-center gap-4 dark:text-ls-white/40 text-ls-primary/40"><Clock size={16} className="opacity-40" /> {article.read_time}</span>}
                   </div>
                   <div className="flex items-center gap-3">
                     <button onClick={shareLI} className="p-3 rounded-2xl bg-foreground/5 hover:bg-[#0B6EC3]/10 hover:text-[#0B6EC3] transition-all text-text-muted"><Linkedin size={18} /></button>
@@ -336,7 +345,7 @@ export default function ArticleDetailPage({ params }) {
               ) : article?.full_content ? (
                 <>
                   <motion.div ref={articleRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}
-                    className="article-body font-serif leading-[1.8] text-lg lg:text-xl text-foreground/90 selection:bg-[#F59F01]/20"
+                    className="article-body font-serif leading-[1.9] text-xl lg:text-2xl dark:text-ls-white/80 text-ls-primary/80 selection:bg-ls-compliment/20"
                     dangerouslySetInnerHTML={{ __html: article.full_content }}
                   />
 

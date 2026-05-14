@@ -11,6 +11,7 @@ import api from '@/services/api';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
+import { motion } from 'framer-motion';
 
 export default function EntrepreneurDashboardPage() {
   const { resolvedTheme } = useTheme();
@@ -26,100 +27,108 @@ export default function EntrepreneurDashboardPage() {
   }, []);
 
   if (loading) return (
-    <div className="h-[60vh] flex flex-col items-center justify-center gap-6 theme-transition">
-      <Loader2 className="w-10 h-10 text-ls-compliment animate-spin" />
-      <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Syncing Submission Pipeline...</p>
+    <div className="h-[60vh] flex flex-col items-center justify-center gap-12 theme-transition">
+      <Loader2 className="w-12 h-12 text-ls-compliment animate-spin opacity-40" />
+      <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.4em] animate-pulse">Syncing Venture Pipeline...</p>
     </div>
   );
 
   return (
-    <div className="space-y-12 theme-transition animate-in fade-in duration-700">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-        <div className="flex items-center gap-6">
-          <div className="w-14 h-14 rounded-[1.25rem] bg-ls-compliment/10 flex items-center justify-center text-ls-compliment shadow-inner">
-            <Rocket size={32} strokeWidth={2.5} />
+    <div className="space-y-20 animate-in fade-in duration-1000 max-w-7xl mx-auto pb-32">
+      {/* Header - Institutional Command */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 border-b border-border-theme pb-12">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 text-ls-compliment text-[10px] font-bold uppercase tracking-[0.5em]">
+            <Rocket size={14} /> Venture Command Center
           </div>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight uppercase leading-none">Venture Pipeline</h1>
-            <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-3">Institutional Funding Protocols & Asset Registry</p>
+          <h1 className="text-5xl md:text-7xl font-serif font-light text-foreground tracking-tight leading-tight">
+            Venture <span className="italic">Pipeline</span>
+          </h1>
+          <p className="text-xl text-text-muted font-serif font-light italic max-w-xl">
+            A formal ledger of institutional funding protocols, strategic asset registrations, and venture vetting sequences.
+          </p>
+        </div>
+        <div className="flex items-center gap-6 px-10 py-5 bg-border-theme/20 border border-border-theme shadow-sm">
+           <div className="space-y-1 text-right">
+             <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.3em]">Protocol Count</p>
+             <p className="text-[9px] text-text-muted/40 font-bold uppercase tracking-widest font-mono">ACTIVE_SESSIONS: {submissions.length}</p>
           </div>
         </div>
       </div>
 
-      {/* Submissions List */}
-      <div className="grid grid-cols-1 gap-8">
+      {/* Submissions List - Architectural Registry */}
+      <div className="grid grid-cols-1 gap-16">
         {submissions.length === 0 ? (
-          <div className="rounded-[3rem] border-2 border-dashed border-border-theme bg-card p-24 text-center space-y-8 theme-transition shadow-2xl">
-            <div className="w-24 h-24 bg-foreground/5 rounded-full flex items-center justify-center mx-auto border border-border-theme shadow-inner opacity-20">
-              <ShieldAlert size={48} />
+          <div className="bg-card border border-border-theme p-32 text-center shadow-2xl">
+            <div className="w-20 h-20 border border-border-theme flex items-center justify-center mx-auto mb-10 opacity-20">
+              <ShieldAlert size={32} />
             </div>
-            <div className="space-y-2">
-              <p className="text-foreground font-black uppercase tracking-widest text-lg">No Active Protocols</p>
-              <p className="text-text-muted/40 text-[10px] font-black uppercase tracking-[0.3em]">You haven't initiated any funding submissions in the current cycle</p>
-            </div>
+            <h3 className="text-2xl font-serif font-light text-foreground uppercase tracking-tight">Registry Inactive</h3>
+            <p className="text-text-muted/40 text-[10px] font-bold uppercase tracking-[0.4em] mt-4 font-serif italic">No venture protocols initiated in this archival cycle.</p>
           </div>
         ) : (
           submissions.map((sub) => (
-            <div key={sub.id} className="rounded-[3rem] border border-border-theme bg-card p-10 hover:bg-foreground/[0.01] transition-all group shadow-xl hover:shadow-2xl relative overflow-hidden theme-transition">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-ls-compliment/5 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
-              
-              <div className="flex flex-col md:flex-row md:items-center gap-10 relative z-10">
-                <div className="flex-1 space-y-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-                    <h3 className="text-3xl font-black text-foreground uppercase tracking-tight group-hover:text-[#F59F01] transition-colors leading-none">
-                      {sub.legal_name || 'Restricted Venture Registry'}
-                    </h3>
-                    <div className="scale-110 origin-left">
-                      <StatusBadge status={sub.status} />
+            <div key={sub.id} className="bg-card border border-border-theme group hover:bg-ls-primary transition-all duration-700 shadow-2xl overflow-hidden cursor-pointer">
+              <div className="p-12 md:p-16">
+                <div className="flex flex-col lg:grid lg:grid-cols-[1fr_auto] gap-16 items-start">
+                  <div className="space-y-10 flex-1 w-full">
+                    <div className="space-y-6">
+                       <div className="flex items-center gap-6">
+                          <span className="text-[9px] font-mono text-text-muted/30 group-hover:text-ls-white/30 tracking-[0.3em] uppercase">REG_REF: VENT-{sub.id?.toString().padStart(4, '0')}</span>
+                          <StatusBadge status={sub.status} />
+                       </div>
+                       <h3 className="text-5xl font-serif font-light text-foreground group-hover:text-ls-white transition-all uppercase tracking-tight leading-none">
+                         {sub.legal_name || 'Restricted Venture Protocol'}
+                       </h3>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-x-16 gap-y-8">
+                      <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.3em] text-text-muted/40 group-hover:text-ls-white/40 transition-colors">
+                        <Rocket size={14} className="text-ls-compliment opacity-40 group-hover:opacity-100" />
+                        {sub.sector || 'Strategic Sector'}
+                      </div>
+                      <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.3em] text-text-muted/40 group-hover:text-ls-white/40 transition-colors">
+                        <Clock size={14} className="text-ls-compliment opacity-40 group-hover:opacity-100" />
+                        INGESTION: {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : 'DRAFT'}
+                      </div>
+                      <div className="flex items-center gap-4 text-[9px] font-bold uppercase tracking-[0.3em] text-ls-compliment group-hover:text-ls-white transition-colors">
+                        <CheckCircle2 size={14} />
+                        PHASE: 0{sub.form_step_completed + 1}
+                      </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-x-12 gap-y-4">
-                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-text-muted">
-                      <div className="w-9 h-9 rounded-xl bg-foreground/5 flex items-center justify-center text-text-muted/40"><Rocket size={16} /></div>
-                      {sub.sector || 'General Sector'}
-                    </div>
-                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-text-muted">
-                      <div className="w-9 h-9 rounded-xl bg-foreground/5 flex items-center justify-center text-text-muted/40"><Clock size={16} /></div>
-                      {sub.submitted_at ? new Date(sub.submitted_at).toLocaleDateString() : 'Draft Protocol'}
-                    </div>
-                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-ls-compliment">
-                      <div className="w-9 h-9 rounded-xl bg-ls-compliment/10 flex items-center justify-center text-ls-compliment shadow-inner"><CheckCircle2 size={16} /></div>
-                      Phase {sub.form_step_completed} Integration
-                    </div>
+                  <div className="flex flex-col sm:flex-row lg:flex-col gap-4 w-full lg:w-72">
+                    <Link
+                      href={`/entrepreneur/submissions/${sub.id}`}
+                      className="flex items-center justify-center gap-4 border border-border-theme group-hover:border-ls-white/20 text-text-muted group-hover:text-ls-white text-[10px] font-bold uppercase tracking-[0.4em] py-6 transition-all bg-border-theme/10 group-hover:bg-transparent"
+                    >
+                      <Eye size={18} /> Review Dossier
+                    </Link>
+                    {!sub.submitted_at && (
+                      <Link
+                        href={`/entrepreneur/submissions/${sub.id}/apply`}
+                        className="flex items-center justify-center gap-4 bg-ls-compliment text-ls-primary text-[10px] font-bold uppercase tracking-[0.5em] py-6 hover:bg-ls-white transition-all shadow-xl shadow-ls-compliment/10"
+                      >
+                        <FileUp size={18} /> {sub.form_step_completed > 0 ? 'Resume Ingestion' : 'Initialize Protocol'}
+                      </Link>
+                    )}
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-4">
-                  <Link
-                    href={`/entrepreneur/submissions/${sub.id}`}
-                    className="flex items-center gap-3 bg-foreground/5 hover:bg-foreground/10 border border-border-theme text-foreground text-[10px] font-black uppercase tracking-widest px-10 py-5 rounded-2xl transition-all shadow-sm active:scale-95"
-                  >
-                    <Eye size={20} /> Registry
-                  </Link>
-                  {!sub.submitted_at && (
-                    <Link
-                      href={`/entrepreneur/submissions/${sub.id}/apply`}
-                      className="flex items-center gap-3 bg-[#F59F01] text-ls-primary-fixed text-[10px] font-black uppercase tracking-widest px-10 py-5 rounded-2xl transition-all shadow-xl shadow-[#F59F01]/20 active:scale-95"
-                    >
-                      <FileUp size={20} /> {sub.form_step_completed > 0 ? 'Resume Ingestion' : 'Initialize Protocol'}
-                    </Link>
-                  )}
-                </div>
-              </div>
-              
-              {/* Progress System */}
-              <div className="mt-12 space-y-4 relative z-10">
-                <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-[0.2em] text-text-muted/40">
-                  <span>Institutional Alignment Progress</span>
-                  <span className="text-[#F59F01]">{Math.round(Math.min((sub.form_step_completed / (sub.total_steps || 6)) * 100, 100))}%</span>
-                </div>
-                <div className="h-2.5 rounded-full bg-foreground/5 overflow-hidden shadow-inner border border-border-theme/20">
-                  <div 
-                    className="h-full transition-all duration-1000 shadow-lg bg-[#F59F01] shadow-[#F59F01]/10"
-                    style={{ width: `${Math.min((sub.form_step_completed / (sub.total_steps || 6)) * 100, 100)}%` }}
-                  />
+                {/* Progress System - Minimalist Track */}
+                <div className="mt-16 space-y-4">
+                  <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-[0.5em] text-text-muted/30 group-hover:text-ls-white/30 transition-colors font-mono">
+                    <span>Institutional Alignment Sync</span>
+                    <span className="text-ls-compliment group-hover:text-ls-white">{Math.round(Math.min((sub.form_step_completed / (sub.total_steps || 6)) * 100, 100))}%</span>
+                  </div>
+                  <div className="h-px w-full bg-border-theme group-hover:bg-ls-white/10 overflow-hidden relative">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min((sub.form_step_completed / (sub.total_steps || 6)) * 100, 100)}%` }}
+                      className="h-full absolute left-0 top-0 bg-ls-compliment transition-all duration-1000 group-hover:bg-ls-white"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

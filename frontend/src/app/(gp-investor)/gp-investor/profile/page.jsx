@@ -41,119 +41,138 @@ export default function GPInvestorProfilePage() {
   };
 
   if (loading) return (
-    <div className="h-[60vh] flex items-center justify-center">
-      <Loader2 size={32} className="text-[#16c784] animate-spin" />
+    <div className="h-[60vh] flex flex-col items-center justify-center gap-12 theme-transition">
+      <Loader2 className="w-12 h-12 text-ls-compliment animate-spin opacity-40" />
+      <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.4em] animate-pulse">Syncing Identity Registry...</p>
     </div>
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-20">
-      <div>
-        <h1 className="text-3xl font-bold text-white">Shareholder Profile</h1>
-        <p className="text-white/40 text-sm mt-1">Manage your GP management company shareholder account.</p>
+    <div className="space-y-20 animate-in fade-in duration-1000 pb-32 max-w-7xl mx-auto">
+      {/* Header - Institutional Profile Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 border-b border-border-theme pb-12">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 text-ls-compliment text-[10px] font-bold uppercase tracking-[0.5em]">
+            <User size={14} /> Shareholder Identity Registry
+          </div>
+          <h1 className="text-5xl md:text-7xl font-serif font-light text-foreground tracking-tight leading-tight">
+            Identity <span className="italic">Ledger</span>
+          </h1>
+          <p className="text-xl text-text-muted font-serif font-light italic max-w-xl">
+            Management company shareholder credentials, equity vesting protocols, and secure archival of personal identification data.
+          </p>
+        </div>
+        <div className="flex items-center gap-6 px-10 py-5 bg-border-theme/20 border border-border-theme shadow-sm">
+           <div className="space-y-1 text-right">
+             <p className="text-[10px] font-bold text-text-muted uppercase tracking-[0.3em]">Identity Identifier</p>
+             <p className="text-[9px] text-text-muted/40 font-bold uppercase tracking-widest font-mono">GP-SH-2075-AUTH</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Left Col */}
-        <div className="md:col-span-1 space-y-6">
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-            <div className="w-20 h-20 rounded-full bg-[#16c784]/20 flex items-center justify-center mx-auto mb-4 border border-[#16c784]/30">
-              <TrendingUp size={32} className="text-[#16c784]" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+        {/* Left Col - Profile Summary Dossier */}
+        <div className="md:col-span-1 space-y-12">
+          <div className="bg-card border border-border-theme p-10 shadow-2xl relative group overflow-hidden theme-transition">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-ls-compliment/5 blur-[50px] rounded-full -mr-12 -mt-12 pointer-events-none" />
+            <div className="w-24 h-24 border border-ls-compliment/40 bg-ls-compliment/5 flex items-center justify-center mx-auto mb-8 transition-all group-hover:border-ls-compliment">
+              <TrendingUp size={40} className="text-ls-compliment opacity-40 group-hover:opacity-100 transition-all" />
             </div>
-            <h3 className="text-white font-bold">{user?.first_name} {user?.last_name}</h3>
-            <p className="text-white/30 text-[10px] uppercase tracking-widest mt-1 font-bold text-[#16c784]">GP Shareholder</p>
+            <h3 className="text-2xl font-serif font-light text-foreground text-center uppercase tracking-tight group-hover:text-ls-compliment transition-all">{user?.first_name} {user?.last_name}</h3>
+            <p className="text-ls-compliment text-[9px] font-bold uppercase tracking-[0.5em] text-center mt-3">GP Shareholder Entity</p>
             
-            <div className="mt-6 pt-6 border-t border-white/5 space-y-4 text-left">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/30">Ownership Status</span>
-                <span className="text-emerald-400 font-bold uppercase tracking-tighter">Verified</span>
+            <div className="mt-12 pt-12 border-t border-border-theme space-y-6">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-[0.3em]">Ownership Status</span>
+                <span className="text-ls-up text-[9px] font-bold border border-ls-up/20 bg-ls-up/5 px-3 py-1 uppercase tracking-widest">Verified</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-white/30">Vesting Status</span>
-                <span className="text-white/60">Fully Vested</span>
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold text-text-muted uppercase tracking-[0.3em]">Vesting Status</span>
+                <span className="text-foreground text-[11px] font-serif italic">FULLY_VESTED</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-            <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
-              <Briefcase size={14} className="text-[#16c784]" /> Management Access
+          <div className="bg-ls-primary text-ls-white p-10 shadow-2xl relative overflow-hidden group border-l-4 border-ls-compliment">
+            <div className="absolute bottom-0 right-0 w-32 h-32 bg-ls-compliment/10 blur-[60px] rounded-full -mr-16 -mb-16 pointer-events-none" />
+            <h4 className="text-ls-compliment font-bold text-[10px] uppercase tracking-[0.5em] mb-6 flex items-center gap-4">
+              <Briefcase size={14} className="text-ls-compliment" /> Management Privileges
             </h4>
-            <p className="text-[10px] text-white/40 leading-relaxed">
-              As a shareholder, you have viewing access to all Fund performances, IR documents, and Management Company financial reports.
+            <p className="text-base font-serif italic text-ls-white/60 leading-relaxed">
+              Shareholder status grants full archival access to Fund intelligence, IR repositories, and management company financial declarations.
             </p>
           </div>
         </div>
 
-        {/* Right Col */}
-        <div className="md:col-span-2 space-y-8">
-          <form className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-            <div className="p-6 border-b border-white/10 bg-white/[0.01]">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-widest">
-                <User size={16} className="text-[#16c784]" /> Personal Information
+        {/* Right Col - Archival Form */}
+        <div className="md:col-span-2 space-y-12">
+          <form className="bg-card border border-border-theme shadow-2xl theme-transition overflow-hidden">
+            <div className="px-12 py-10 border-b border-border-theme bg-border-theme/10">
+              <h3 className="text-[10px] font-bold text-text-muted flex items-center gap-4 uppercase tracking-[0.5em]">
+                <User size={16} className="text-ls-compliment" /> Registry Ingestion
               </h3>
             </div>
             
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] text-white/40 uppercase font-bold tracking-widest px-1">First Name</label>
+            <div className="p-12 space-y-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                <div className="space-y-4">
+                  <label className="text-[9px] font-bold text-text-muted uppercase tracking-[0.4em]">Given Name</label>
                   <input 
                     type="text"
                     defaultValue={user?.first_name}
-                    className="w-full bg-[#0a0014] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#16c784] outline-none transition-all"
+                    className="w-full bg-border-theme/10 border border-border-theme p-5 text-foreground font-serif text-lg focus:border-ls-compliment outline-none transition-all placeholder:opacity-20"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] text-white/40 uppercase font-bold tracking-widest px-1">Last Name</label>
+                <div className="space-y-4">
+                  <label className="text-[9px] font-bold text-text-muted uppercase tracking-[0.4em]">Surname</label>
                   <input 
                     type="text"
                     defaultValue={user?.last_name}
-                    className="w-full bg-[#0a0014] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#16c784] outline-none transition-all"
+                    className="w-full bg-border-theme/10 border border-border-theme p-5 text-foreground font-serif text-lg focus:border-ls-compliment outline-none transition-all placeholder:opacity-20"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] text-white/40 uppercase font-bold tracking-widest px-1">Email Address</label>
+              <div className="space-y-4">
+                <label className="text-[9px] font-bold text-text-muted uppercase tracking-[0.4em]">Electronic Identification</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-white/10" size={16} />
+                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-text-muted/20" size={18} />
                   <input 
                     type="email"
                     value={user?.email || ''}
                     disabled
-                    className="w-full bg-white/[0.02] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-white/30 text-sm cursor-not-allowed"
+                    className="w-full bg-border-theme/5 border border-border-theme/50 p-5 pl-16 text-text-muted/30 font-mono text-sm cursor-not-allowed uppercase tracking-widest"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="p-6 bg-white/[0.02] border-t border-white/10 flex justify-end">
+            <div className="px-12 py-10 bg-border-theme/10 border-t border-border-theme flex justify-end">
               <button 
                 type="button"
-                className="bg-[#16c784] hover:bg-[#16c784]/80 text-black font-bold px-6 py-2.5 rounded-xl flex items-center gap-2 transition-all"
+                className="bg-ls-primary text-ls-white hover:bg-ls-white hover:text-ls-primary border border-ls-primary px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] transition-all flex items-center gap-4 shadow-xl"
               >
                 <Save size={16} />
-                Update Account
+                Authorize Update
               </button>
             </div>
           </form>
 
-          <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                <ShieldCheck size={20} />
+          <div className="bg-card border border-border-theme p-10 flex items-center justify-between shadow-2xl group hover:border-ls-compliment/40 transition-all duration-700">
+            <div className="flex items-center gap-8">
+              <div className="w-14 h-14 border border-ls-compliment/20 bg-ls-compliment/5 flex items-center justify-center text-ls-compliment group-hover:bg-ls-compliment group-hover:text-ls-primary transition-all duration-500">
+                <ShieldCheck size={24} />
               </div>
-              <div>
-                <p className="text-sm font-bold text-white">Governance Portal</p>
-                <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Manage your voting rights</p>
+              <div className="space-y-2">
+                <p className="text-xl font-serif font-light text-foreground uppercase tracking-tight leading-none group-hover:text-ls-compliment transition-all">Governance Protocol</p>
+                <p className="text-[9px] text-text-muted uppercase tracking-[0.4em] font-bold">Execution gateway for shareholder voting mandates.</p>
               </div>
             </div>
             <Link 
               href="/gp-investor/governance"
-              className="text-white/20 hover:text-white text-[10px] font-bold uppercase tracking-widest px-4 py-2 rounded-lg border border-white/10 transition-all block"
+              className="px-10 py-4 border border-border-theme text-text-muted/40 hover:text-ls-compliment hover:border-ls-compliment/40 text-[9px] font-bold uppercase tracking-[0.4em] transition-all block shadow-lg"
             >
-              Access
+              Initiate Access
             </Link>
           </div>
         </div>

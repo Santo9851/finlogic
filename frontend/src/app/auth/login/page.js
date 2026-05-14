@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Mail, Lock } from 'lucide-react';
+import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import FinlogicLogo from '@/components/FinlogicLogo';
 import { useTheme } from 'next-themes';
@@ -66,87 +66,118 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen bg-abstract-gradient flex flex-col items-center justify-center p-4 theme-transition">
-      <div className="w-full max-w-md">
-        
-        {/* Brand/Header */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-block mb-6 hover:scale-105 transition-transform">
-            <FinlogicLogo size={44} variant="full" darkBg={isDark} />
-          </Link>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome Back</h1>
-          <p className="text-text-muted">Log in to your account to continue</p>
+    <div className="min-h-screen flex bg-background theme-transition selection:bg-ls-compliment/30 font-sans">
+      {/* Left side: Architectural Image (Visible on LG up) */}
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-ls-primary">
+        <div className="absolute inset-0 z-0 opacity-40 grayscale mix-blend-luminosity">
+          <img 
+            src="/images/redesign/vision.png" 
+            alt="Institutional Authority" 
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-ls-primary via-transparent to-transparent" />
         </div>
+        
+        <div className="absolute inset-0 z-10 flex flex-col justify-end p-20 space-y-8">
+           <div className="space-y-4 max-w-lg">
+              <div className="h-1 w-12 bg-ls-compliment" />
+              <h2 className="text-5xl font-serif font-light text-ls-white leading-tight">
+                Investing in <br />Nepal's Future
+              </h2>
+              <p className="text-xl text-ls-white/60 font-light leading-relaxed">
+                Join our exclusive network of visionary entrepreneurs and institutional investors.
+              </p>
+           </div>
+        </div>
+      </div>
 
-        {/* Form Card */}
-        <div className="glass-card rounded-2xl p-8 relative overflow-hidden theme-transition">
-          {/* Decorative Elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#F59F01]/10 rounded-full blur-3xl -mx-10 -my-10 border border-[#F59F01]/5" />
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-foreground/5 rounded-full blur-2xl -mx-10 -my-10" />
+      {/* Right side: Login Form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 md:px-20 lg:px-32 py-20 relative overflow-hidden">
+        {/* Subtle background decoration for mobile */}
+        <div className="lg:hidden absolute top-0 right-0 w-64 h-64 bg-ls-compliment/5 rounded-full blur-3xl -mx-20 -my-20" />
+        
+        <div className="max-w-md w-full mx-auto relative z-10">
+          {/* Logo */}
+          <div className="mb-20">
+            <Link href="/" className="inline-block transition-transform hover:scale-105">
+              <FinlogicLogo size={44} variant="full" />
+            </Link>
+          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 relative z-10">
-            <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-                  <Mail size={18} />
+          <div className="space-y-12">
+            <header className="space-y-4">
+              <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-ls-compliment">Authentication Portal</span>
+              <h1 className="text-5xl font-serif font-light leading-tight">Welcome Back</h1>
+              <p className="text-lg text-text-muted font-light leading-relaxed">
+                Sign in to access your institutional dashboard and portfolio analytics.
+              </p>
+            </header>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-bold text-ls-compliment uppercase tracking-[0.4em]">Email Address</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-0 flex items-center pointer-events-none text-text-muted group-focus-within:text-ls-compliment transition-colors">
+                      <Mail size={18} strokeWidth={1.5} />
+                    </div>
+                    <input
+                      {...register('email')}
+                      type="email"
+                      autoComplete="username"
+                      className="block w-full pl-8 pr-3 py-4 bg-transparent border-b border-border-theme text-foreground placeholder:text-text-muted/20 focus:outline-none focus:border-ls-compliment transition-all text-xl font-light"
+                      placeholder="you@institution.com"
+                    />
+                  </div>
+                  {errors.email && <p className="text-[10px] font-bold uppercase tracking-widest text-red-500 mt-2">{errors.email.message}</p>}
                 </div>
-                <input
-                  {...register('email')}
-                  type="email"
-                  autoComplete="username"
-                  className="block w-full pl-10 pr-3 py-2.5 bg-foreground/5 border border-border-theme rounded-xl text-foreground placeholder-text-muted/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors"
-                  placeholder="you@example.com"
-                />
-              </div>
-              {errors.email && <p className="mt-1.5 text-sm text-red-500 dark:text-red-400">{errors.email.message}</p>}
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-text-muted">Password</label>
-                <Link href="/auth/forgot-password" className="text-xs text-[#F59F01] hover:text-[#F59F01]/80 hover:underline transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-                  <Lock size={18} />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-ls-compliment uppercase tracking-[0.4em]">Password</label>
+                    <Link href="/auth/forgot-password" className="text-[10px] font-bold uppercase tracking-widest text-text-muted hover:text-ls-compliment transition-colors">
+                      Forgot?
+                    </Link>
+                  </div>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-0 flex items-center pointer-events-none text-text-muted group-focus-within:text-ls-compliment transition-colors">
+                      <Lock size={18} strokeWidth={1.5} />
+                    </div>
+                    <input
+                      {...register('password')}
+                      type="password"
+                      autoComplete="current-password"
+                      className="block w-full pl-8 pr-3 py-4 bg-transparent border-b border-border-theme text-foreground placeholder:text-text-muted/20 focus:outline-none focus:border-ls-compliment transition-all text-xl font-light"
+                      placeholder="••••••••"
+                    />
+                  </div>
+                  {errors.password && <p className="text-[10px] font-bold uppercase tracking-widest text-red-500 mt-2">{errors.password.message}</p>}
                 </div>
-                <input
-                  {...register('password')}
-                  type="password"
-                  autoComplete="current-password"
-                  className="block w-full pl-10 pr-3 py-2.5 bg-foreground/5 border border-border-theme rounded-xl text-foreground placeholder-text-muted/30 focus:outline-none focus:ring-2 focus:ring-[#F59F01]/50 focus:border-[#F59F01] transition-colors"
-                  placeholder="••••••••"
-                />
               </div>
-              {errors.password && <p className="mt-1.5 text-sm text-red-500 dark:text-red-400">{errors.password.message}</p>}
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-semibold text-ls-primary-fixed bg-[#F59F01] hover:bg-[#F59F01]/90 hover:shadow-lg hover:shadow-[#F59F01]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background focus:ring-[#F59F01] disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-6"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
-                  Logging in...
-                </>
-              ) : (
-                'Sign In'
-              )}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full group relative flex items-center justify-center overflow-hidden bg-ls-primary py-6 text-ls-white transition-all hover:bg-ls-compliment hover:text-ls-primary active:scale-[0.98] disabled:opacity-50"
+              >
+                <span className="relative z-10 text-xs font-bold uppercase tracking-[0.4em]">
+                  {isLoading ? 'Transmitting...' : 'Sign In'}
+                </span>
+              </button>
+            </form>
 
-          <div className="mt-8 text-center relative z-10">
-            <p className="text-sm text-text-muted">
-              Don&apos;t have an account?{' '}
-              <Link href="/auth/register" className="font-semibold text-foreground hover:text-[#F59F01] transition-colors">
-                Register here
+            <footer className="pt-10 border-t border-border-theme flex flex-col sm:flex-row items-center justify-between gap-6">
+              <p className="text-sm text-text-muted font-light">
+                New to the network?
+              </p>
+              <Link 
+                href="/auth/register" 
+                className="inline-flex items-center space-x-3 text-xs font-bold uppercase tracking-widest text-ls-compliment hover:text-ls-white transition-all"
+              >
+                <span>Create Account</span>
+                <ArrowRight size={16} />
               </Link>
-            </p>
+            </footer>
           </div>
         </div>
       </div>
@@ -157,8 +188,8 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-abstract-gradient flex items-center justify-center p-4">
-        <Loader2 className="animate-spin h-10 w-10 text-[#F59F01]" />
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Loader2 className="animate-spin h-10 w-10 text-ls-compliment" />
       </div>
     }>
       <LoginContent />

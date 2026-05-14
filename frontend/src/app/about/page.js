@@ -2,36 +2,47 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Linkedin, Twitter, X, Target, Lightbulb, Users, Eye, ShieldCheck } from "lucide-react";
+import { Linkedin, Twitter, Facebook, X, Target, Lightbulb, Users, Eye, ShieldCheck, ArrowRight } from "lucide-react";
 
 export default function AboutPage() {
   const [selectedMember, setSelectedMember] = useState(null);
+
+  const advisoryBoard = [
+    {
+      name: "Mr. Badri Khanal",
+      social: { linkedin: "#", facebook: "#" }
+    },
+    {
+      name: "Mr. Himal Aryal",
+      social: { linkedin: "#", facebook: "#" }
+    },
+  ];
 
   const values = [
     {
       title: "Vision",
       description: "We look where others don't, embracing innovation and the unconventional.",
-      icon: <Eye className="w-8 h-8 text-ls-compliment" />,
+      icon: <Eye className="w-8 h-8" />,
     },
     {
       title: "Wisdom",
       description: "We seek knowledge, learn from experience, and act with integrity.",
-      icon: <Lightbulb className="w-8 h-8 text-ls-compliment" />,
+      icon: <Lightbulb className="w-8 h-8" />,
     },
     {
       title: "Leadership",
       description: "We empower founders to lead boldly and confidently.",
-      icon: <Users className="w-8 h-8 text-ls-compliment" />,
+      icon: <Users className="w-8 h-8" />,
     },
     {
       title: "Insight",
       description: "We dig deep, trust our intuition, and uncover hidden truths.",
-      icon: <Target className="w-8 h-8 text-ls-compliment" />,
+      icon: <Target className="w-8 h-8" />,
     },
     {
       title: "Harmony",
       description: "We build partnerships based on mutual respect and aligned interests.",
-      icon: <ShieldCheck className="w-8 h-8 text-ls-compliment" />,
+      icon: <ShieldCheck className="w-8 h-8" />,
     },
   ];
 
@@ -63,7 +74,7 @@ export default function AboutPage() {
         },
       ],
       image: "/images/santosh-poudel.jpg",
-      social: { linkedin: "#", twitter: "#" },
+      social: { linkedin: "#", twitter: "#", facebook: "#" },
     },
     {
       id: 2,
@@ -93,87 +104,7 @@ export default function AboutPage() {
         },
       ],
       image: "/images/amrit-rana-chhetri.png",
-      social: { linkedin: "#", twitter: "#" },
-    },
-
-    {
-      id: 4,
-      name: "Suman Subedi",
-      role: "Director",
-      bio: "Suman is a seasoned financial management professional with over eight years of experience spanning financial structuring, investment management, portfolio oversight, and corporate financial leadership.",
-      bioFull: [
-        {
-          text: "Suman Subedi is a seasoned financial management professional with over eight years of experience spanning financial structuring, investment management, portfolio oversight, and corporate financial leadership. As a Director at Finlogic Capital Limited, he brings deep operational finance expertise and a strong track record of building institutional-grade financial systems within Nepal's investment landscape.",
-        },
-        {
-          text: "Suman has spent eight years at Wealth Bee Investment Pvt. Ltd., progressing from Finance Manager to Chief Financial Officer. As Finance Manager, he established the firm's foundational financial systems, internal controls, and reporting frameworks from the ground up. Elevated to CFO, he took on broader responsibilities including strategic business expansion planning, investment evaluation, portfolio performance monitoring, business and asset valuation, and data-driven decision support for senior management.",
-          highlight: "Wealth Bee Investment Pvt. Ltd.",
-        },
-        {
-          text: "Alongside this, Suman has served as Chief Financial Officer at Routine of Nepal for approximately three years, further deepening his experience in corporate financial governance and multi-entity financial oversight.",
-        },
-        {
-          text: "Suman holds a Master of Business Administration (MBA) with a CGPA of 3.32 from Lincoln International College, affiliated to Lincoln University College, Malaysia — with equivalence certified by Tribhuvan University's Curriculum Development Centre. He completed his undergraduate studies with a Bachelor of Business Studies (BBS) from Shanker Dev Campus, Tribhuvan University.",
-        },
-        {
-          text: "His combination of hands-on CFO experience and investment management background makes him a vital contributor to Finlogic Capital's financial governance and operational integrity.",
-        },
-      ],
-      image: "/images/suman-subedi.png",
-      social: { linkedin: "#", twitter: "#" },
-    },
-    {
-      id: 5,
-      name: "Anju Bhattarai",
-      role: "Director",
-      bio: "Anju is a finance and compliance professional with over six years of progressive experience spanning regulatory compliance, financial management, and private equity deal structuring.",
-      bioFull: [
-        {
-          text: "Anju Bhattarai is a finance and compliance professional with over six years of progressive experience spanning regulatory compliance, financial management, investment evaluation, and private equity deal structuring. As a Director at Finlogic Capital Limited, she brings a disciplined, detail-oriented approach to the firm's governance, compliance architecture, and deal evaluation processes.",
-        },
-        {
-          text: "Anju began her career at ANK-Mountain JV, a Kathmandu-based infrastructure joint venture, where she served as Compliance Manager and Finance Officer. In this role, she was responsible for regulatory compliance, financial record management, internal audits, and strengthening reporting systems — building a strong foundation in financial governance and institutional controls.",
-          highlight: "ANK-Mountain JV",
-        },
-        {
-          text: "She subsequently joined Mountain Holding and Private Equity Pvt. Ltd. as Deal Evaluation and Valuation Specialist, where she developed deep expertise in evaluating investment opportunities, conducting detailed financial and business valuations, and supporting strategic deal structuring across Nepal's private equity landscape.",
-          highlight: "Mountain Holding and Private Equity Pvt. Ltd.",
-        },
-        {
-          text: "Anju holds a Master of Business Studies (MBS) in First Division from Lumbini Banijya Campus, Tribhuvan University, and a Bachelor of Business Administration (BBA) with a CGPA of 3.71 from Kshitiz International College, affiliated to Pokhara University.",
-        },
-        {
-          text: "Her combination of compliance rigor and private equity deal experience positions her as a critical pillar in Finlogic Capital's mission to institutionalize responsible, transparent investment practice in Nepal.",
-        },
-      ],
-      image: "/images/anju-bhattarai.jpg",
-      social: { linkedin: "#", twitter: "#" },
-    },
-    {
-      id: 6,
-      name: "Gita Devi Khanal",
-      role: "Director",
-      bio: "Gita is an investment advisory professional with over eight years of experience providing investment oversight, portfolio analysis, and strategic advisory support across diversified sectors.",
-      bioFull: [
-        {
-          text: "Gita Devi Khanal is an investment advisory professional with over eight years of experience providing investment oversight, portfolio analysis, and strategic advisory support across diversified sectors. As a Director at Finlogic Capital Limited, she contributes a cross-sector investment perspective and a disciplined approach to capital allocation and risk assessment.",
-        },
-        {
-          text: "Gita has served as a Part-Time Investment Consultant at Beta Business Consulting Pvt. Ltd. for more than eight years, where she provided investment advisory and oversight support across subsidiaries operating in financial services, hospitality, real estate, manufacturing, and energy sectors.",
-          highlight: "Beta Business Consulting Pvt. Ltd.",
-        },
-        {
-          text: "Her responsibilities spanned evaluation of investment opportunities and sector-wise feasibility analysis, oversight of investment performance across diversified portfolios, business and asset valuation for strategic decision-making, risk assessment and return analysis across multiple industries, capital allocation advisory, and preparation of analytical reports for senior management.",
-        },
-        {
-          text: "Her profile is notable for the breadth of sectoral exposure she brings — spanning industries that closely align with Finlogic Capital's own investment verticals — and for the practical financial acumen she has developed across a sustained long-term advisory engagement.",
-        },
-        {
-          text: "Gita holds a Master of Arts in History and a Bachelor of Arts with Honours in History, both from North-Eastern Hill University, Shillong, India — reflecting an intellectual foundation in analytical thinking and critical inquiry that has translated effectively into her investment advisory career.",
-        },
-      ],
-      image: "/images/gita-devi-khanal.png",
-      social: { linkedin: "#", twitter: "#" },
+      social: { linkedin: "#", twitter: "#", facebook: "#" },
     },
     {
       id: 3,
@@ -200,7 +131,86 @@ export default function AboutPage() {
         },
       ],
       image: "/images/asmita-raut.png",
-      social: { linkedin: "#", twitter: "#" },
+      social: { linkedin: "#", twitter: "#", facebook: "#" },
+    },
+    {
+      id: 4,
+      name: "Suman Subedi",
+      role: "Director",
+      bio: "Suman is a seasoned financial management professional with over eight years of experience spanning financial structuring, investment management, portfolio oversight, and corporate financial leadership.",
+      bioFull: [
+        {
+          text: "Suman Subedi is a seasoned financial management professional with over eight years of experience spanning financial structuring, investment management, portfolio oversight, and corporate financial leadership. As a Director at Finlogic Capital Limited, he brings deep operational finance expertise and a strong track record of building institutional-grade financial systems within Nepal's investment landscape.",
+        },
+        {
+          text: "Suman has spent eight years at Wealth Bee Investment Pvt. Ltd., progressing from Finance Manager to Chief Financial Officer. As Finance Manager, he established the firm's foundational financial systems, internal controls, and reporting frameworks from the ground up. Elevated to CFO, he took on broader responsibilities including strategic business expansion planning, investment evaluation, portfolio performance monitoring, business and asset valuation, and data-driven decision support for senior management.",
+          highlight: "Wealth Bee Investment Pvt. Ltd.",
+        },
+        {
+          text: "Alongside this, Suman has served as Chief Financial Officer at Routine of Nepal for approximately three years, further deepening his experience in corporate financial governance and multi-entity financial oversight.",
+        },
+        {
+          text: "Suman holds a Master of Business Administration (MBA) with a CGPA of 3.32 from Lincoln International College, affiliated to Lincoln University College, Malaysia — with equivalence certified by Tribhuvan University's Curriculum Development Centre. He completed his undergraduate studies with a Bachelor of Business Studies (BBS) from Shanker Dev Campus, Tribhuvan University.",
+        },
+        {
+          text: "His combination of hands-on CFO experience and investment management background makes him a vital contributor to Finlogic Capital's financial governance and operational integrity.",
+        },
+      ],
+      image: "/images/suman-subedi.png",
+      social: { linkedin: "#", twitter: "#", facebook: "#" },
+    },
+    {
+      id: 5,
+      name: "Anju Bhattarai",
+      role: "Director",
+      bio: "Anju is a finance and compliance professional with over six years of progressive experience spanning regulatory compliance, financial management, and private equity deal structuring.",
+      bioFull: [
+        {
+          text: "Anju Bhattarai is a finance and compliance professional with over six years of progressive experience spanning regulatory compliance, financial management, investment evaluation, and private equity deal structuring. As a Director at Finlogic Capital Limited, she brings a disciplined, detail-oriented approach to the firm's governance, compliance architecture, and deal evaluation processes.",
+        },
+        {
+          text: "Anju began her career at ANK-Mountain JV, a Kathmandu-based infrastructure joint venture, where she served as Compliance Manager and Finance Officer. In this role, she was responsible for regulatory compliance, financial record management, internal audits, and strengthening reporting systems — building a strong foundation in financial governance and institutional controls.",
+          highlight: "ANK-Mountain JV",
+        },
+        {
+          text: "She subsequently joined Mountain Holding and Private Equity Pvt. Ltd. as Deal Evaluation and Valuation Specialist, where she developed deep expertise in evaluating investment opportunities, conducting detailed financial and business valuations, and supporting strategic deal structuring across Nepal's private equity landscape.",
+          highlight: "Mountain Holding and Private Equity Pvt. Ltd.",
+        },
+        {
+          text: "Anju holds a Master of Business Studies (MBS) in First Division from Lumbini Banijya Campus, Tribhuvan University, and a Bachelor of Business Administration (BBA) with a CGPA of 3.71 from Kshitiz International College, affiliated to Pokhara University.",
+        },
+        {
+          text: "Her combination of compliance rigor and private equity deal experience positions her as a critical pillar in Finlogic Capital's mission to institutionalize responsible, transparent investment practice in Nepal.",
+        },
+      ],
+      image: "/images/anju-bhattarai.jpg",
+      social: { linkedin: "#", twitter: "#", facebook: "#" },
+    },
+    {
+      id: 6,
+      name: "Gita Devi Khanal",
+      role: "Director",
+      bio: "Gita is an investment advisory professional with over eight years of experience providing investment oversight, portfolio analysis, and strategic advisory support across diversified sectors.",
+      bioFull: [
+        {
+          text: "Gita Devi Khanal is an investment advisory professional with over eight years of experience providing investment oversight, portfolio analysis, and strategic advisory support across diversified sectors. As a Director at Finlogic Capital Limited, she contributes a cross-sector investment perspective and a disciplined approach to capital allocation and risk assessment.",
+        },
+        {
+          text: "Gita has served as a Part-Time Investment Consultant at Beta Business Consulting Pvt. Ltd. for more than eight years, where she provided investment advisory and oversight support across subsidiaries operating in financial services, hospitality, real estate, manufacturing, and energy sectors.",
+          highlight: "Beta Business Consulting Pvt. Ltd.",
+        },
+        {
+          text: "Her responsibilities spanned evaluation of investment opportunities and sector-wise feasibility analysis, oversight of investment performance across diversified portfolios, business and asset valuation for strategic decision-making, risk assessment and return analysis across multiple industries, capital allocation advisory, and preparation of analytical reports for senior management.",
+        },
+        {
+          text: "Her profile is notable for the breadth of sectoral exposure she brings — spanning industries that closely align with Finlogic Capital's own investment verticals — and for the practical financial acumen she has developed across a sustained long-term advisory engagement.",
+        },
+        {
+          text: "Gita holds a Master of Arts in History and a Bachelor of Arts with Honours in History, both from North-Eastern Hill University, Shillong, India — reflecting an intellectual foundation in analytical thinking and critical inquiry that has translated effectively into her investment advisory career.",
+        },
+      ],
+      image: "/images/gita-devi-khanal.png",
+      social: { linkedin: "#", twitter: "#", facebook: "#" },
     },
     {
       id: 7,
@@ -226,143 +236,176 @@ export default function AboutPage() {
         },
       ],
       image: "/images/janak-tiwari.png",
-      social: { linkedin: "#", twitter: "#" },
+      social: { linkedin: "#", twitter: "#", facebook: "#" },
     },
   ];
 
   return (
     <div className="bg-background text-foreground min-h-screen theme-transition">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-abstract-gradient opacity-20 pointer-events-none" />
-        <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center">
-          <motion.h1
+      <section className="relative pt-40 pb-32 overflow-hidden bg-ls-primary text-ls-white">
+        <div className="absolute inset-0 z-0 opacity-40 grayscale mix-blend-luminosity">
+          <img src="/images/redesign/leadership.png" className="w-full h-full object-cover" alt="About Hero" />
+          <div className="absolute inset-0 bg-ls-primary/80" />
+        </div>
+        <div className="container mx-auto px-4 lg:px-8 relative z-10">
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl md:text-7xl font-bold mb-6"
+            className="space-y-6"
           >
-            About Us
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-xl text-text-muted max-w-2xl mx-auto"
-          >
-            Bridging visionary thinking with disciplined, insight-driven action.
-          </motion.p>
+            <span className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Our Heritage & Vision</span>
+            <h1 className="text-6xl md:text-8xl font-serif font-light leading-tight">Institutionalizing <br /> Opportunity</h1>
+            <p className="text-xl text-ls-white/70 max-w-2xl leading-relaxed md:text-2xl font-light">
+              Founded on the intersection of visionary foresight and disciplined wisdom, we are Nepal's premier private equity partner.
+            </p>
+          </motion.div>
         </div>
       </section>
 
-      {/* Intro Section */}
-      <section className="py-24 border-y border-ls-supporting/20">
-        <div className="container mx-auto px-4 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <div>
-            <h2 className="text-3xl font-bold mb-8 text-ls-compliment">Who We Are</h2>
-            <div className="space-y-6 text-lg text-text-muted leading-relaxed">
-              <p>
-                Finlogic Capital Limited is a private equity firm founded on the belief that the best investments are those that combine visionary thinking with timeless wisdom. Our name reflects our approach: <span className="text-foreground font-bold">Fin</span> for finance, <span className="text-foreground font-bold">logic</span> for the disciplined, insight-driven process we apply to every decision.
-              </p>
-              <p>
-                We are headquartered in Kathmandu, Nepal, with a focus on emerging markets and cross-border opportunities. Our team brings together diverse backgrounds – finance, entrepreneurship, technology, and advisory – united by a shared philosophy: to invest beyond the obvious.
-              </p>
-            </div>
-          </div>
-          <div>
-            <h2 className="text-3xl font-bold mb-8 text-ls-compliment">Our Story</h2>
-            <div className="space-y-6 text-lg text-text-muted leading-relaxed">
-              <p>
-                Finlogic Capital was born from a simple observation: the most successful investments are not just about numbers; they are about vision, relationships, and timing. Our founder, <span className="text-foreground font-bold">Santosh Poudel</span>, spent years studying the patterns of successful businesses and the deeper principles that drive sustainable growth.
-              </p>
-              <p>
-                Since our inception, we have remained true to that vision – backing exceptional entrepreneurs, uncovering hidden opportunities, and building lasting partnerships with our investors.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Mission Section */}
-      <section className="py-24 bg-ls-supporting/5">
-        <div className="container mx-auto px-4 lg:px-8 max-w-4xl text-center">
-          <h2 className="text-3xl font-bold mb-12 text-ls-compliment">Our Mission</h2>
-          <p className="text-3xl md:text-4xl font-light leading-snug text-foreground italic">
-            "To generate exceptional, risk-adjusted returns for our investors by identifying and nurturing visionary businesses, while fostering trust, transparency, and positive impact in every community we touch."
-          </p>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="py-24">
+      {/* Intro & Story Section */}
+      <section className="py-32 lg:py-48">
         <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="text-3xl font-bold mb-16 text-center text-ls-compliment">Our Core Values</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-20">
+            <div className="lg:col-span-5 space-y-10">
+              <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Who We Are</h2>
+              <h3 className="text-5xl font-serif font-light leading-tight">Bridging Kathmandu <br /> with Global Capital</h3>
+              <p className="text-xl text-text-muted leading-relaxed">
+                Finlogic Capital Limited is a Kathmandu-based private equity firm institutionalizing deal origination, evaluation, and capital deployment across high-growth emerging sectors.
+              </p>
+            </div>
+            <div className="lg:col-span-7 space-y-12 text-lg text-text-muted leading-relaxed">
+              <p>
+                Finlogic Capital was born from a simple observation: the most successful investments are not just about numbers; they are about vision, relationships, and timing. Our founder, <span className="text-ls-secondary font-bold">Santosh Poudel</span>, spent years studying the patterns of successful businesses and the deeper principles that drive sustainable growth.
+              </p>
+              <p>
+                Since our inception, we have remained true to that vision – backing exceptional entrepreneurs, uncovering hidden opportunities, and building lasting partnerships with our investors. Our name reflects our approach: <span className="text-ls-secondary font-bold">Fin</span> for finance, <span className="text-ls-secondary font-bold">logic</span> for the disciplined, insight-driven process we apply to every decision.
+              </p>
+              <div className="pt-6">
+                <div className="h-px w-24 bg-ls-compliment" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mission & Values Grid */}
+      <section className="py-32 bg-ls-primary text-ls-white">
+        <div className="container mx-auto px-4 lg:px-8">
+          <div className="mb-24 space-y-6">
+            <span className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Our Foundation</span>
+            <h2 className="text-5xl font-serif font-light">Core Values & Mission</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-ls-white/10">
             {values.map((v, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -5 }}
-                className="glass-card p-8 rounded-2xl flex flex-col items-center text-center group"
-              >
-                <div className="mb-6 transform transition-transform group-hover:scale-110">
+              <div key={i} className="bg-ls-primary p-12 transition-all hover:bg-ls-supporting/20 group">
+                <div className="mb-8 text-ls-compliment opacity-60 group-hover:opacity-100 transition-opacity">
                   {v.icon}
                 </div>
-                <h3 className="text-xl font-bold mb-4">{v.title}</h3>
-                <p className="text-sm text-text-muted">{v.description}</p>
-              </motion.div>
+                <h3 className="text-2xl font-serif font-light mb-4">{v.title}</h3>
+                <p className="text-ls-white/50 group-hover:text-ls-white/70 transition-colors leading-relaxed">
+                  {v.description}
+                </p>
+              </div>
             ))}
+            {/* Mission as the 6th block */}
+            <div className="bg-ls-primary p-12 lg:col-span-1 border-t md:border-t-0 border-ls-white/10">
+              <h3 className="text-sm font-bold uppercase tracking-[0.3em] text-ls-compliment mb-6">Our Mission</h3>
+              <p className="text-2xl font-serif font-light italic leading-relaxed">
+                "To generate exceptional risk-adjusted returns by identifying and nurturing visionary businesses across South Asia."
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Team Grid */}
-      <section className="py-24 border-t border-ls-supporting/20">
+      {/* Team Grid - Editorial Style */}
+      <section className="py-32 lg:py-48">
         <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="text-3xl font-bold mb-16 text-center text-ls-compliment">Meet Our Team</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
+          <div className="mb-24 flex flex-col items-end justify-between md:flex-row md:items-center border-b border-border-theme pb-12">
+            <div className="space-y-4">
+              <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">The Collective</h2>
+              <h3 className="text-5xl font-serif font-light md:text-7xl">Our Leadership</h3>
+            </div>
+            <p className="max-w-xs text-text-muted text-sm italic mt-6 md:mt-0">
+              A diverse team of financial experts, strategists, and visionary leaders dedicated to Nepal's growth.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12">
             {teamMembers.map((member) => (
               <motion.div
                 key={member.id}
                 layoutId={`member-container-${member.id}`}
-                className="group cursor-pointer"
+                className="group cursor-pointer space-y-6"
                 onClick={() => setSelectedMember(member)}
               >
-                <div className="relative aspect-square rounded-2xl overflow-hidden mb-6 filter grayscale group-hover:grayscale-0 transition-all duration-500">
+                <div className="relative aspect-[3/4] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700">
                   <img
                     src={member.image}
                     alt={member.name}
-                    className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-background/20 group-hover:bg-transparent transition-colors" />
+                  <div className="absolute inset-0 bg-ls-primary/10 group-hover:bg-transparent transition-colors" />
+
+                  {/* Social Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-full group-hover:translate-y-0 transition-transform duration-500 bg-gradient-to-t from-ls-primary/80 to-transparent flex justify-center gap-6">
+                    <a
+                      href={member.social.linkedin}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-ls-white hover:text-ls-compliment transition-colors"
+                    >
+                      <Linkedin size={20} />
+                    </a>
+                    <a
+                      href={member.social.facebook}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-ls-white hover:text-ls-compliment transition-colors"
+                    >
+                      <Facebook size={20} />
+                    </a>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold mb-1 group-hover:text-ls-compliment transition-colors">{member.name}</h3>
-                <p className="text-text-muted text-sm font-medium uppercase tracking-widest">{member.role}</p>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-serif font-light group-hover:text-ls-compliment transition-colors">{member.name}</h3>
+                  <p className="text-text-muted text-xs font-bold uppercase tracking-[0.2em]">{member.role}</p>
+                </div>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Advisory Board Placeholder */}
-      <section className="py-24 bg-ls-supporting/5 text-center">
+      {/* Advisory Board Section */}
+      <section className="py-32 bg-ls-primary text-ls-white border-t border-ls-white/5">
         <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="text-3xl font-bold mb-12 text-ls-compliment">Advisory Board</h2>
-          <p className="text-text-muted italic mb-8">Our advisors include distinguished leaders from technology, finance, and international developmental agencies across Nepal and beyond.</p>
-          <div className="flex flex-wrap justify-center gap-8 opacity-40">
-            {["Mr. Badri Khanal", "Mr. Himal Aryal",].map(idx => (
-              <div key={idx} className="h-12 w-48 bg-foreground/10 rounded flex items-center justify-center font-bold">{idx}</div>
+          <div className="text-center mb-20 space-y-4">
+            <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Strategic Guidance</h2>
+            <h3 className="text-5xl font-serif font-light leading-tight">Advisory Board</h3>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-16 md:gap-32">
+            {advisoryBoard.map((member, idx) => (
+              <div key={idx} className="group space-y-6 text-center">
+                <div className="text-2xl md:text-3xl font-serif font-light tracking-widest text-ls-white/80 group-hover:text-ls-white transition-colors duration-500">
+                  {member.name}
+                </div>
+                <div className="flex justify-center gap-6 opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-2 group-hover:translate-y-0">
+                  {member.social.linkedin && (
+                    <a href={member.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-ls-compliment hover:text-ls-white transition-colors">
+                      <Linkedin size={20} />
+                    </a>
+                  )}
+                  {member.social.facebook && (
+                    <a href={member.social.facebook} target="_blank" rel="noopener noreferrer" className="text-ls-compliment hover:text-ls-white transition-colors">
+                      <Facebook size={20} />
+                    </a>
+                  )}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Careers Section */}
-      <section className="py-16 text-center">
-        <div className="container mx-auto px-4 lg:px-8">
-          <h2 className="text-3xl font-bold mb-8">Join Our Journey</h2>
-          <p className="text-text-muted mb-10 max-w-xl mx-auto">We are always looking for talented individuals who share our passion for vision and wisdom.</p>
-          <button className="rounded-full border border-ls-compliment px-10 py-4 text-ls-compliment font-bold hover:bg-ls-compliment hover:text-ls-primary-fixed transition-all">
-            See Current Openings
-          </button>
         </div>
       </section>
 
@@ -375,41 +418,42 @@ export default function AboutPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedMember(null)}
-              className="absolute inset-0 bg-ls-primary/80 backdrop-blur-xl"
+              className="absolute inset-0 bg-ls-primary/90 backdrop-blur-2xl"
             />
 
             <motion.div
               layoutId={`member-container-${selectedMember.id}`}
-              className="glass-card max-w-4xl w-full rounded-3xl overflow-hidden relative z-10 grid grid-cols-1 md:grid-cols-2"
+              className="bg-background max-w-5xl w-full rounded-none overflow-hidden relative z-10 grid grid-cols-1 md:grid-cols-2 shadow-2xl"
             >
-              <div className="aspect-square md:aspect-auto">
+              <div className="aspect-[3/4] md:aspect-auto grayscale">
                 <img
                   src={selectedMember.image}
                   alt={selectedMember.name}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="p-8 md:p-12 flex flex-col justify-center">
+              <div className="p-10 md:p-16 flex flex-col justify-center relative">
                 <button
                   onClick={() => setSelectedMember(null)}
-                  className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-colors"
+                  className="absolute top-8 right-8 p-3 hover:bg-ls-primary/5 rounded-full transition-colors"
                 >
                   <X className="w-6 h-6" />
                 </button>
-                <div className="mb-8">
-                  <h3 className="text-3xl font-bold mb-2">{selectedMember.name}</h3>
-                  <p className="text-ls-compliment font-semibold uppercase tracking-widest text-sm">{selectedMember.role}</p>
+                <div className="mb-10 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-[0.3em] text-ls-compliment">Executive Leadership</span>
+                  <h3 className="text-4xl md:text-5xl font-serif font-light">{selectedMember.name}</h3>
+                  <p className="text-ls-primary font-bold uppercase tracking-widest text-xs">{selectedMember.role}</p>
                 </div>
-                <div className="space-y-4 text-text-muted leading-relaxed mb-10 max-h-[50vh] overflow-y-auto pr-2 scrollbar-thin">
+                <div className="space-y-6 text-text-muted leading-relaxed mb-12 max-h-[40vh] overflow-y-auto pr-6 scrollbar-thin">
                   {selectedMember.bioFull
                     ? selectedMember.bioFull.map((para, i) => (
-                      <p key={i}>
+                      <p key={i} className="text-lg">
                         {para.highlight
                           ? para.text.split(para.highlight).map((part, j, arr) =>
                             j < arr.length - 1 ? (
                               <span key={j}>
                                 {part}
-                                <span className="text-ls-compliment font-semibold">{para.highlight}</span>
+                                <span className="text-ls-primary font-bold">{para.highlight}</span>
                               </span>
                             ) : (
                               part
@@ -418,15 +462,18 @@ export default function AboutPage() {
                           : para.text}
                       </p>
                     ))
-                    : <p>{selectedMember.bio}</p>
+                    : <p className="text-lg">{selectedMember.bio}</p>
                   }
                 </div>
-                <div className="flex space-x-4">
-                  <a href={selectedMember.social.linkedin} className="p-3 bg-white/5 hover:bg-ls-compliment hover:text-ls-primary rounded-full transition-all">
-                    <Linkedin className="w-5 h-5" />
+                <div className="flex space-x-6">
+                  <a href={selectedMember.social.linkedin} target="_blank" rel="noopener noreferrer" className="text-ls-primary hover:text-ls-compliment transition-colors">
+                    <Linkedin className="w-6 h-6" />
                   </a>
-                  <a href={selectedMember.social.twitter} className="p-3 bg-white/5 hover:bg-ls-compliment hover:text-ls-primary rounded-full transition-all">
-                    <Twitter className="w-5 h-5" />
+                  <a href={selectedMember.social.facebook} target="_blank" rel="noopener noreferrer" className="text-ls-primary hover:text-ls-compliment transition-colors">
+                    <Facebook className="w-6 h-6" />
+                  </a>
+                  <a href={selectedMember.social.twitter} target="_blank" rel="noopener noreferrer" className="text-ls-primary hover:text-ls-compliment transition-colors">
+                    <Twitter className="w-6 h-6" />
                   </a>
                 </div>
               </div>
@@ -434,6 +481,7 @@ export default function AboutPage() {
           </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }

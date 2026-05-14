@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Clock,
   Sparkles,
-  Info
+  Info,
+  History
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -177,145 +178,183 @@ export default function IdeaValidatorPage() {
 
   if (!session && !isCompleted) {
     return (
-      <div className="container mx-auto px-4 py-20 min-h-screen">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto space-y-12"
-        >
-          {/* Hero Card */}
-          <div className="relative overflow-hidden rounded-[3rem] bg-card p-12 lg:p-20 border border-border-theme shadow-2xl">
-            <div className="absolute top-0 right-0 p-8">
-              <Sparkles className={`w-12 h-12 text-ls-compliment ${isDark ? 'opacity-20' : 'opacity-10'}`} />
-            </div>
-            <div className="relative z-10 space-y-6">
-              <h1 className="text-5xl lg:text-7xl font-black tracking-tight">
-                Idea <span className="text-ls-compliment">Validator</span>
-              </h1>
-              <p className="text-xl text-text-muted max-w-2xl leading-relaxed">
-                Analyze your business idea through the lens of our five philosophical pillars. 
-                Get brutally honest, constructive feedback and an adversarial risk assessment 
-                to prepare for institutional-grade scaling.
-              </p>
-              
-              <div className="flex flex-wrap gap-8 pt-6">
-                {user ? (
-                  <>
-                    <div className={`rounded-2xl p-6 border border-border-theme ${isDark ? 'bg-background/50 backdrop-blur-md' : 'bg-background shadow-sm'}`}>
-                      <div className="text-sm text-text-muted uppercase tracking-widest mb-1">Your Quota</div>
-                      <div className="text-3xl font-black text-ls-compliment">
-                        {quota?.remaining_validations} Analyses Left
-                      </div>
-                      <div className="text-xs text-text-muted mt-2">
-                        Resets quarterly (1 free analysis)
-                      </div>
+      <div className="bg-background text-foreground min-h-screen theme-transition selection:bg-ls-compliment/30 font-sans">
+        {/* Hero Section */}
+        <section className="relative pt-32 pb-20 bg-ls-primary text-ls-white overflow-hidden">
+          <div className="absolute inset-0 z-0 opacity-30 grayscale mix-blend-luminosity">
+            <img src="/images/redesign/leadership.png" className="w-full h-full object-cover" alt="Validator Hero" />
+            <div className="absolute inset-0 bg-ls-primary/80" />
+          </div>
+          
+          <div className="container mx-auto px-4 lg:px-8 relative z-10 text-center space-y-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+              className="text-[10px] font-bold uppercase tracking-[0.5em] text-ls-compliment"
+            >
+              Institutional Innovation Framework
+            </motion.div>
+
+            <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+              className="text-6xl md:text-8xl font-serif font-light leading-tight"
+            >
+              Idea <span className="italic">Validator</span>
+            </motion.h1>
+
+            <motion.p initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="text-xl md:text-2xl text-ls-white/70 max-w-3xl mx-auto font-light leading-relaxed font-serif"
+            >
+              A ruthless adversarial assessment of vision, leadership, and market resilience—designed for the institutional-grade entrepreneur.
+            </motion.p>
+          </div>
+        </section>
+
+        <div className="container mx-auto px-4 lg:px-8 -mt-16 relative z-20 pb-32">
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-5xl mx-auto"
+          >
+            {/* Dashboard Card */}
+            <div className="bg-card border border-border-theme shadow-2xl overflow-hidden rounded-xl">
+              <div className="grid grid-cols-1 lg:grid-cols-12">
+                {/* Left: Metadata & Status */}
+                <div className="lg:col-span-4 bg-ls-primary/5 p-12 border-r border-border-theme flex flex-col justify-between">
+                  <div className="space-y-10">
+                    <div>
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-4">Registry ID</div>
+                      <div className="font-mono text-sm opacity-60">FLC-VAL-{user?.id?.substring(0,8).toUpperCase() || 'ANON'}</div>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                    {user ? (
+                      <div className="space-y-6">
+                        <div className="p-8 border border-ls-compliment/20 bg-ls-compliment/5 rounded-lg">
+                          <div className="text-[10px] font-bold uppercase tracking-widest text-ls-compliment mb-2">Available Credits</div>
+                          <div className="text-4xl font-serif font-light text-foreground">
+                            {quota?.remaining_validations} <span className="text-sm uppercase tracking-widest font-sans font-bold text-text-muted">Analyses</span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-text-muted italic">
+                          "Growth without wisdom is merely expansion. Validation is the architecture of success."
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-8 border border-border-theme bg-background/50 rounded-lg">
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-2">Access Status</div>
+                        <div className="text-xl font-serif font-light">Restricted Access</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-12">
+                    <Sparkles className="w-8 h-8 text-ls-compliment opacity-40" />
+                  </div>
+                </div>
+
+                {/* Right: Actions & Info */}
+                <div className="lg:col-span-8 p-12 lg:p-16 space-y-12">
+                  <div className="space-y-6">
+                    <h2 className="text-3xl font-serif font-light">Prepare for Sovereignty</h2>
+                    <p className="text-text-muted leading-relaxed">
+                      Our 25-question framework subjects your business concept to the same rigor used by institutional partners. We don't just validate ideas; we architect them for the frontier market.
+                    </p>
+                  </div>
+
+                  {user ? (
+                    <div className="flex flex-wrap gap-6 pt-4">
                       <button 
                         onClick={startNewValidation}
                         disabled={quota?.remaining_validations <= 0}
-                        className={`w-full sm:w-auto flex items-center justify-center space-x-3 px-10 py-5 rounded-full font-bold transition-all ${
+                        className={`group flex items-center space-x-6 px-12 py-6 transition-all ${
                           quota?.remaining_validations > 0 
-                          ? 'bg-ls-compliment text-ls-primary hover:scale-105 shadow-lg shadow-ls-compliment/20' 
+                          ? 'bg-ls-primary text-ls-white hover:bg-ls-supporting' 
                           : 'bg-border-theme text-text-muted cursor-not-allowed'
                         }`}
                       >
-                        <span>Start New Analysis</span>
-                        <ArrowRight className="w-5 h-5" />
+                        <span className="text-sm font-bold uppercase tracking-[0.3em]">Begin Assessment</span>
+                        <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-2 text-ls-compliment" />
                       </button>
 
                       <Link 
                         href="/validate/history"
-                        className="w-full sm:w-auto flex items-center justify-center space-x-3 px-10 py-5 rounded-full font-bold border border-border-theme hover:bg-card transition-all"
+                        className="flex items-center space-x-6 px-12 py-6 border border-border-theme hover:bg-ls-primary/5 transition-all"
                       >
-                        <Clock className="w-5 h-5" />
-                        <span>View History</span>
+                        <span className="text-sm font-bold uppercase tracking-[0.3em]">Vault History</span>
+                        <Clock className="w-5 h-5 opacity-40" />
                       </Link>
                     </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col sm:flex-row items-center gap-6 w-full">
-                    <Link 
-                      href="/auth/login?redirect=/validate"
-                      className="w-full sm:w-auto flex items-center justify-center space-x-3 bg-ls-compliment text-ls-primary px-12 py-5 rounded-full font-black hover:scale-105 transition-all shadow-xl shadow-ls-compliment/20"
-                    >
-                      <span>Login to Start Analysis</span>
-                      <ArrowRight className="w-5 h-5" />
-                    </Link>
-                    <p className="text-sm text-text-muted">
-                      Join Finlogic to access institutional-grade business validation.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {!user && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12 border-t border-border-theme mt-12">
-                  {[
-                    { title: 'Institutional Framework', desc: 'Analyzed across our 5 philosophical pillars.' },
-                    { title: 'Adversarial Review', desc: 'A ruthless "Red Team" assessment of your risks.' },
-                    { title: 'Branded Reports', desc: 'Shareable PDF & card for institutional partners.' }
-                  ].map((item, i) => (
-                    <div key={i} className="space-y-2">
-                      <div className="flex items-center space-x-2 text-ls-compliment">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <h4 className="text-sm font-bold uppercase tracking-wider">{item.title}</h4>
+                  ) : (
+                    <div className="space-y-10">
+                       <Link 
+                        href="/auth/login?redirect=/validate"
+                        className="inline-flex items-center space-x-6 bg-ls-primary text-ls-white px-12 py-6 hover:bg-ls-supporting transition-all"
+                      >
+                        <span className="text-sm font-bold uppercase tracking-[0.3em]">Identify for Access</span>
+                        <ArrowRight className="w-5 h-5 text-ls-compliment" />
+                      </Link>
+                      <div className="grid grid-cols-2 gap-8 pt-8 border-t border-border-theme">
+                        <div className="space-y-2">
+                           <div className="text-[10px] font-bold uppercase tracking-widest text-ls-compliment">Phase I</div>
+                           <div className="text-sm font-serif italic">Philosophical Alignment</div>
+                        </div>
+                        <div className="space-y-2">
+                           <div className="text-[10px] font-bold uppercase tracking-widest text-ls-compliment">Phase II</div>
+                           <div className="text-sm font-serif italic">Adversarial Risk Audit</div>
+                        </div>
                       </div>
-                      <p className="text-xs text-text-muted leading-relaxed">{item.desc}</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {quota?.remaining_validations <= 0 && (
-                <div className="flex items-start space-x-3 text-ls-secondary bg-ls-secondary/5 p-4 rounded-xl border border-ls-secondary/20 max-w-lg">
-                  <AlertCircle className="w-5 h-5 mt-1 shrink-0" />
-                  <p className="text-sm">
-                    You have exhausted your quarterly quota. Please contact 
-                    <a href="mailto:info@finlogiccapital.com" className="font-bold underline ml-1">info@finlogiccapital.com</a> 
-                    to purchase additional validation credits.
-                  </p>
+                  {quota?.remaining_validations <= 0 && user && (
+                    <div className="p-6 bg-ls-down/5 border border-ls-down/20 flex items-center space-x-4">
+                      <AlertCircle className="w-5 h-5 text-ls-down" />
+                      <p className="text-xs text-text-muted">
+                        Quota exhausted. Contact <span className="text-foreground font-bold">intelligence@finlogiccapital.com</span> for institutional expansion.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
   if (isCompleted) {
     return (
-      <div className="container mx-auto px-4 py-20 min-h-screen flex items-center justify-center text-center">
+      <div className="min-h-screen bg-ls-primary text-ls-white flex items-center justify-center p-8">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-2xl space-y-8"
+          className="max-w-3xl text-center space-y-12"
         >
           <div className="flex justify-center">
-            <div className="w-24 h-24 rounded-full bg-ls-compliment/10 flex items-center justify-center">
-              <CheckCircle2 className="w-12 h-12 text-ls-compliment" />
-            </div>
+             <div className="w-32 h-32 border border-ls-compliment/20 flex items-center justify-center relative">
+                <CheckCircle2 className="w-12 h-12 text-ls-compliment" />
+                <div className="absolute inset-0 border border-ls-compliment/10 scale-125 animate-pulse" />
+             </div>
           </div>
-          <h2 className="text-5xl font-black">Analysis Submitted!</h2>
-          <p className="text-xl text-text-muted">
-            Our AI engine (the Sovereign Venture Architect) is now analyzing your submission. 
-            This usually takes 2-3 minutes. You will receive an email once your report is ready.
-          </p>
-          <div className="flex justify-center gap-4">
+          
+          <div className="space-y-6">
+            <h2 className="text-5xl md:text-7xl font-serif font-light">Submission Logged</h2>
+            <p className="text-xl text-ls-white/60 font-serif italic max-w-xl mx-auto leading-relaxed">
+              "The Sovereign Venture Architect is now scrutinizing your vision. Precision takes time."
+            </p>
+          </div>
+
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8 pt-8">
             <Link 
               href={`/validate/report/${session.id}`}
-              className="flex items-center space-x-2 bg-ls-compliment text-ls-primary px-8 py-4 rounded-full font-bold hover:scale-105 transition-all"
+              className="group flex items-center space-x-6 bg-ls-compliment text-ls-primary px-12 py-6 transition-all hover:bg-ls-white"
             >
-              <span>View Live Status</span>
-              <Clock className="w-5 h-5" />
+              <span className="text-xs font-bold uppercase tracking-[0.3em]">Audit Status</span>
+              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-2" />
             </Link>
             <button 
               onClick={() => window.location.reload()}
-              className="px-8 py-4 rounded-full border border-border-theme font-bold hover:bg-card transition-all"
+              className="text-xs font-bold uppercase tracking-[0.3em] border-b border-ls-white/20 pb-2 hover:border-ls-compliment transition-all"
             >
-              Back to Dashboard
+              Return to Vault
             </button>
           </div>
         </motion.div>
@@ -328,49 +367,56 @@ export default function IdeaValidatorPage() {
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-background text-foreground theme-transition pb-40">
-        {/* Progress Bar & Header */}
-        <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border-theme">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-2xl bg-ls-compliment/10 text-ls-compliment`}>
-                  <currentPillar.icon className="w-6 h-6" />
+      <div className="min-h-screen bg-background text-foreground theme-transition pb-40 font-sans">
+        {/* Editorial Header */}
+        <div className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border-theme">
+          <div className="container mx-auto px-4 lg:px-8 py-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+              <div className="flex items-center space-x-8">
+                <div className="w-16 h-16 border border-ls-compliment/20 flex items-center justify-center text-ls-compliment">
+                  <currentPillar.icon className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-widest text-ls-compliment">
-                    Step {currentStep} / 5
-                  </h3>
-                  <h4 className="text-2xl font-black">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.4em] text-ls-compliment mb-2">
+                    Phase 0{currentStep} — Strategy Audit
+                  </div>
+                  <h4 className="text-3xl font-serif font-light">
                     {lang === 'en' ? currentPillar.name_en : currentPillar.name_ne}
                   </h4>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-6">
+                <div className="hidden md:flex flex-col items-end mr-4">
+                   <div className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">Audit Progress</div>
+                   <div className="text-xs font-mono opacity-60">{Math.round((currentStep / 5) * 100)}% Complete</div>
+                </div>
+                
                 <Link 
                   href="/validate/history"
-                  className="px-4 py-2 rounded-full border border-border-theme text-[10px] font-black uppercase tracking-widest hover:bg-card transition-all flex items-center gap-2"
+                  className="hidden sm:flex items-center space-x-3 px-6 py-3 border border-border-theme text-[10px] font-bold uppercase tracking-widest hover:bg-card transition-all"
                 >
-                  <Clock size={12} />
-                  History
+                  <History className="w-4 h-4" />
+                  <span>Vault History</span>
                 </Link>
+                
                 <button 
                   onClick={() => setLang(l => l === 'en' ? 'ne' : 'en')}
-                  className="px-4 py-2 rounded-full border border-border-theme text-[10px] font-black uppercase tracking-widest hover:bg-card transition-all"
+                  className="px-6 py-3 border border-border-theme text-[10px] font-bold uppercase tracking-widest hover:bg-card transition-all"
                 >
-                  {lang === 'en' ? 'नेपाली' : 'English'}
+                  {lang === 'en' ? 'NEP' : 'ENG'}
                 </button>
+
                 {saving && (
-                  <span className="text-xs text-ls-compliment flex items-center space-x-2">
-                    <span className="w-2 h-2 rounded-full bg-ls-compliment animate-pulse" />
-                    <span>Auto-saving...</span>
-                  </span>
+                  <div className="flex items-center space-x-3 text-[10px] font-bold uppercase tracking-widest text-ls-compliment">
+                    <span className="w-1.5 h-1.5 rounded-full bg-ls-compliment animate-pulse" />
+                    <span>Syncing Vault</span>
+                  </div>
                 )}
               </div>
             </div>
 
-            <div className="h-2 w-full bg-border-theme rounded-full overflow-hidden">
+            <div className="mt-8 h-0.5 w-full bg-border-theme overflow-hidden">
               <motion.div 
                 initial={false}
                 animate={{ width: `${(currentStep / 5) * 100}%` }}
@@ -380,136 +426,119 @@ export default function IdeaValidatorPage() {
           </div>
         </div>
 
-        <div className="container mx-auto px-4 py-12">
-          <div className="max-w-4xl mx-auto space-y-12">
+        <div className="container mx-auto px-4 lg:px-8 py-20">
+          <div className="max-w-4xl mx-auto space-y-24">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-16"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-24"
               >
                 {stepQuestions.map((q, idx) => (
-                  <div key={q.id} className="space-y-6">
-                    <div className="space-y-3">
-                      <h5 className="text-sm font-mono text-text-muted">Question {q.id}</h5>
-                      <h2 className="text-2xl lg:text-3xl font-bold leading-tight">
+                  <div key={q.id} className="space-y-12">
+                    <div className="space-y-8">
+                      <div className="inline-block border-l-2 border-ls-compliment pl-6">
+                         <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-text-muted">Item Ref: 0{q.id}</span>
+                      </div>
+                      <h2 className="text-4xl md:text-5xl font-serif font-light leading-tight">
                         {q.question_ne}<br/>
-                        <span className="text-text-muted text-xl lg:text-2xl font-medium">{q.question_en}</span>
+                        <span className="text-text-muted italic">{q.question_en}</span>
                       </h2>
                     </div>
 
-                    {/* Hint / Example Box */}
-                    <div className="flex items-start space-x-3 p-5 rounded-2xl bg-ls-compliment/5 border border-ls-compliment/10">
-                      <Info className="w-5 h-5 text-ls-compliment shrink-0 mt-1" />
-                      <div className="text-sm space-y-1">
-                        <div className="font-bold text-ls-compliment uppercase tracking-widest text-[10px]">Contextual Example</div>
-                        <p className="text-text-muted italic">{q.hint_ne}</p>
-                        <p className="text-text-muted">{q.hint_en}</p>
+                    {/* Context Box - Editorial style */}
+                    <div className="flex items-start space-x-6 p-10 border border-border-theme bg-ls-primary/5 italic font-serif text-lg leading-relaxed text-text-muted">
+                      <Info className="w-6 h-6 text-ls-compliment shrink-0 mt-1" />
+                      <div className="space-y-4">
+                        <p>"{q.hint_ne}"</p>
+                        <p>"{q.hint_en}"</p>
                       </div>
                     </div>
 
-                    <div className="grid gap-3">
+                    <div className="grid gap-px bg-border-theme border border-border-theme overflow-hidden">
                       {q.options.map((opt) => (
                         <button
                           key={opt.val}
                           onClick={() => handleFieldChange(q.id, 'selected_option', opt.val)}
-                          className={`flex items-center justify-between p-5 rounded-2xl border text-left transition-all ${
+                          className={`flex items-center justify-between p-8 text-left transition-all group ${
                             answers[q.id]?.selected_option === opt.val
-                            ? 'border-ls-compliment bg-ls-compliment/5 shadow-md ring-1 ring-ls-compliment'
-                            : 'border-border-theme hover:border-ls-compliment/50 bg-card'
+                            ? 'bg-ls-primary text-ls-white'
+                            : 'bg-card hover:bg-ls-primary/5'
                           }`}
                         >
-                          <span className="font-medium">{opt.ne} / {opt.en}</span>
-                          {answers[q.id]?.selected_option === opt.val && <CheckCircle2 className="w-5 h-5 text-ls-compliment" />}
+                          <span className="text-lg font-serif">{opt.ne} / {opt.en}</span>
+                          <div className={`w-6 h-6 border transition-all flex items-center justify-center ${
+                            answers[q.id]?.selected_option === opt.val
+                            ? 'border-ls-compliment bg-ls-compliment'
+                            : 'border-border-theme group-hover:border-ls-compliment'
+                          }`}>
+                             {answers[q.id]?.selected_option === opt.val && <CheckCircle2 className="w-4 h-4 text-ls-primary" />}
+                          </div>
                         </button>
                       ))}
                     </div>
 
-                    {answers[q.id]?.selected_option === 'Other' && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        className="space-y-2"
-                      >
-                        <label className="text-xs font-bold uppercase tracking-widest text-text-muted">Please specify:</label>
-                        <input 
-                          type="text"
-                          value={answers[q.id]?.other_text || ''}
-                          onChange={(e) => handleFieldChange(q.id, 'other_text', e.target.value)}
-                          placeholder="Type your response..."
-                          className="w-full bg-card border border-border-theme rounded-xl p-4 focus:border-ls-compliment outline-none"
-                        />
-                      </motion.div>
-                    )}
-
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold uppercase tracking-widest text-text-muted">Elaborate (15-50 words):</label>
+                    <div className="space-y-8">
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-text-muted">Strategic Elaboration</label>
                         <textarea 
                           value={answers[q.id]?.free_text_response || ''}
                           onChange={(e) => handleFieldChange(q.id, 'free_text_response', e.target.value)}
-                          placeholder="Share more details about this aspect of your business..."
+                          placeholder="Provide the institutional rationale for this choice..."
                           rows={4}
-                          className="w-full bg-card border border-border-theme rounded-2xl p-6 focus:border-ls-compliment outline-none resize-none leading-relaxed"
+                          className="w-full bg-transparent border-b border-border-theme py-6 text-xl font-serif italic outline-none focus:border-ls-compliment transition-all placeholder:opacity-30 resize-none"
                         />
                       </div>
-
                     </div>
 
                     {idx < stepQuestions.length - 1 && (
-                      <div className="h-px w-full bg-gradient-to-r from-transparent via-border-theme to-transparent my-12" />
+                      <div className="flex items-center justify-center py-12">
+                         <div className="w-12 h-px bg-ls-compliment/20" />
+                      </div>
                     )}
                   </div>
                 ))}
               </motion.div>
             </AnimatePresence>
 
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 bg-ls-secondary/10 border border-ls-secondary/20 text-ls-secondary rounded-xl flex items-center space-x-3">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
-              </div>
-            )}
-
             {/* Navigation */}
-            <div className="flex items-center justify-between pt-12 border-t border-border-theme">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-12 pt-20 border-t border-border-theme">
               <button 
                 onClick={prevStep}
                 disabled={currentStep === 1}
-                className={`flex items-center space-x-2 px-8 py-4 rounded-full font-bold transition-all ${
-                  currentStep === 1 ? 'opacity-0 pointer-events-none' : 'border border-border-theme hover:bg-card'
+                className={`group flex items-center space-x-4 transition-all ${
+                  currentStep === 1 ? 'opacity-0 pointer-events-none' : 'text-text-muted hover:text-foreground'
                 }`}
               >
-                <ChevronLeft className="w-5 h-5" />
-                <span>Previous Pillar</span>
+                <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-2" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Previous Phase</span>
               </button>
 
               {currentStep < 5 ? (
                 <button 
                   onClick={nextStep}
-                  className="flex items-center space-x-2 bg-foreground text-background px-10 py-4 rounded-full font-bold hover:bg-ls-compliment hover:text-ls-primary transition-all"
+                  className="group flex items-center space-x-6 bg-ls-primary text-ls-white px-16 py-6 hover:bg-ls-supporting transition-all"
                 >
-                  <span>Next Pillar</span>
-                  <ChevronRight className="w-5 h-5" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Advance Phase</span>
+                  <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-2 text-ls-compliment" />
                 </button>
               ) : (
                 <button 
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="flex items-center space-x-2 bg-ls-compliment text-ls-primary px-12 py-5 rounded-full font-black hover:scale-105 transition-all shadow-xl shadow-ls-compliment/20 disabled:opacity-50"
+                  className="group flex items-center space-x-8 bg-ls-compliment text-ls-primary px-16 py-6 hover:bg-ls-primary hover:text-ls-white transition-all disabled:opacity-50"
                 >
                   {submitting ? (
-                    <>
+                    <div className="flex items-center space-x-4">
                       <div className="w-5 h-5 border-2 border-ls-primary/20 border-t-ls-primary rounded-full animate-spin" />
-                      <span>Submitting...</span>
-                    </>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Logging Audit</span>
+                    </div>
                   ) : (
                     <>
-                      <span>Submit Analysis</span>
-                      <ArrowRight className="w-5 h-5" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Commit Analysis</span>
+                      <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-2" />
                     </>
                   )}
                 </button>

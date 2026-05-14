@@ -83,165 +83,163 @@ export default function LPDocumentsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700 pb-20 theme-transition">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 rounded-[1.5rem] bg-ls-compliment/10 flex items-center justify-center text-ls-compliment shadow-inner">
-            <FileCheck size={32} />
+    <div className="space-y-20 animate-in fade-in duration-1000 pb-32 max-w-7xl mx-auto">
+      {/* Header - Institutional Vault */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 border-b border-border-theme pb-12">
+        <div className="space-y-6">
+          <div className="flex items-center gap-4 text-ls-compliment text-[10px] font-bold uppercase tracking-[0.5em]">
+            <FileCheck size={14} /> Strategic Archival Vault
           </div>
-          <div>
-            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Fund Repository</h1>
-            <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-1">Access official fund reports, legal documents, and capital notices.</p>
-          </div>
+          <h1 className="text-5xl md:text-7xl font-serif font-light text-foreground tracking-tight leading-tight">
+            Fund <span className="italic">Repository</span>
+          </h1>
+          <p className="text-xl text-text-muted font-serif font-light italic max-w-xl">
+            A secure gateway to official fund intelligence, legal frameworks, and capital commitment notices.
+          </p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="bg-foreground/[0.03] border border-border-theme rounded-2xl p-1.5 flex shadow-inner">
-            {['ALL', 'LPA', 'CAPITAL_CALL', 'QUARTERLY_REPORT', 'CAPITAL_ACCOUNT'].map(type => (
-              <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  filterType === type 
-                  ? 'bg-ls-compliment text-white shadow-lg shadow-ls-compliment/20' 
-                  : 'text-text-muted/40 hover:text-foreground'
-                }`}
-              >
-                {type === 'ALL' ? 'All Files' : type === 'CAPITAL_ACCOUNT' ? 'Statements' : type.replace('_', ' ')}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center gap-3 bg-border-theme/20 p-px border border-border-theme shadow-sm">
+          {['ALL', 'LPA', 'CAPITAL_CALL', 'QUARTERLY_REPORT', 'CAPITAL_ACCOUNT'].map(type => (
+            <button
+              key={type}
+              onClick={() => setFilterType(type)}
+              className={`px-6 py-3 text-[9px] font-bold uppercase tracking-[0.3em] transition-all ${
+                filterType === type 
+                ? 'bg-ls-primary text-ls-white shadow-xl' 
+                : 'text-text-muted/60 hover:text-foreground'
+              }`}
+            >
+              {type === 'ALL' ? 'ARCHIVE' : type === 'CAPITAL_ACCOUNT' ? 'STATEMENTS' : type.replace('_', ' ')}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Sidebar / Filters */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-card border border-border-theme rounded-[2rem] p-8 shadow-xl theme-transition overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-ls-compliment/5 blur-[30px] rounded-full -mr-10 -mt-10 pointer-events-none" />
-            <h3 className="text-[10px] font-black text-text-muted/40 uppercase tracking-[0.2em] mb-6">Security Notice</h3>
-            <div className="flex items-start gap-4 p-5 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl shadow-inner">
-              <ShieldCheck className="text-emerald-500 mt-0.5 shrink-0" size={16} />
-              <p className="text-[11px] text-text-muted/60 leading-relaxed font-medium">
-                All document access is logged for institutional audit. Pre-signed links expire in 60 minutes.
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-16">
+        {/* Sidebar - Governance & Security */}
+        <div className="lg:col-span-1 space-y-12">
+          <div className="bg-card border border-border-theme p-10 shadow-2xl relative group overflow-hidden theme-transition">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-ls-compliment/5 blur-[50px] rounded-full -mr-12 -mt-12 pointer-events-none" />
+            <h3 className="text-[10px] font-bold text-text-muted/40 uppercase tracking-[0.4em] mb-8 flex items-center gap-3">
+              <ShieldCheck size={14} className="text-ls-compliment" /> Governance Notice
+            </h3>
+            <div className="p-8 border border-ls-up/20 bg-ls-up/5 shadow-inner">
+              <p className="text-[11px] text-text-muted leading-relaxed font-serif italic opacity-80">
+                Institutional access is logged per audit protocols. Pre-signed retrieval links expire in 60 minutes.
               </p>
             </div>
             
-            <div className="mt-8 space-y-3">
-              <p className="text-[10px] text-text-muted/30 font-black uppercase tracking-widest ml-1 mb-2">Recent Activities</p>
-              {documents.slice(0, 3).map(doc => (
-                <div key={doc.id} className="flex items-center gap-3 text-[11px] py-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-ls-compliment" />
-                  <span className="text-text-muted/50 truncate font-medium">{doc.title}</span>
+            <div className="mt-12 pt-12 border-t border-border-theme space-y-4">
+              <p className="text-[9px] text-text-muted/30 font-bold uppercase tracking-[0.4em] mb-4">Registry Timeline</p>
+              {documents.slice(0, 3).map((doc, i) => (
+                <div key={doc.id} className="flex items-start gap-4 text-[10px] py-2 group/item cursor-pointer">
+                  <span className="text-ls-compliment/40 group-hover/item:text-ls-compliment font-mono">0{i+1}</span>
+                  <span className="text-text-muted/60 group-hover/item:text-foreground truncate font-serif italic transition-colors">{doc.title}</span>
                 </div>
               ))}
             </div>
           </div>
           
-          <div className="bg-card border border-border-theme rounded-[2rem] p-8 shadow-xl theme-transition relative overflow-hidden">
-            <div className="absolute bottom-0 left-0 w-full h-1 bg-ls-compliment/20" />
-            <p className="text-[10px] font-black text-ls-compliment uppercase tracking-[0.2em] mb-3">Institutional Support</p>
-            <p className="text-[11px] text-text-muted/60 leading-relaxed mb-6 font-medium">Questions regarding your quarterly statements or capital commitment schedules?</p>
-            <button className="w-full py-4 bg-foreground/[0.03] border border-border-theme rounded-xl text-foreground text-[10px] font-black uppercase tracking-widest hover:bg-foreground/[0.08] transition-all flex items-center justify-center gap-3 shadow-lg active:scale-95">
-              Contact LP Support
+          <div className="bg-ls-primary text-ls-white p-10 shadow-2xl relative overflow-hidden group">
+            <div className="absolute bottom-0 right-0 w-32 h-32 bg-ls-compliment/10 blur-[60px] rounded-full -mr-16 -mb-16 pointer-events-none" />
+            <p className="text-[9px] font-bold text-ls-compliment uppercase tracking-[0.5em] mb-6">Institutional Support</p>
+            <p className="text-base font-serif italic text-ls-white/60 leading-relaxed mb-10">Request clarification on quarterly statements or capital commitment schedules.</p>
+            <button className="w-full py-5 bg-ls-compliment text-ls-primary text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-ls-white transition-all flex items-center justify-center gap-4 shadow-xl">
+              Initiate Inquiry
               <ArrowRight size={14} />
             </button>
           </div>
         </div>
 
-        {/* Document List */}
-        <div className="lg:col-span-3 space-y-6">
+        {/* Document Ledger */}
+        <div className="lg:col-span-3 space-y-8">
           {loading ? (
             Array(4).fill(0).map((_, i) => (
-              <div key={i} className="h-28 bg-foreground/[0.03] border border-border-theme rounded-[2rem] animate-pulse" />
+              <div key={i} className="h-32 bg-border-theme/5 border border-border-theme animate-pulse" />
             ))
           ) : filteredDocs.length === 0 ? (
-            <div className="bg-card border border-border-theme rounded-[2.5rem] p-20 text-center shadow-xl theme-transition">
-              <div className="w-20 h-20 rounded-full bg-foreground/[0.03] flex items-center justify-center mx-auto mb-6 text-text-muted/10 shadow-inner">
-                <FileText size={40} />
+            <div className="bg-card border border-border-theme p-24 text-center shadow-2xl">
+              <div className="w-20 h-20 border border-border-theme flex items-center justify-center mx-auto mb-10 opacity-20">
+                <FileText size={32} />
               </div>
-              <h3 className="text-xl font-black text-foreground uppercase tracking-tight">No records available</h3>
-              <p className="text-text-muted/40 text-[10px] font-black uppercase tracking-widest mt-2">Check back later for newly issued fund updates.</p>
+              <h3 className="text-2xl font-serif font-light text-foreground uppercase tracking-tight">No records identified</h3>
+              <p className="text-text-muted/40 text-[10px] font-bold uppercase tracking-[0.4em] mt-4 font-serif italic">Check back later for newly issued fund updates.</p>
             </div>
           ) : (
             filteredDocs.map(doc => (
-              <div key={doc.id} className="bg-card border border-border-theme hover:border-ls-compliment/30 rounded-[2rem] p-6 shadow-xl group transition-all duration-300 theme-transition relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-1 h-full bg-ls-compliment opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="flex items-center justify-between gap-6">
-                  <div className="flex items-center gap-6 flex-1 min-w-0">
-                    <div className="w-14 h-14 rounded-2xl bg-foreground/[0.03] flex items-center justify-center text-text-muted/30 group-hover:text-ls-compliment transition-colors shrink-0 shadow-inner">
-                      <FileText size={28} />
+              <div key={doc.id} className="bg-card border border-border-theme hover:border-ls-compliment/40 p-8 shadow-2xl group transition-all duration-700 relative overflow-hidden">
+                <div className="flex items-center justify-between gap-12">
+                  <div className="flex items-center gap-10 flex-1 min-w-0">
+                    <div className="w-16 h-16 border border-border-theme flex items-center justify-center text-text-muted/20 group-hover:text-ls-compliment group-hover:border-ls-compliment/40 transition-all shrink-0">
+                      <FileText size={32} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-4 mb-2">
-                        <h3 className="text-lg font-black text-foreground group-hover:text-ls-compliment transition-colors truncate uppercase tracking-tight">{doc.title}</h3>
+                    <div className="flex-1 min-w-0 space-y-4">
+                      <div className="flex items-center gap-6">
+                        <h3 className="text-2xl font-serif font-light text-foreground group-hover:text-ls-compliment transition-colors truncate uppercase tracking-tight">{doc.title}</h3>
                         {isNew(doc.publish_date) && (
-                          <span className="bg-emerald-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full shadow-[0_4px_10px_rgba(16,185,129,0.3)]">New</span>
+                          <span className="text-ls-up text-[9px] font-bold uppercase tracking-widest px-3 py-1 border border-ls-up/30 bg-ls-up/5">New Entry</span>
                         )}
                         {doc.requires_acknowledgment && !doc.has_acknowledged && (
-                          <span className="bg-amber-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full animate-pulse shadow-[0_4px_10px_rgba(245,159,1,0.3)]">Action Required</span>
+                          <span className="text-ls-compliment text-[9px] font-bold uppercase tracking-widest px-3 py-1 border border-ls-compliment/30 bg-ls-compliment/5 animate-pulse">Action Required</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-5 text-[10px] font-black uppercase tracking-widest">
-                        <div className="flex items-center gap-2 text-text-muted/40">
-                          <Building2 size={14} className="text-ls-secondary" />
-                          <span>{doc.fund_name || 'Finlogic Institutional Fund'}</span>
+                      <div className="flex items-center gap-8 text-[9px] font-bold uppercase tracking-[0.3em] font-mono">
+                        <div className="flex items-center gap-3 text-text-muted/40 group-hover:text-text-muted/60">
+                          <Building2 size={12} className="text-ls-compliment" />
+                          <span>{doc.fund_name || 'FINLOGIC_INSTITUTIONAL_FUND'}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-text-muted/40">
-                          <Calendar size={14} />
+                        <div className="flex items-center gap-3 text-text-muted/40">
+                          <Calendar size={12} />
                           <span>{new Date(doc.publish_date).toLocaleDateString()}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-text-muted/20">
-                          <Clock size={14} />
+                        <div className="flex items-center gap-3 text-text-muted/20">
+                          <Clock size={12} />
                           <span>{(doc.file_size / 1024 / 1024).toFixed(2)} MB</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-6">
                     {doc.requires_acknowledgment && !doc.has_acknowledged && (
                       <button 
                         onClick={() => handleAcknowledge(doc.id)}
-                        className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-5 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-white transition-all shadow-lg active:scale-95"
+                        className="bg-ls-compliment text-ls-primary text-[9px] font-bold uppercase tracking-[0.4em] px-8 py-4 hover:bg-ls-white transition-all shadow-xl shadow-ls-compliment/10"
                       >
-                        <CheckCircle2 size={14} />
-                        Execute Acknowledge
+                        Execute Protocol
                       </button>
                     )}
                     {doc.has_acknowledged && (
-                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 px-4 py-3 text-[10px] font-black uppercase tracking-widest bg-emerald-500/5 rounded-xl border border-emerald-500/10 shadow-inner">
+                      <div className="flex items-center gap-3 text-ls-up px-6 py-4 text-[9px] font-bold uppercase tracking-widest bg-ls-up/5 border border-ls-up/20 shadow-inner">
                         <CheckCircle2 size={14} />
-                        Identity Verified
+                        Verified
                       </div>
                     )}
                     <button 
                       onClick={() => handleDownload(doc.id, doc.file_name, doc.document_type)}
-                      className="p-4 bg-foreground/[0.03] border border-border-theme rounded-xl text-text-muted/60 hover:text-ls-compliment hover:bg-ls-compliment/5 transition-all active:scale-90 shadow-md group/btn"
-                      title="Ingest Document"
+                      className="p-5 border border-border-theme text-text-muted/40 hover:text-ls-compliment hover:border-ls-compliment/40 transition-all active:scale-90 group/btn"
+                      title="Archival Retrieval"
                     >
-                      <Download size={20} className="group-hover/btn:translate-y-0.5 transition-transform" />
+                      <Download size={24} className="group-hover/btn:translate-y-0.5 transition-transform" />
                     </button>
                   </div>
                 </div>
                 
                 {doc.document_type === 'CAPITAL_CALL' && (
-                  <div className="mt-6 pt-6 border-t border-border-theme/50 flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                      <div className="bg-ls-compliment/5 border border-ls-compliment/10 rounded-xl px-5 py-2.5 shadow-inner">
-                        <p className="text-[9px] text-ls-compliment/60 font-black uppercase tracking-[0.2em] mb-1">Call Obligation</p>
-                        <p className="text-sm font-black text-foreground font-mono">NPR {parseFloat(doc.capital_call_amount).toLocaleString()}</p>
+                  <div className="mt-10 pt-10 border-t border-border-theme flex items-center justify-between">
+                    <div className="flex items-center gap-12">
+                      <div className="space-y-2">
+                        <p className="text-[9px] text-text-muted/40 font-bold uppercase tracking-[0.4em]">Obligation Balance</p>
+                        <p className="text-xl font-serif font-light text-foreground tabular-nums">रू {parseFloat(doc.capital_call_amount).toLocaleString()}</p>
                       </div>
-                      <div className="bg-rose-500/5 border border-rose-500/10 rounded-xl px-5 py-2.5 shadow-inner">
-                        <p className="text-[9px] text-rose-500/60 font-black uppercase tracking-[0.2em] mb-1">Maturity Date</p>
-                        <p className="text-sm font-black text-foreground font-mono">{new Date(doc.capital_call_due_date).toLocaleDateString()}</p>
+                      <div className="space-y-2">
+                        <p className="text-[9px] text-ls-compliment/40 font-bold uppercase tracking-[0.4em]">Maturity Threshold</p>
+                        <p className="text-xl font-serif font-light text-foreground tabular-nums">{new Date(doc.capital_call_due_date).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <button className="text-[10px] text-ls-compliment font-black uppercase tracking-[0.2em] flex items-center gap-2 hover:underline transition-all">
-                      Settlement Protocols
-                      <ExternalLink size={12} />
+                    <button className="text-[10px] text-ls-compliment font-bold uppercase tracking-[0.4em] flex items-center gap-3 group/link">
+                      <span className="border-b border-ls-compliment/30 group-hover/link:border-ls-compliment transition-colors">Settlement Protocols</span>
+                      <ExternalLink size={14} />
                     </button>
                   </div>
                 )}

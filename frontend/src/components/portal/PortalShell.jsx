@@ -11,11 +11,9 @@ import Link from 'next/link';
 
 export function PortalLoader() {
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center theme-transition">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 rounded-full border-4 border-[#F59F01]/20 border-t-[#F59F01] animate-spin" />
-        <p className="text-[#F59F01]/60 text-sm tracking-widest uppercase">Loading portal…</p>
-      </div>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center theme-transition gap-12">
+      <div className="w-12 h-12 border border-ls-compliment/20 border-t-ls-compliment animate-spin" />
+      <p className="text-ls-compliment text-[10px] font-bold tracking-[0.5em] uppercase animate-pulse">Syncing Registry Hub</p>
     </div>
   );
 }
@@ -40,22 +38,27 @@ export function PortalGuard({ children, allowedRoles }) {
 /** Metric card used in dashboards */
 export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', trend, href }) {
   const content = (
-    <div className={`rounded-xl border border-border-theme bg-card backdrop-blur-sm p-5 flex flex-col gap-3 hover:border-[#F59F01]/20 transition-all theme-transition ${href ? 'cursor-pointer hover:bg-foreground/5' : ''}`}>
+    <div className={`border border-border-theme bg-card p-10 flex flex-col justify-between space-y-10 group hover:bg-ls-primary transition-all duration-500 theme-transition overflow-hidden relative ${href ? 'cursor-pointer' : ''}`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs text-text-muted uppercase tracking-widest">{label}</span>
+        <span className="text-[10px] font-bold text-text-muted group-hover:text-ls-white/40 uppercase tracking-[0.4em] transition-colors">{label}</span>
         {Icon && (
-          <span className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}18` }}>
-            <Icon size={16} style={{ color }} />
+          <span className="text-ls-compliment opacity-60 group-hover:opacity-100 transition-all">
+            <Icon size={20} />
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-      {sub && <p className="text-xs text-text-muted">{sub}</p>}
-      {trend !== undefined && (
-        <p className={`text-xs font-medium ${trend >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-          {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
-        </p>
-      )}
+      
+      <div className="space-y-4">
+        <p className="text-4xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight">{value}</p>
+        <div className="flex items-center justify-between">
+           {sub && <p className="text-[9px] font-serif italic text-text-muted group-hover:text-ls-white/20 transition-colors">{sub}</p>}
+           {trend !== undefined && (
+             <p className={`text-[10px] font-bold uppercase tracking-widest ${trend >= 0 ? 'text-ls-up' : 'text-red-500'}`}>
+               {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
+             </p>
+           )}
+        </div>
+      </div>
     </div>
   );
 
@@ -66,26 +69,28 @@ export function MetricCard({ label, value, sub, icon: Icon, color = '#F59F01', t
   return content;
 }
 
-/** Status badge */
+/** Status badge - Linear High Contrast */
 export function StatusBadge({ status }) {
   const map = {
-    PENDING_SUBMISSION: { label: 'Pending Submission', cls: 'bg-foreground/5 text-text-muted' },
-    SUBMITTED: { label: 'Submitted', cls: 'bg-blue-500/10 text-blue-700 dark:text-blue-300' },
-    SCREENING: { label: 'Screening', cls: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300' },
-    IC_REVIEW: { label: 'IC Review', cls: 'bg-orange-500/10 text-orange-700 dark:text-orange-300' },
-    TERM_SHEET: { label: 'Term Sheet', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-300' },
-    LOI_ISSUED: { label: 'LOI Issued', cls: 'bg-[#F59F01]/10 text-[#F59F01]' },
-    CONTRACT_SIGNED: { label: 'Contract Signed', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-    CAPITAL_CALLED: { label: 'Capital Called', cls: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
-    CLOSED: { label: 'Closed', cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
-    DECLINED: { label: 'Declined', cls: 'bg-red-500/10 text-red-600 dark:text-red-400' },
-    RAISING: { label: 'Raising', cls: 'bg-blue-500/10 text-blue-700 dark:text-blue-300' },
-    INVESTING: { label: 'Investing', cls: 'bg-green-500/10 text-green-700 dark:text-green-300' },
-    HARVESTING: { label: 'Harvesting', cls: 'bg-amber-500/10 text-amber-700 dark:text-amber-300' },
+    PENDING_SUBMISSION: { label: 'Pending Submission', color: '#64748b' },
+    SUBMITTED: { label: 'Submitted', color: '#0B6EC3' },
+    SCREENING: { label: 'Screening', color: '#F59F01' },
+    IC_REVIEW: { label: 'IC Review', color: '#F59F01' },
+    TERM_SHEET: { label: 'Term Sheet', color: '#F59F01' },
+    LOI_ISSUED: { label: 'LOI Issued', color: '#F59F01' },
+    CONTRACT_SIGNED: { label: 'Contract Signed', color: '#16c784' },
+    CAPITAL_CALLED: { label: 'Capital Called', color: '#8b5cf6' },
+    CLOSED: { label: 'Closed', color: '#16c784' },
+    DECLINED: { label: 'Declined', color: '#ef4444' },
+    RAISING: { label: 'Raising', color: '#0B6EC3' },
+    INVESTING: { label: 'Investing', color: '#16c784' },
+    HARVESTING: { label: 'Harvesting', color: '#F59F01' },
   };
-  const cfg = map[status] || { label: status, cls: 'bg-foreground/5 text-text-muted' };
+  const cfg = map[status] || { label: status, color: '#64748b' };
+  
   return (
-    <span className={`text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold ${cfg.cls} theme-transition`}>
+    <span className="inline-flex items-center px-4 py-1.5 bg-border-theme/20 border-l-2 text-[9px] font-bold uppercase tracking-[0.2em] theme-transition"
+          style={{ borderLeftColor: cfg.color, color: cfg.color }}>
       {cfg.label}
     </span>
   );
