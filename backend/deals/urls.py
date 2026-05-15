@@ -41,6 +41,7 @@ from .views import (
     # LP portal
     LPDashboardView,
     LPFundDetailView,
+    LPSupportRequestView,
     # GP Investor portal
     GPInvestorDashboardView,
     # LP Profile
@@ -123,6 +124,7 @@ from .views import (
     GPSPADraftDetailView,
     GPUploadSignedSPAView,
     GPDownloadSPAPDFView,
+    GPFundCapitalCallBatchView,
     # Phase 3 views
 
     EntrepreneurUploadSignedLOIView,
@@ -412,6 +414,11 @@ urlpatterns = [
         name='gp-project-create-capital-calls',
     ),
     path(
+        'deals/funds/<uuid:pk>/create-capital-calls/',
+        GPFundCapitalCallBatchView.as_view(),
+        name='gp-fund-create-capital-calls',
+    ),
+    path(
         'portfolio/waterfall/calculate/',
         WaterfallCalculateView.as_view(),
         name='waterfall-calculate',
@@ -527,9 +534,34 @@ urlpatterns = [
         name='lp-dashboard',
     ),
     path(
+        'deals/lp/portfolio/',
+        LPPortfolioView.as_view(),
+        name='lp-portfolio-consistent',
+    ),
+    path(
+        'deals/lp/distributions/',
+        LPDistributionListView.as_view(),
+        name='lp-distributions-consistent',
+    ),
+    path(
+        'deals/lp/profile/',
+        LPProfileSelfView.as_view(),
+        name='lp-profile-consistent',
+    ),
+    path(
+        'deals/lp/documents/',
+        LPDocumentListView.as_view(),
+        name='lp-documents-consistent',
+    ),
+    path(
         'deals/lp/fund/<uuid:fund_id>/',
         LPFundDetailView.as_view(),
         name='lp-fund-detail',
+    ),
+    path(
+        'deals/lp/support-request/',
+        LPSupportRequestView.as_view(),
+        name='lp-support-request',
     ),
 
     # ── Fund Document Management ──────────────────────────────────────────

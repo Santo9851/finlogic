@@ -10,20 +10,24 @@ import api from '@/services/api';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 
-export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
+export default function CapitalCallWizard({ deal, fund, onClose, onRefresh }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    total_amount_npr: deal.term_sheets?.[0]?.terms?.investment_amount_npr || '',
+    total_amount_npr: deal?.term_sheets?.[0]?.terms?.investment_amount_npr || '',
     due_date: '',
-    notes: `Initial drawdown for ${deal.legal_name}`
+    call_type: deal ? 'INVESTMENT' : 'MANAGEMENT_FEE',
+    notes: deal ? `Initial drawdown for ${deal.legal_name}` : `Institutional Management Fee Drawdown - ${new Date().getFullYear()} Q${Math.floor(new Date().getMonth() / 3) + 1}`
   });
 
   const handleIssue = async () => {
     setIsSubmitting(true);
     try {
-      await api.post(`/deals/projects/${deal.id}/create-capital-calls/`, formData);
+      const endpoint = deal 
+        ? `/deals/projects/${deal.id}/create-capital-calls/` 
+        : `/deals/funds/${fund.id}/create-capital-calls/`;
+      await api.post(endpoint, formData);
       toast.success('Capital calls issued successfully');
       onRefresh?.();
       onClose();
@@ -47,7 +51,7 @@ export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
             </div>
             <div>
               <h2 className="text-2xl font-black text-foreground tracking-tight uppercase leading-tight">Capital Drawdown</h2>
-              <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-1">LP Pro-Rata Protocol for {deal.legal_name}</p>
+              <p className="text-text-muted text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mt-1">LP Pro-Rata Protocol for {deal?.legal_name || fund?.name}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-3 bg-foreground/5 rounded-2xl text-text-muted hover:text-foreground transition-all active:scale-95">
@@ -62,7 +66,7 @@ export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
               <Info size={20} />
             </div>
             <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.2em] leading-relaxed opacity-80">
-              This will execute pro-rata capital calls for all LPs committed to <span className="text-purple-500">{deal.fund_detail?.name || 'Institutional Vehicle'}</span>. 
+              This will execute pro-rata capital calls for all LPs committed to <span className="text-purple-500">{deal?.fund_detail?.name || fund?.name || 'Institutional Vehicle'}</span>. 
               The system will automatically compute allocations based on the commitment matrix.
             </p>
           </div>
@@ -102,6 +106,20 @@ export default function CapitalCallWizard({ deal, onClose, onRefresh }) {
                 className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl p-6 text-foreground text-sm font-medium focus:border-purple-500/40 outline-none transition-all shadow-inner leading-relaxed"
                 placeholder="Internal notes for this capital call cycle..."
               />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] text-text-muted font-black uppercase tracking-[0.3em] ml-1">Call Type (Purpose)</label>
+              <select 
+                value={formData.call_type}
+                onChange={(e) => setFormData({...formData, call_type: e.target.value})}
+                className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl p-6 text-foreground font-black uppercase tracking-widest text-xs focus:border-purple-500/40 outline-none transition-all shadow-inner"
+              >
+                <option value="INVESTMENT">Investment Capital</option>
+                <option value="MANAGEMENT_FEE">Management Fee</option>
+                <option value="FUND_EXPENSE">Fund Expense</option>
+                <option value="OTHER">Other Institutional Call</option>
+              </select>
             </div>
           </div>
         </div>

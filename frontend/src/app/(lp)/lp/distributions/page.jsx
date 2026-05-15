@@ -1,15 +1,17 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/services/api';
 import { Loader2, PieChart } from 'lucide-react';
 import { MetricCard } from '@/components/portal/PortalShell';
 import { useTheme } from 'next-themes';
+import LPNoProfileError from '@/components/portal/LPNoProfileError';
 
 export default function LPDistributions() {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const { data: distributions, isLoading } = useQuery({
+  const { data: distributions, isLoading, error } = useQuery({
     queryKey: ['lp', 'distributions'],
     queryFn: async () => {
       const res = await api.get('/deals/lp/distributions/');
@@ -24,7 +26,14 @@ export default function LPDistributions() {
     </div>
   );
 
-  const totalDist = distributions?.reduce((acc, d) => acc + parseFloat(d.amount_npr), 0) || 0;
+  if (error?.response?.status === 404) {
+    return <LPNoProfileError />;
+  }
+
+  const distList = Array.isArray(distributions?.results) 
+    ? distributions.results 
+    : (Array.isArray(distributions) ? distributions : []);
+  const totalDist = distList.reduce((acc, d) => acc + (parseFloat(d.amount_npr) || 0), 0) || 0;
 
   return (
     <div className="space-y-20 animate-in fade-in duration-1000 pb-32 max-w-7xl mx-auto">
@@ -49,8 +58,13 @@ export default function LPDistributions() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme">
-        <div className="bg-card p-10 group hover:bg-ls-primary transition-all duration-700 overflow-hidden relative">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme"
+      >
+        <div className="bg-card p-10 group hover:bg-ls-primary transition-all duration-700 relative">
           <div className="flex items-center justify-between mb-10">
             <div className="text-ls-compliment opacity-40 group-hover:opacity-100 group-hover:text-ls-white/40 transition-all">
               <PieChart size={24} />
@@ -65,7 +79,7 @@ export default function LPDistributions() {
             <p className="text-base font-serif italic text-text-muted/40 group-hover:text-ls-white/20 transition-all pt-2">Capital Returns Disbursed</p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="bg-card border border-border-theme shadow-2xl theme-transition overflow-hidden">
         <div className="px-12 py-10 border-b border-border-theme flex items-center justify-between bg-border-theme/10">
@@ -85,8 +99,14 @@ export default function LPDistributions() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border-theme">
-              {distributions?.map((dist, i) => (
-                <tr key={dist.id} className="hover:bg-ls-primary group transition-all duration-500 cursor-pointer">
+              {distList.map((dist, i) => (
+                <motion.tr 
+                  key={dist.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * i }}
+                  className="hover:bg-ls-primary group transition-all duration-500 cursor-pointer"
+                >
                   <td className="px-12 py-10">
                     <span className="text-base font-serif italic text-text-muted group-hover:text-ls-white/60 transition-all">
                       {new Date(dist.distribution_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' })}
@@ -108,9 +128,9 @@ export default function LPDistributions() {
                       रू {(parseFloat(dist.amount_npr) / 1e7).toFixed(3)}<span className="text-sm ml-1 opacity-60">Cr</span>
                     </span>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
-              {(!distributions || distributions.length === 0) && (
+              {distList.length === 0 && (
                 <tr>
                   <td colSpan="4" className="px-12 py-32 text-center">
                     <div className="space-y-6 opacity-20">

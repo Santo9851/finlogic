@@ -21,9 +21,11 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/services/api';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import LPNoProfileError from '@/components/portal/LPNoProfileError';
 
 const COLORS = ['#F59F01', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E'];
 
@@ -32,6 +34,7 @@ export default function LPPortfolioPage() {
   const isDark = resolvedTheme === "dark";
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState(null);
 
   useEffect(() => {
     fetchPortfolio();
@@ -39,9 +42,10 @@ export default function LPPortfolioPage() {
 
   const fetchPortfolio = async () => {
     try {
-      const res = await api.get('/lp/portfolio/');
+      const res = await api.get('/deals/lp/portfolio/');
       setData(res.data);
     } catch (err) {
+      setErrorStatus(err.response?.status);
       toast.error('Failed to load portfolio data');
     } finally {
       setLoading(false);
@@ -54,6 +58,10 @@ export default function LPPortfolioPage() {
       <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.4em] animate-pulse">Syncing Portfolio Ledger...</p>
     </div>
   );
+
+  if (errorStatus === 404) {
+    return <LPNoProfileError />;
+  }
 
   const sectorChartData = Object.entries(data?.stats?.sectors || {}).map(([name, value]) => ({
     name, value
@@ -84,40 +92,48 @@ export default function LPPortfolioPage() {
       </div>
 
       {/* Metrics Ledger - High Fidelity Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme overflow-visible"
+      >
         <MetricCard 
           title="Portfolio TVPI" 
-          value={`${data?.stats?.performance?.tvpi}x`} 
+          value={`${(data?.stats?.performance?.tvpi || 0).toFixed(2)}x`} 
           desc="Gross MOIC Value" 
           icon={TrendingUp} 
-          trend="+0.12x" 
+          trend="+0.00x" 
           color="amber"
+          info="Total Value to Paid-In (Net of Carry): (Distributed + Net RV) / Paid-In Capital. Reflects value after estimated GP carry."
         />
         <MetricCard 
           title="Portfolio IRR" 
-          value={`${data?.stats?.performance?.irr}%`} 
+          value={`${(data?.stats?.performance?.irr || 0).toFixed(1)}%`} 
           desc="Net Inception Yield" 
           icon={Target} 
-          trend="+2.1%" 
+          trend="+0.0%" 
           color="blue"
+          info="Internal Rate of Return (Net of Carry & Fees): Annualized rate of earnings net of all fees and estimated GP carried interest."
         />
         <MetricCard 
           title="Realized DPI" 
-          value={`${data?.stats?.performance?.dpi}x`} 
+          value={`${(data?.stats?.performance?.dpi || 0).toFixed(2)}x`} 
           desc="Cash-on-Cash Return" 
           icon={Wallet} 
           trend="Stable" 
           color="emerald"
+          info="Distributed to Paid-In: Total Distributions / Paid-In Capital."
         />
         <MetricCard 
           title="Active Assets" 
-          value={data?.stats?.total_investments} 
+          value={data?.stats?.total_investments || 0} 
           desc="In-Cycle Deployments" 
           icon={Building2} 
-          trend="+2 UNIT" 
+          trend="+0 UNIT" 
           color="purple"
         />
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
         {/* Allocation Chart - Institutional Style */}
@@ -186,7 +202,13 @@ export default function LPPortfolioPage() {
           
           <div className="divide-y divide-border-theme">
             {data?.projects?.map((project, i) => (
-              <div key={project.id} className="p-10 flex items-center justify-between hover:bg-ls-primary group transition-all duration-500 cursor-pointer relative overflow-hidden">
+              <motion.div 
+                key={project.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * i }}
+                className="p-10 flex items-center justify-between hover:bg-ls-primary group transition-all duration-500 cursor-pointer relative overflow-hidden"
+              >
                 <div className="flex items-center gap-10">
                   <div className="w-14 h-14 border border-border-theme flex items-center justify-center text-[10px] font-bold text-text-muted/30 group-hover:text-ls-white group-hover:border-ls-white/20 transition-all">
                     0{i + 1}
@@ -214,7 +236,7 @@ export default function LPPortfolioPage() {
                      <ChevronRight size={18} />
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -223,23 +245,34 @@ export default function LPPortfolioPage() {
   );
 }
 
-function MetricCard({ title, value, desc, icon: Icon, trend, color }) {
+function MetricCard({ title, value, desc, icon: Icon, trend, color, info }) {
   const isUp = trend.includes('+');
 
   return (
-    <div className="bg-card p-10 group hover:bg-ls-primary transition-all duration-700 overflow-hidden relative">
+    <div className="bg-card p-10 group hover:bg-ls-primary transition-all duration-700 relative">
       <div className="flex items-center justify-between mb-10">
         <div className="text-ls-compliment group-hover:text-ls-white/40 transition-all opacity-40 group-hover:opacity-100">
           <Icon size={24} />
         </div>
-        {trend !== 'Stable' && (
-          <div className={`flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.3em] px-4 py-2 border transition-all ${
-            isUp ? 'text-ls-up border-ls-up/20 bg-ls-up/5' : 'text-red-500 border-red-500/20 bg-red-500/5'
-          } group-hover:bg-ls-white group-hover:text-ls-primary group-hover:border-ls-white`}>
-            {isUp ? <ArrowUpRight size={14} strokeWidth={3} /> : <ArrowDownRight size={14} strokeWidth={3} />}
-            {trend}
-          </div>
-        )}
+        <div className="flex items-center gap-4">
+          {info && (
+            <div className="group/tip relative">
+              <Info size={14} className="text-text-muted/20 group-hover:text-ls-compliment transition-colors cursor-help" />
+              <div className="absolute bottom-full right-0 mb-4 w-48 p-4 bg-ls-primary border border-ls-compliment/20 text-[8px] font-bold uppercase tracking-widest text-ls-white leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-[100] shadow-2xl">
+                {info}
+                <div className="absolute top-full right-4 border-8 border-transparent border-t-ls-primary" />
+              </div>
+            </div>
+          )}
+          {trend !== 'Stable' && (
+            <div className={`flex items-center gap-3 text-[9px] font-bold uppercase tracking-[0.3em] px-4 py-2 border transition-all ${
+              isUp ? 'text-ls-up border-ls-up/20 bg-ls-up/5' : 'text-red-500 border-red-500/20 bg-red-500/5'
+            } group-hover:bg-ls-white group-hover:text-ls-primary group-hover:border-ls-white`}>
+              {isUp ? <ArrowUpRight size={14} strokeWidth={3} /> : <ArrowDownRight size={14} strokeWidth={3} />}
+              {trend}
+            </div>
+          )}
+        </div>
       </div>
       <div className="space-y-4">
         <p className="text-[9px] font-bold text-text-muted group-hover:text-ls-white/30 uppercase tracking-[0.5em]">{title}</p>

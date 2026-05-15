@@ -53,6 +53,7 @@ from .models import (
     ConflictOfInterest,
     TermSheet,
     SPADraft,
+    LPSupportRequest,
 )
 
 
@@ -150,7 +151,7 @@ class FundSerializer(serializers.ModelSerializer):
             'id', 'name', 'vintage_year',
             'target_size_npr', 'committed_capital_npr', 'uncalled_capital_npr',
             'status', 'status_display',
-            'preferred_return_pct', 'carry_pct',
+            'preferred_return_pct', 'management_fee_pct', 'carry_pct',
             'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
@@ -670,6 +671,7 @@ class CapitalCallSerializer(serializers.ModelSerializer):
     fund_name = serializers.CharField(source='fund.name', read_only=True)
     project_name = serializers.CharField(source='project.legal_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    call_type_display = serializers.CharField(source='get_call_type_display', read_only=True)
     lp_commitment_name = serializers.CharField(source='lp_commitment.lp_profile.full_name', read_only=True)
     lp_profile_detail = serializers.SerializerMethodField()
 
@@ -678,7 +680,9 @@ class CapitalCallSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'fund', 'fund_name', 'project', 'project_name', 'lp_commitment',
             'lp_commitment_name', 'lp_profile_detail',
-            'call_date', 'due_date', 'amount_npr', 'status', 'status_display',
+            'call_date', 'due_date', 'amount_npr', 
+            'status', 'status_display',
+            'call_type', 'call_type_display',
             'notice_sent_at', 'received_at', 'payment_proof', 'notes',
             'created_at', 'updated_at',
         )
@@ -750,7 +754,7 @@ class LPDashboardFundSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'vintage_year', 'status',
             'target_size_npr', 'committed_capital_npr',
-            'preferred_return_pct', 'carry_pct',
+            'preferred_return_pct', 'management_fee_pct', 'carry_pct',
             'my_commitment', 'approved_deals_count',
             'total_documents_count', 'pending_action_count',
         )
@@ -1119,3 +1123,20 @@ class GPInvestorMeetingRequestSerializer(serializers.ModelSerializer):
         model = GPInvestorMeetingRequest
         fields = '__all__'
         read_only_fields = ('id', 'user', 'status', 'created_at', 'updated_at')
+
+
+# ---------------------------------------------------------------------------
+# 15. LPSupportRequest
+# ---------------------------------------------------------------------------
+
+class LPSupportRequestSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    lp_name = serializers.CharField(source='lp_profile.full_name', read_only=True)
+
+    class Meta:
+        model = LPSupportRequest
+        fields = (
+            'id', 'lp_profile', 'lp_name', 'subject', 'message',
+            'status', 'status_display', 'admin_notes', 'created_at', 'updated_at'
+        )
+        read_only_fields = ('id', 'lp_profile', 'status', 'admin_notes', 'created_at', 'updated_at')

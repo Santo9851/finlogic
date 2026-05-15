@@ -19,6 +19,7 @@ import api from '@/services/api';
 import { toast } from 'sonner';
 import FileUploader from '@/components/portal/FileUploader';
 import { useTheme } from 'next-themes';
+import LPNoProfileError from '@/components/portal/LPNoProfileError';
 
 export default function LPProfilePage() {
   const { user } = useAuth();
@@ -39,12 +40,16 @@ export default function LPProfilePage() {
     try {
       const [authRes, lpRes] = await Promise.all([
         api.get('auth/profile/'),
-        api.get('lp/profile/')
+        api.get('/deals/lp/profile/')
       ]);
       setProfileData({ ...authRes.data, lp_profile: lpRes.data });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
-      toast.error('Could not load profile data');
+      if (error.response?.status === 404) {
+        setProfileData({ error: 404 });
+      } else {
+        toast.error('Could not load profile data');
+      }
     } finally {
       setLoading(false);
     }
@@ -63,7 +68,7 @@ export default function LPProfilePage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.patch('lp/profile/', {
+      await api.patch('/deals/lp/profile/', {
         full_name: profileData.lp_profile?.full_name,
         organization: profileData.lp_profile?.organization,
         country: profileData.lp_profile?.country,
@@ -82,6 +87,10 @@ export default function LPProfilePage() {
       <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.4em] animate-pulse">Syncing Identity Ledger...</p>
     </div>
   );
+
+  if (profileData?.error === 404) {
+    return <LPNoProfileError />;
+  }
 
   const lp = profileData?.lp_profile;
 

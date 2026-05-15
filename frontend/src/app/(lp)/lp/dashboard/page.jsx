@@ -6,12 +6,12 @@
  */
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  PieChart, 
-  Wallet, 
-  ArrowUpRight, 
-  FileText, 
-  TrendingUp, 
+import {
+  PieChart,
+  Wallet,
+  ArrowUpRight,
+  FileText,
+  TrendingUp,
   Loader2,
   Building2,
   History,
@@ -20,11 +20,18 @@ import {
   Calendar,
   ShieldCheck,
   CircleDollarSign,
-  Lock
+  Lock,
+  Info,
+  HelpCircle,
+  Send,
+  X
 } from 'lucide-react';
 import api from '@/services/api';
 import { useTheme } from 'next-themes';
+import { toast } from 'sonner';
 import Link from 'next/link';
+import LPNoProfileError from '@/components/portal/LPNoProfileError';
+import { motion } from 'framer-motion';
 
 export default function LPDashboard() {
   const { resolvedTheme } = useTheme();
@@ -62,33 +69,31 @@ export default function LPDashboard() {
   );
 
   if (error) {
-    const isNoProfile = error.response?.status === 404;
+    if (error.response?.status === 404) {
+      return <LPNoProfileError />;
+    }
     return (
-      <div className="h-[60vh] flex flex-col items-center justify-center gap-12 text-center px-6">
-        <div className="w-20 h-20 border border-red-500/20 flex items-center justify-center text-red-500">
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-12 text-center px-6 animate-in fade-in zoom-in duration-1000">
+        <div className="w-20 h-20 border border-red-500/20 flex items-center justify-center text-red-500 bg-red-500/5">
           <ShieldCheck size={40} />
         </div>
         <div className="space-y-4">
-          <h2 className="text-3xl font-serif font-light text-foreground">
-            {isNoProfile ? 'Investor Profile Not Found' : 'Access Restricted'}
-          </h2>
-          <p className="text-text-muted max-w-md mx-auto text-sm leading-relaxed font-serif italic">
-            {isNoProfile 
-              ? "Your account is not currently registered as a Limited Partner. Please contact the GP team to initialize your investment profile." 
-              : "We encountered an issue syncing your portfolio data. Please verify your connection or contact support."}
+          <h2 className="text-3xl font-serif font-light text-foreground uppercase tracking-tight">Access Restricted</h2>
+          <p className="text-text-muted max-w-md mx-auto text-[11px] font-bold uppercase tracking-[0.3em] font-mono opacity-60">
+            We encountered an issue syncing your portfolio data. Please verify your connection or contact support.
           </p>
         </div>
-        {isNoProfile && (
-          <button className="border border-border-theme text-foreground px-12 py-5 text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-ls-primary hover:text-ls-white transition-all">
-            Contact GP Support
-          </button>
-        )}
       </div>
     );
   }
 
   return (
-    <div className="space-y-20 pb-32 theme-transition animate-in fade-in duration-700 max-w-7xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+      className="space-y-20 pb-32 theme-transition max-w-7xl mx-auto"
+    >
       {/* Header & Fund Selector - Institutional Style */}
       <div className="flex flex-col lg:grid lg:grid-cols-[1fr_auto] lg:items-end justify-between gap-12 border-b border-border-theme pb-12">
         <div className="space-y-6">
@@ -109,11 +114,10 @@ export default function LPDashboard() {
               <button
                 key={fund.id}
                 onClick={() => setSelectedFundId(fund.id)}
-                className={`px-8 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-all ${
-                  (selectedFundId === fund.id || (!selectedFundId && fund === funds[0]))
+                className={`px-8 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-all ${(selectedFundId === fund.id || (!selectedFundId && fund === funds[0]))
                     ? 'bg-ls-primary text-ls-white shadow-xl'
                     : 'text-text-muted hover:text-foreground hover:bg-border-theme/40'
-                }`}
+                  }`}
               >
                 {fund.name}
               </button>
@@ -143,8 +147,8 @@ export default function LPDashboard() {
                       <p className="text-[9px] text-ls-white/40 font-bold uppercase tracking-[0.3em]">{selectedFund.pending_action_count} Document(s) Awaiting Acknowledgement</p>
                     </div>
                   </div>
-                  <Link 
-                    href="/lp/documents" 
+                  <Link
+                    href="/lp/documents"
                     className="bg-ls-compliment text-ls-primary text-[10px] font-bold uppercase tracking-[0.4em] px-10 py-5 hover:bg-ls-white transition-all shadow-xl"
                   >
                     Enter Vault
@@ -153,7 +157,11 @@ export default function LPDashboard() {
               )}
 
               {dashboard?.pending_calls?.length > 0 && (
-                <div className="bg-card p-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-card p-12 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8 border border-ls-compliment/20 shadow-[0_0_40px_rgba(245,159,1,0.05)]"
+                >
                   <div className="flex items-start gap-8">
                     <CircleDollarSign size={28} className="text-ls-compliment flex-shrink-0" />
                     <div className="space-y-2">
@@ -161,14 +169,13 @@ export default function LPDashboard() {
                       <p className="text-[9px] text-text-muted font-bold uppercase tracking-[0.3em]">Active drawdown protocols detected in ledger</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-10">
                     <div className="flex flex-col items-start sm:items-end">
-                      <p className="text-2xl font-serif font-light text-foreground tracking-tighter tabular-nums">रू {parseFloat(dashboard.pending_calls[0].amount_npr).toLocaleString()}</p>
-                      <p className={`text-[9px] font-bold uppercase tracking-[0.3em] mt-1 ${
-                        dashboard.pending_calls[0].status === 'PAID' ? 'text-ls-up' : 'text-ls-compliment'
-                      }`}>
-                        {dashboard.pending_calls[0].status === 'PAID' ? 'Awaiting Verification' : `Due: ${new Date(dashboard.pending_calls[0].due_date).toLocaleDateString()}`}
+                      <p className="text-2xl font-serif font-light text-foreground tracking-tighter tabular-nums">रू {parseFloat(dashboard.pending_calls[0].amount_npr || 0).toLocaleString()}</p>
+                      <p className={`text-[9px] font-bold uppercase tracking-[0.3em] mt-1 ${dashboard.pending_calls[0].status === 'PAID' ? 'text-ls-up' : 'text-ls-compliment'
+                        }`}>
+                        {dashboard.pending_calls[0].call_type_display} | {dashboard.pending_calls[0].status === 'PAID' ? 'Awaiting Verification' : `Due: ${new Date(dashboard.pending_calls[0].due_date).toLocaleDateString()}`}
                       </p>
                     </div>
 
@@ -181,51 +188,125 @@ export default function LPDashboard() {
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
           )}
 
           {/* Metrics Ledger - High Fidelity */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme">
-            <MetricCard 
-              label="Committed Capital" 
-              value={`रू ${(dashboard?.total_committed_npr / 1e6).toFixed(1)}M`} 
-              icon={Wallet} 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme overflow-visible">
+            <MetricCard
+              label="Committed Capital"
+              value={`रू ${((dashboard?.total_committed_npr || 0) / 1e6).toFixed(1)}M`}
+              icon={Wallet}
             />
-            <MetricCard 
-              label="Capital Called" 
-              value={`रू ${(dashboard?.total_called_npr / 1e6).toFixed(1)}M`} 
-              icon={ArrowUpRight} 
+            <MetricCard
+              label="Capital Called"
+              value={`रू ${((dashboard?.total_called_npr || 0) / 1e6).toFixed(1)}M`}
+              icon={ArrowUpRight}
             />
-            <MetricCard 
-              label="Institutional Returns" 
-              value={`रू ${(dashboard?.total_distributed_npr / 1e6).toFixed(1)}M`} 
-              icon={PieChart} 
+            <MetricCard
+              label="Institutional Returns"
+              value={`रू ${((dashboard?.total_distributed_npr || 0) / 1e6).toFixed(1)}M`}
+              icon={PieChart}
             />
-            <MetricCard 
-              label="Net Asset Value" 
-              value={`रू ${(dashboard?.nav_npr / 1e6).toFixed(1)}M`} 
-              icon={TrendingUp} 
+            <MetricCard
+              label="Net Asset Value"
+              value={`रू ${((dashboard?.nav_npr || 0) / 1e6).toFixed(1)}M`}
+              icon={TrendingUp}
+              info="Net Asset Value: Current Fair Market Value of your stake, net of estimated GP carry and fees."
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border-theme border-x border-b border-border-theme overflow-visible">
+            <div className="bg-card p-6 flex items-center justify-between group hover:bg-ls-primary transition-all duration-700">
+              <div className="space-y-1">
+                <p className="text-[8px] font-bold text-text-muted group-hover:text-ls-white/40 uppercase tracking-[0.4em]">Est. Carried Interest</p>
+                <p className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight relative z-10">
+                  रू {((dashboard?.estimated_carry_npr || 0) / 1e6).toFixed(2)}M
+                </p>
+              </div>
+              <div className="text-text-muted/20 group-hover:text-ls-compliment transition-colors relative z-10">
+                <Info size={14} />
+              </div>
+            </div>
+            <div className="bg-card p-6 flex items-center justify-between group hover:bg-ls-primary transition-all duration-700">
+              <div className="space-y-1">
+                <p className="text-[8px] font-bold text-text-muted group-hover:text-ls-white/40 uppercase tracking-[0.4em]">Life-to-Date Mgmt Fees</p>
+                <p className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight relative z-10">
+                  रू {((dashboard?.total_mgmt_fees_npr || 0) / 1e6).toFixed(2)}M
+                </p>
+              </div>
+              <div className="text-text-muted/20 group-hover:text-ls-compliment transition-colors relative z-10">
+                <Info size={14} />
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-24">
             <div className="lg:col-span-2 space-y-24">
               {/* Performance Multipliers - Architectural */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border-theme border border-border-theme">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border-theme border border-border-theme overflow-visible">
                 {[
-                  { label: 'TVPI', value: dashboard?.total_called_npr > 0 ? (dashboard?.nav_npr / dashboard?.total_called_npr).toFixed(2) + 'x' : '0.00x', sub: 'Gross MOIC' },
-                  { label: 'DPI', value: dashboard?.total_called_npr > 0 ? (dashboard?.total_distributed_npr / dashboard?.total_called_npr).toFixed(2) + 'x' : '0.00x', sub: 'Cash Realized' },
-                  { label: 'RVPI', value: dashboard?.total_called_npr > 0 ? ((dashboard?.nav_npr - dashboard?.total_distributed_npr) / dashboard?.total_called_npr).toFixed(2) + 'x' : '0.00x', sub: 'Residual Capital' },
-                  { label: 'Net IRR', value: '18.4%', sub: 'Inception Yield' },
+                  {
+                    label: 'TVPI',
+                    value: (dashboard?.performance?.tvpi || 0).toFixed(2) + 'x',
+                    sub: 'Gross MOIC',
+                    info: 'Total Value to Paid-In (Net of Carry): (Distributed + Net RV) / Paid-In Capital. Measures total value created after GP participation.'
+                  },
+                  {
+                    label: 'DPI',
+                    value: (dashboard?.performance?.dpi || 0).toFixed(2) + 'x',
+                    sub: 'Cash Realized',
+                    info: 'Distributed to Paid-In: Total Distributions / Paid-In Capital. Measures cash returned to investor.'
+                  },
+                  {
+                    label: 'RVPI',
+                    value: (dashboard?.performance?.rvpi || 0).toFixed(2) + 'x',
+                    sub: 'Residual Cap',
+                    info: 'Residual Value to Paid-In (Net of Carry): Net Asset Value / Paid-In Capital. Measures unrealized value after estimated GP carry.'
+                  },
+                  {
+                    label: 'Net IRR',
+                    value: (dashboard?.performance?.irr || 0).toFixed(1) + '%',
+                    sub: 'Inception Yield',
+                    info: 'Internal Rate of Return (Net of Carry & Fees): Annualized rate of earnings on an investment, net of all management fees and estimated carried interest.'
+                  },
                 ].map((m, idx) => (
-                  <div key={idx} className="bg-card p-8 group hover:bg-ls-primary transition-all duration-500 overflow-hidden relative">
-                    <p className="text-[9px] text-text-muted group-hover:text-ls-white/40 uppercase font-bold tracking-[0.4em] mb-4 relative z-10">{m.label}</p>
-                    <p className="text-3xl font-serif font-light text-foreground group-hover:text-ls-compliment transition-colors tracking-tight relative z-10">{m.value}</p>
+                  <motion.div
+                    key={idx}
+                    whileHover={{ backgroundColor: "var(--ls-primary)" }}
+                    transition={{ duration: 0.5 }}
+                    className="bg-card p-8 group transition-all duration-700 relative"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <p className="text-[9px] text-text-muted group-hover:text-ls-white/40 uppercase font-bold tracking-[0.4em] relative z-10">{m.label}</p>
+                      <div className="group/tip relative">
+                        <Info size={12} className="text-text-muted/20 group-hover:text-ls-compliment transition-colors cursor-help" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-48 p-4 bg-ls-primary border border-ls-compliment/20 text-[8px] font-bold uppercase tracking-widest text-ls-white leading-relaxed opacity-0 group-hover/tip:opacity-100 transition-all pointer-events-none z-[100] shadow-2xl">
+                          {m.info}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-ls-primary" />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-3xl font-serif font-light text-foreground group-hover:text-ls-compliment transition-colors tracking-tight relative z-10">
+                      {m.value}
+                    </p>
                     <p className="text-[9px] text-text-muted group-hover:text-ls-white/20 font-bold uppercase tracking-[0.3em] mt-3 relative z-10 font-serif italic">{m.sub}</p>
-                  </div>
+                  </motion.div>
                 ))}
+              </div>
+
+              {/* Fee & Carry Transparency Note */}
+              <div className="p-8 bg-border-theme/5 border border-border-theme/50 flex items-center justify-between">
+                <div className="flex items-center gap-6">
+                  <div className="w-1.5 h-1.5 rounded-full bg-ls-compliment animate-pulse" />
+                  <p className="text-[9px] font-bold text-text-muted uppercase tracking-[0.3em]">Institutional Transparency Protocol</p>
+                </div>
+                <div className="flex gap-12 text-[9px] font-mono font-bold uppercase tracking-widest text-text-muted/60">
+                  <span>Mgmt Fees: रू {((dashboard?.performance?.total_mgmt_fees || 0) / 1e6).toFixed(2)}M</span>
+                  <span>Est. Carry: रू {((dashboard?.performance?.estimated_carry || 0) / 1e6).toFixed(2)}M</span>
+                </div>
               </div>
 
               {/* Portfolio Registry - Formal Document */}
@@ -242,7 +323,7 @@ export default function LPDashboard() {
                   </div>
                   <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-text-muted/40 border border-border-theme px-6 py-2">{fundDetail?.approved_deals?.length || 0} Discrete Assets</span>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
@@ -298,7 +379,7 @@ export default function LPDashboard() {
                 <h3 className="text-[10px] font-bold text-ls-white/40 flex items-center gap-4 uppercase tracking-[0.5em] border-b border-ls-white/10 pb-8 relative z-10">
                   <FileText size={16} className="text-ls-compliment" /> Vault Snapshot
                 </h3>
-                
+
                 <div className="space-y-10 relative z-10">
                   {(dashboard?.recent_documents || []).map((doc, idx) => (
                     <div key={idx} className="flex items-start gap-6 group/doc cursor-pointer">
@@ -317,8 +398,8 @@ export default function LPDashboard() {
                     </div>
                   ))}
                 </div>
-                
-                <Link 
+
+                <Link
                   href="/lp/documents"
                   className="block w-full py-6 bg-ls-compliment text-ls-primary text-center text-[10px] font-bold uppercase tracking-[0.5em] transition-all hover:bg-ls-white shadow-xl"
                 >
@@ -331,12 +412,12 @@ export default function LPDashboard() {
                 <h3 className="text-[10px] font-bold text-text-muted flex items-center gap-4 uppercase tracking-[0.5em] px-4">
                   <History size={16} className="text-ls-compliment" /> Fund Activity Ledger
                 </h3>
-                
+
                 <div className="relative pl-10 space-y-12 border-l border-border-theme ml-4">
                   {(dashboard?.activity_feed || []).map((act, idx) => (
                     <div key={idx} className="relative group/activity cursor-pointer">
-                      <div 
-                        className={`absolute -left-[45px] top-1.5 w-2 h-2 rounded-full border border-background transition-transform group-hover/activity:scale-150 ${act.type === 'CAPITAL_CALL' ? 'bg-ls-compliment shadow-[0_0_12px_rgba(245,159,1,0.3)]' : 'bg-ls-up shadow-[0_0_12px_rgba(16,185,129,0.3)]'}`} 
+                      <div
+                        className={`absolute -left-[45px] top-1.5 w-2 h-2 rounded-full border border-background transition-transform group-hover/activity:scale-150 ${act.type === 'CAPITAL_CALL' ? 'bg-ls-compliment shadow-[0_0_12px_rgba(245,159,1,0.3)]' : 'bg-ls-up shadow-[0_0_12px_rgba(16,185,129,0.3)]'}`}
                       />
                       <p className="text-lg font-serif font-light text-foreground tracking-tight leading-tight group-hover/activity:text-ls-compliment transition-colors">{act.title}</p>
                       <div className="flex justify-between items-center mt-3 font-mono">
@@ -355,13 +436,13 @@ export default function LPDashboard() {
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }
 
 function MetricCard({ label, value, icon: Icon }) {
   return (
-    <div className="p-10 bg-card flex flex-col justify-between space-y-10 group hover:bg-ls-primary transition-all duration-500 overflow-hidden relative">
+    <div className="p-10 bg-card flex flex-col justify-between space-y-10 group hover:bg-ls-primary transition-all duration-500 relative">
       <div className="text-ls-compliment opacity-60 group-hover:opacity-100 transition-all flex items-center justify-between">
         <Icon size={24} />
         <span className="text-[8px] font-mono opacity-20 group-hover:opacity-40 tracking-widest uppercase">Institutional Metric</span>
@@ -401,7 +482,7 @@ function LPPaymentNotification({ call }) {
 
   return (
     <>
-      <button 
+      <button
         onClick={() => setOpen(true)}
         className="bg-ls-compliment text-ls-primary text-[10px] font-bold uppercase tracking-[0.5em] px-10 py-5 hover:bg-ls-white transition-all shadow-xl"
       >
@@ -418,8 +499,8 @@ function LPPaymentNotification({ call }) {
             <form onSubmit={handleSubmit} className="space-y-12">
               <div className="space-y-6">
                 <label className="block text-[9px] font-bold text-text-muted uppercase tracking-[0.4em]">Asset Documentation (PDF/JPG)</label>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   onChange={(e) => setFile(e.target.files[0])}
                   required
                   className="w-full bg-border-theme/5 border border-border-theme p-6 text-xs focus:ring-1 focus:ring-ls-compliment/20 outline-none"
@@ -427,14 +508,14 @@ function LPPaymentNotification({ call }) {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-6 pt-6">
-                <button 
+                <button
                   type="button"
                   onClick={() => setOpen(false)}
                   className="flex-1 px-10 py-5 border border-border-theme text-[10px] font-bold uppercase tracking-[0.4em] text-text-muted hover:bg-border-theme/10 transition-all"
                 >
                   Cancel Protocol
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={notifyMutation.isLoading}
                   className="flex-1 px-10 py-5 bg-ls-compliment text-ls-primary text-[10px] font-bold uppercase tracking-[0.5em] shadow-xl hover:bg-ls-white transition-all active:scale-95 disabled:opacity-50"

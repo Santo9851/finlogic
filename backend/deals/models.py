@@ -65,6 +65,7 @@ class Fund(models.Model):
         max_length=20, choices=Status.choices, default=Status.RAISING
     )
     preferred_return_pct = models.FloatField(default=8.0)
+    management_fee_pct = models.FloatField(default=2.0)
     carry_pct = models.FloatField(default=20.0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -575,6 +576,12 @@ class CapitalCall(models.Model):
         RECEIVED = 'RECEIVED', 'Received'
         DEFAULTED = 'DEFAULTED', 'Defaulted'
 
+    class CallType(models.TextChoices):
+        INVESTMENT = 'INVESTMENT', 'Capital Investment'
+        MANAGEMENT_FEE = 'MANAGEMENT_FEE', 'Management Fee'
+        FUND_EXPENSE = 'FUND_EXPENSE', 'Fund Expense'
+        OTHER = 'OTHER', 'Other'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     fund = models.ForeignKey(
         Fund, on_delete=models.PROTECT, related_name='capital_calls'
@@ -596,6 +603,9 @@ class CapitalCall(models.Model):
     amount_npr = models.DecimalField(max_digits=15, decimal_places=2)
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    call_type = models.CharField(
+        max_length=20, choices=CallType.choices, default=CallType.INVESTMENT
     )
     notice_sent_at = models.DateTimeField(null=True, blank=True)
     received_at = models.DateTimeField(null=True, blank=True)
@@ -1868,3 +1878,36 @@ class SPADraft(models.Model):
 
     def __str__(self):
         return f"SPA Draft v{self.version} for {self.project.legal_name}"
+# ---------------------------------------------------------------------------
+# 15. LPSupportRequest
+# ---------------------------------------------------------------------------
+
+class LPSupportRequest(models.Model):
+    """Support tickets submitted by Limited Partners."""
+    
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        IN_PROGRESS = 'IN_PROGRESS', 'In Progress'
+        RESOLVED = 'RESOLVED', 'Resolved'
+        CLOSED = 'CLOSED', 'Closed'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    lp_profile = models.ForeignKey(
+        LPProfile, on_delete=models.CASCADE, related_name='support_requests'
+    )
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    admin_notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_lp_support_requests'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Support: {self.subject} ({self.lp_profile.full_name})"

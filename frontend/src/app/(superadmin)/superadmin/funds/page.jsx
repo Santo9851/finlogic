@@ -21,11 +21,13 @@ import {
   Trash2,
   AlertCircle,
   Building2,
-  ChevronRight
+  ChevronRight,
+  CircleDollarSign
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import CapitalCallWizard from '@/components/admin/CapitalCallWizard';
 
 const STATUS_OPTIONS = [
   { value: 'RAISING', label: 'Raising' },
@@ -42,6 +44,7 @@ export default function SuperAdminFundsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedFund, setSelectedFund] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showCallWizard, setShowCallWizard] = useState(false);
 
   // 1. Fetch Funds
   const { data: funds = [], isLoading } = useQuery({
@@ -114,6 +117,7 @@ export default function SuperAdminFundsPage() {
     data.vintage_year = parseInt(data.vintage_year);
     data.target_size_npr = parseFloat(data.target_size_npr);
     data.preferred_return_pct = parseFloat(data.preferred_return_pct);
+    data.management_fee_pct = parseFloat(data.management_fee_pct);
     data.carry_pct = parseFloat(data.carry_pct);
 
     if (selectedFund) {
@@ -237,6 +241,13 @@ export default function SuperAdminFundsPage() {
                   <td className="px-10 py-7 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <button 
+                        onClick={() => { setSelectedFund(fund); setShowCallWizard(true); }}
+                        className="p-3 text-text-muted/20 hover:text-ls-compliment hover:bg-ls-compliment/5 rounded-xl border border-transparent hover:border-ls-compliment/20 transition-all active:scale-95 shadow-sm"
+                        title="Issue Capital Call"
+                      >
+                        <CircleDollarSign size={18} />
+                      </button>
+                      <button 
                         onClick={() => openModal(fund)}
                         className="p-3 text-text-muted/20 hover:text-purple-500 hover:bg-purple-500/5 rounded-xl border border-transparent hover:border-purple-500/20 transition-all active:scale-95 shadow-sm"
                       >
@@ -344,6 +355,17 @@ export default function SuperAdminFundsPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <label className="text-[10px] text-text-muted font-black uppercase tracking-[0.3em] ml-1">Mgmt Fee (%)</label>
+                  <input 
+                    name="management_fee_pct"
+                    type="number"
+                    step="0.1"
+                    defaultValue={selectedFund?.management_fee_pct || 2.0}
+                    required
+                    className="w-full bg-foreground/[0.03] border border-border-theme rounded-2xl px-6 py-4 text-foreground text-sm focus:border-purple-500 outline-none shadow-inner transition-all font-medium"
+                  />
+                </div>
+                <div className="space-y-2">
                   <label className="text-[10px] text-text-muted font-black uppercase tracking-[0.3em] ml-1">Carry / Performance (%)</label>
                   <input 
                     name="carry_pct"
@@ -392,6 +414,14 @@ export default function SuperAdminFundsPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {showCallWizard && selectedFund && (
+        <CapitalCallWizard 
+          fund={selectedFund}
+          onClose={() => { setShowCallWizard(false); setSelectedFund(null); }}
+          onRefresh={() => queryClient.invalidateQueries(['superadmin', 'funds'])}
+        />
       )}
     </div>
   );

@@ -64,7 +64,7 @@ class FundAdmin(admin.ModelAdmin):
     list_display = (
         'name', 'legal_name', 'vintage_year', 'status',
         'target_size_npr', 'committed_capital_npr',
-        'preferred_return_pct', 'carry_pct',
+        'preferred_return_pct', 'management_fee_pct', 'carry_pct',
     )
     list_filter = ('status', 'vintage_year')
     search_fields = ('name', 'legal_name')
@@ -76,7 +76,7 @@ class FundAdmin(admin.ModelAdmin):
         ('Capital', {
             'fields': (
                 'target_size_npr', 'committed_capital_npr',
-                'preferred_return_pct', 'carry_pct',
+                'preferred_return_pct', 'management_fee_pct', 'carry_pct',
             ),
         }),
         ('Timestamps', {
@@ -231,9 +231,9 @@ class PEInvestmentAdmin(admin.ModelAdmin):
 @admin.register(CapitalCall)
 class CapitalCallAdmin(admin.ModelAdmin):
     list_display = (
-        'fund', 'call_date', 'due_date', 'amount_npr', 'status',
+        'fund', 'call_date', 'due_date', 'amount_npr', 'call_type', 'status',
     )
-    list_filter = ('status', 'fund')
+    list_filter = ('status', 'call_type', 'fund')
     search_fields = ('fund__name',)
     raw_id_fields = ('fund', 'lp_commitment')
     readonly_fields = ('id', 'created_at', 'updated_at')
@@ -448,7 +448,7 @@ class ValuationRecordAdmin(admin.ModelAdmin):
 
 @admin.register(ExitScenario)
 class ExitScenarioAdmin(admin.ModelAdmin):
-    list_display = ('investment', 'name', 'exit_type', 'target_year')
+    list_display = ('investment', 'scenario_name', 'exit_type', 'target_exit_date')
     list_filter = ('exit_type',)
 
 

@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Download, 
-  CheckCircle2, 
-  Clock, 
-  Search, 
-  Filter, 
+import {
+  FileText,
+  Download,
+  CheckCircle2,
+  Clock,
+  Search,
+  Filter,
   ExternalLink,
   ShieldCheck,
   AlertCircle,
+  Loader2,
   FileCheck,
   Building2,
   Calendar,
@@ -19,6 +20,7 @@ import {
 import api from '@/services/api';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import LPNoProfileError from '@/components/portal/LPNoProfileError';
 
 export default function LPDocumentsPage() {
   const { resolvedTheme } = useTheme();
@@ -26,6 +28,7 @@ export default function LPDocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('ALL');
+  const [errorStatus, setErrorStatus] = useState(null);
 
   useEffect(() => {
     fetchDocuments();
@@ -34,10 +37,14 @@ export default function LPDocumentsPage() {
   const fetchDocuments = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/lp/documents/');
+      const res = await api.get('/deals/lp/documents/');
       setDocuments(res.data.results || res.data || []);
     } catch (err) {
-      toast.error('Failed to load your documents');
+      if (err.response?.status === 404) {
+        setErrorStatus(404);
+      } else {
+        toast.error('Failed to load your documents');
+      }
     } finally {
       setLoading(false);
     }
@@ -45,9 +52,9 @@ export default function LPDocumentsPage() {
 
   const handleDownload = async (docId, fileName, docType) => {
     try {
-      const endpoint = docType === 'CAPITAL_ACCOUNT' 
-        ? `/lp/me/statements/${docId}/download/` 
-        : `/lp/documents/${docId}/download/`;
+      const endpoint = docType === 'CAPITAL_ACCOUNT'
+        ? `/deals/lp/me/statements/${docId}/download/`
+        : `/deals/lp/documents/${docId}/download/`;
       const res = await api.get(endpoint);
       const link = document.createElement('a');
       link.href = res.data.url;
@@ -63,7 +70,7 @@ export default function LPDocumentsPage() {
 
   const handleAcknowledge = async (docId) => {
     try {
-      await api.post(`/lp/documents/${docId}/acknowledge/`);
+      await api.post(`/deals/lp/documents/${docId}/acknowledge/`);
       toast.success('Document acknowledged successfully');
       fetchDocuments();
     } catch (err) {
@@ -71,8 +78,8 @@ export default function LPDocumentsPage() {
     }
   };
 
-  const filteredDocs = filterType === 'ALL' 
-    ? documents 
+  const filteredDocs = filterType === 'ALL'
+    ? documents
     : documents.filter(d => d.document_type === filterType);
 
   const isNew = (dateStr) => {
@@ -81,6 +88,17 @@ export default function LPDocumentsPage() {
     const diffDays = Math.ceil((now - uploaded) / (1000 * 60 * 60 * 24));
     return diffDays <= 7;
   };
+
+  if (loading) return (
+    <div className="h-[60vh] flex flex-col items-center justify-center gap-12 theme-transition">
+      <Loader2 className="w-12 h-12 text-ls-compliment animate-spin opacity-40" />
+      <p className="text-text-muted text-[10px] font-bold uppercase tracking-[0.4em] animate-pulse">Syncing Archival Vault...</p>
+    </div>
+  );
+
+  if (errorStatus === 404) {
+    return <LPNoProfileError />;
+  }
 
   return (
     <div className="space-y-20 animate-in fade-in duration-1000 pb-32 max-w-7xl mx-auto">
@@ -97,17 +115,16 @@ export default function LPDocumentsPage() {
             A secure gateway to official fund intelligence, legal frameworks, and capital commitment notices.
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3 bg-border-theme/20 p-px border border-border-theme shadow-sm">
           {['ALL', 'LPA', 'CAPITAL_CALL', 'QUARTERLY_REPORT', 'CAPITAL_ACCOUNT'].map(type => (
             <button
               key={type}
               onClick={() => setFilterType(type)}
-              className={`px-6 py-3 text-[9px] font-bold uppercase tracking-[0.3em] transition-all ${
-                filterType === type 
-                ? 'bg-ls-primary text-ls-white shadow-xl' 
-                : 'text-text-muted/60 hover:text-foreground'
-              }`}
+              className={`px-6 py-3 text-[9px] font-bold uppercase tracking-[0.3em] transition-all ${filterType === type
+                  ? 'bg-ls-primary text-ls-white shadow-xl'
+                  : 'text-text-muted/60 hover:text-foreground'
+                }`}
             >
               {type === 'ALL' ? 'ARCHIVE' : type === 'CAPITAL_ACCOUNT' ? 'STATEMENTS' : type.replace('_', ' ')}
             </button>
@@ -128,18 +145,18 @@ export default function LPDocumentsPage() {
                 Institutional access is logged per audit protocols. Pre-signed retrieval links expire in 60 minutes.
               </p>
             </div>
-            
+
             <div className="mt-12 pt-12 border-t border-border-theme space-y-4">
               <p className="text-[9px] text-text-muted/30 font-bold uppercase tracking-[0.4em] mb-4">Registry Timeline</p>
               {documents.slice(0, 3).map((doc, i) => (
                 <div key={doc.id} className="flex items-start gap-4 text-[10px] py-2 group/item cursor-pointer">
-                  <span className="text-ls-compliment/40 group-hover/item:text-ls-compliment font-mono">0{i+1}</span>
+                  <span className="text-ls-compliment/40 group-hover/item:text-ls-compliment font-mono">0{i + 1}</span>
                   <span className="text-text-muted/60 group-hover/item:text-foreground truncate font-serif italic transition-colors">{doc.title}</span>
                 </div>
               ))}
             </div>
           </div>
-          
+
           <div className="bg-ls-primary text-ls-white p-10 shadow-2xl relative overflow-hidden group">
             <div className="absolute bottom-0 right-0 w-32 h-32 bg-ls-compliment/10 blur-[60px] rounded-full -mr-16 -mb-16 pointer-events-none" />
             <p className="text-[9px] font-bold text-ls-compliment uppercase tracking-[0.5em] mb-6">Institutional Support</p>
@@ -202,7 +219,7 @@ export default function LPDocumentsPage() {
 
                   <div className="flex items-center gap-6">
                     {doc.requires_acknowledgment && !doc.has_acknowledged && (
-                      <button 
+                      <button
                         onClick={() => handleAcknowledge(doc.id)}
                         className="bg-ls-compliment text-ls-primary text-[9px] font-bold uppercase tracking-[0.4em] px-8 py-4 hover:bg-ls-white transition-all shadow-xl shadow-ls-compliment/10"
                       >
@@ -215,7 +232,7 @@ export default function LPDocumentsPage() {
                         Verified
                       </div>
                     )}
-                    <button 
+                    <button
                       onClick={() => handleDownload(doc.id, doc.file_name, doc.document_type)}
                       className="p-5 border border-border-theme text-text-muted/40 hover:text-ls-compliment hover:border-ls-compliment/40 transition-all active:scale-90 group/btn"
                       title="Archival Retrieval"
@@ -224,7 +241,7 @@ export default function LPDocumentsPage() {
                     </button>
                   </div>
                 </div>
-                
+
                 {doc.document_type === 'CAPITAL_CALL' && (
                   <div className="mt-10 pt-10 border-t border-border-theme flex items-center justify-between">
                     <div className="flex items-center gap-12">

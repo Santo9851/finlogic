@@ -148,6 +148,7 @@ export default function CapitalCallsPage() {
               <tr className="border-b border-border-theme bg-foreground/[0.01]">
                 <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40">LP Entity</th>
                 <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40">Vehicle / Deployment</th>
+                <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40">Call Type</th>
                 <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40">Notional (NPR)</th>
                 <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40">Maturity Date</th>
                 <th className="px-10 py-6 text-[10px] font-black uppercase tracking-[0.3em] text-text-muted/40">Ledger Status</th>
@@ -191,6 +192,11 @@ export default function CapitalCallsPage() {
                           </p>
                         )}
                       </div>
+                    </td>
+                    <td className="px-10 py-7">
+                      <span className="px-3 py-1 bg-foreground/5 border border-border-theme rounded text-[9px] font-black uppercase tracking-widest text-text-muted/60">
+                        {call.call_type_display}
+                      </span>
                     </td>
                     <td className="px-10 py-7">
                       <p className="text-sm font-black text-foreground tracking-tighter">रू {parseFloat(call.amount_npr).toLocaleString()}</p>

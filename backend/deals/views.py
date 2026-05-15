@@ -68,6 +68,7 @@ from .models import (
     QoEReport,
     TermSheet,
     SPADraft,
+    LPSupportRequest,
 )
 
 
@@ -129,6 +130,7 @@ from .serializers import (
     TermSheetSerializer,
     SPADraftSerializer,
     CapitalCallSerializer,
+    LPSupportRequestSerializer,
 )
 
 from .valuation import calculate_dcf, calculate_lbo
@@ -147,6 +149,159 @@ from .tasks import (
     scan_legal_document,
     run_full_analysis
 )
+
+
+# ---------------------------------------------------------------------------
+# LP Performance Helpers
+# ---------------------------------------------------------------------------
+
+def _calculate_xirr(cashflows, guess=0.1):
+    """Simple bisection method for XIRR calculation."""
+    if not cashflows or len(cashflows) < 2:
+        return 0.0
+    
+    # Need at least one positive and one negative flow
+    has_pos = any(c[1] > 0 for c in cashflows)
+    has_neg = any(c[1] < 0 for c in cashflows)
+    if not (has_pos and has_neg):
+        return 0.0
+
+    def npv(rate, cf):
+        total = 0
+        d0 = min(c[0] for c in cf)
+        for d, a in cf:
+            years = (d - d0).days / 365.25
+            total += a / ((1 + rate) ** years)
+        return total
+
+    # Bisection
+    low = -0.99
+    high = 2.0
+    for _ in range(50):
+        mid = (low + high) / 2
+        v = npv(mid, cashflows)
+        if v > 0:
+            low = mid
+        else:
+            high = mid
+        if abs(v) < 0.001:
+            break
+    return mid
+
+def _calculate_lp_performance_metrics(lp_profile):
+    """
+    Computes TVPI, DPI, RVPI, and Net IRR for an LP.
+    Safety: returns 0.0 for all if no data is found.
+    """
+    from datetime import date
+    from django.db.models import Sum
+    
+    commitments = lp_profile.fund_commitments.all()
+    if not commitments:
+        return {'tvpi': 0.0, 'dpi': 0.0, 'rvpi': 0.0, 'irr': 0.0}
+
+    # 1. Paid-In Capital
+    paid_in = CapitalCall.objects.filter(
+        lp_commitment__in=commitments,
+        status='RECEIVED'
+    ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0
+    paid_in = float(paid_in)
+
+    # 2. Total Distributed
+    total_dist = Distribution.objects.filter(
+        lp_commitment__in=commitments
+    ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0
+    total_dist = float(total_dist)
+
+    net_total_rv = 0
+    total_gross_rv = 0
+    total_estimated_carry = 0
+    total_mgmt_fees = 0
+
+    for comm in commitments:
+        fund = comm.fund
+        fund_total_committed = LPFundCommitment.objects.filter(fund=fund).aggregate(Sum('committed_amount_npr'))['committed_amount_npr__sum'] or 1
+        lp_share = float(comm.committed_amount_npr) / float(fund_total_committed)
+        
+        # FMV for this fund commitment
+        fund_fmv = 0
+        investments = PEInvestment.objects.filter(fund=fund, exit_date__isnull=True)
+        for inv in investments:
+            latest_val = ValuationRecord.objects.filter(investment=inv).order_by('-valuation_date').first()
+            fund_fmv += float(latest_val.fair_value_npr if latest_val else inv.investment_amount_npr)
+        
+        lp_fund_rv_gross = fund_fmv * lp_share
+        total_gross_rv += lp_fund_rv_gross
+        
+        # Fund-specific Paid-in & Dist
+        lp_fund_paid_in = float(CapitalCall.objects.filter(lp_commitment=comm, status='RECEIVED').aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
+        lp_fund_dist = float(Distribution.objects.filter(lp_commitment=comm).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
+        
+        # Mgmt Fees for this fund
+        lp_fund_mgmt_fees = float(CapitalCall.objects.filter(lp_commitment=comm, status='RECEIVED', call_type='MANAGEMENT_FEE').aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
+        total_mgmt_fees += lp_fund_mgmt_fees
+
+        # Carry Logic
+        lp_fund_profit = lp_fund_dist + lp_fund_rv_gross - lp_fund_paid_in
+        if lp_fund_profit > 0:
+            carry_deduction = lp_fund_profit * (fund.carry_pct / 100.0)
+            lp_fund_rv_net = lp_fund_rv_gross - carry_deduction
+            total_estimated_carry += carry_deduction
+        else:
+            lp_fund_rv_net = lp_fund_rv_gross
+            
+        net_total_rv += lp_fund_rv_net
+
+    # 5. Multipliers (Net)
+    if paid_in > 0:
+        dpi = total_dist / paid_in
+        rvpi = net_total_rv / paid_in
+        tvpi = dpi + rvpi
+    else:
+        dpi = rvpi = tvpi = 0.0
+
+    results = {
+        'tvpi': tvpi,
+        'dpi': dpi,
+        'rvpi': rvpi,
+        'net_total_rv': net_total_rv,
+        'total_mgmt_fees': total_mgmt_fees,
+        'total_estimated_carry': total_estimated_carry
+    }
+
+    # 6. XIRR Cash Flows (Net)
+    cf = []
+    calls = CapitalCall.objects.filter(lp_commitment__in=commitments, status='RECEIVED')
+    for c in calls:
+        cf.append((c.received_at.date() if c.received_at else c.call_date, -float(c.amount_npr)))
+    
+    dists = Distribution.objects.filter(lp_commitment__in=commitments)
+    for d in dists:
+        cf.append((d.distribution_date, float(d.amount_npr)))
+    
+    if net_total_rv > 0:
+        cf.append((date.today(), net_total_rv))
+        
+    irr = _calculate_xirr(cf)
+
+    return {
+        'tvpi': round(tvpi, 2),
+        'dpi': round(dpi, 2),
+        'rvpi': round(rvpi, 2),
+        'irr': round(irr * 100, 1),
+        'total_rv': round(net_total_rv, 2),
+        'gross_rv': round(total_gross_rv, 2),
+        'estimated_carry': round(total_estimated_carry, 2),
+        'total_mgmt_fees': round(total_mgmt_fees, 2)
+    }
+
+def _get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
 
 
 
@@ -364,7 +519,13 @@ class LPDocumentListView(generics.ListAPIView):
     serializer_class = FundDocumentSerializer
 
     def get_queryset(self):
-        lp_profile = self.request.user.lp_profile
+        try:
+            lp_profile = self.request.user.lp_profile
+        except AttributeError:
+            return FundDocument.objects.none()
+        except LPProfile.DoesNotExist:
+            return FundDocument.objects.none()
+            
         fund_ids = lp_profile.fund_commitments.values_list('fund_id', flat=True)
         return FundDocument.objects.filter(
             fund_id__in=fund_ids,
@@ -428,7 +589,11 @@ class LPPortfolioView(APIView):
     permission_classes = [permissions.IsAuthenticated, IsLPRole]
 
     def get(self, request):
-        lp_profile = request.user.lp_profile
+        try:
+            lp_profile = request.user.lp_profile
+        except LPProfile.DoesNotExist:
+             return Response({'detail': 'LP profile not found.'}, status=404)
+
         fund_ids = lp_profile.fund_commitments.values_list('fund_id', flat=True)
         
         projects = PEProject.objects.filter(
@@ -438,16 +603,13 @@ class LPPortfolioView(APIView):
 
         serializer = LPPortfolioSerializer(projects, many=True)
         
-        # Aggregate stats (sample metrics)
-        # In real scenario, calculate based on PEInvestment records
+        # Real metrics calculation
+        performance = _calculate_lp_performance_metrics(lp_profile)
+        
         stats = {
             'total_investments': projects.count(),
             'sectors': {}, # Aggregate by sector for chart
-            'performance': {
-                'tvpi': 1.42,
-                'dpi': 0.15,
-                'irr': 24.5
-            }
+            'performance': performance
         }
         
         for p in projects:
@@ -1353,14 +1515,8 @@ class LPDashboardView(APIView):
             })
         activity.sort(key=lambda x: x['date'], reverse=True)
 
-        # Calculate NAV (Net Asset Value)
-        # Base logic: (Capital Invested - Distributed) * Valuation Multiple
-        # We use max(paid_in, total_called) so that 'in-transit' capital doesn't create negative NAV
-        invested_base = max(float(paid_in_capital), float(total_called))
-        nav = (invested_base - float(total_distributed)) * 1.25
-        
-        # Ensure NAV is never negative
-        nav = max(0, nav)
+        # Calculate real metrics using helper
+        performance = _calculate_lp_performance_metrics(lp_profile)
 
         return Response({
             'lp_profile': LPProfileSerializer(lp_profile).data,
@@ -1373,7 +1529,10 @@ class LPDashboardView(APIView):
             'total_called_npr': float(total_called),
             'total_paid_in_npr': float(paid_in_capital),
             'total_distributed_npr': float(total_distributed),
-            'nav_npr': nav,
+            'nav_npr': float(performance.get('total_rv', total_called - total_distributed)),
+            'total_mgmt_fees_npr': float(performance.get('total_mgmt_fees', 0)),
+            'estimated_carry_npr': float(performance.get('estimated_carry', 0)),
+            'performance': performance,
             'pending_calls': CapitalCallSerializer(
                 CapitalCall.objects.filter(lp_commitment__in=commitments, status__in=['CALLED', 'PAID']).select_related('fund'),
                 many=True
@@ -1402,6 +1561,38 @@ class LPFundDetailView(APIView):
             'fund': FundSerializer(fund).data,
             'approved_deals': PEProjectListSerializer(deals, many=True).data,
         })
+
+
+
+class LPSupportRequestView(APIView):
+    """
+    POST /api/deals/lp/support-request/
+    Allows LP to submit a support ticket.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsLPRole]
+
+    def post(self, request):
+        try:
+            lp_profile = request.user.lp_profile
+        except LPProfile.DoesNotExist:
+            return Response({'detail': 'LP profile not found.'}, status=404)
+
+        serializer = LPSupportRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(lp_profile=lp_profile)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        """List requests from this LP."""
+        try:
+            lp_profile = request.user.lp_profile
+        except LPProfile.DoesNotExist:
+            return Response({'detail': 'LP profile not found.'}, status=404)
+        
+        requests = LPSupportRequest.objects.filter(lp_profile=lp_profile)
+        serializer = LPSupportRequestSerializer(requests, many=True)
+        return Response(serializer.data)
 
 
 # ---------------------------------------------------------------------------
@@ -1524,7 +1715,11 @@ class LPProfileSelfView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsLPRole]
 
     def get_object(self):
-        return get_object_or_404(LPProfile, user=self.request.user)
+        try:
+            return self.request.user.lp_profile
+        except LPProfile.DoesNotExist:
+            from django.http import Http404
+            raise Http404("LP Profile not found")
 
 
 class LPKYCUploadView(generics.CreateAPIView):
@@ -2762,7 +2957,12 @@ class LPDistributionListView(generics.ListAPIView):
         user = self.request.user
         if not hasattr(user, 'lp_profile'):
             return Distribution.objects.none()
-        return Distribution.objects.filter(lp_commitment__lp_profile=user.lp_profile).order_by('-distribution_date')
+        try:
+            lp_profile = user.lp_profile
+        except LPProfile.DoesNotExist:
+            return Distribution.objects.none()
+            
+        return Distribution.objects.filter(lp_commitment__lp_profile=lp_profile).order_by('-distribution_date')
 
 # ---------------------------------------------------------------------------
 # LP Statements
@@ -3619,6 +3819,8 @@ class GPCapitalCallBatchView(APIView):
             
         # Create calls
         calls = []
+        call_type = request.data.get('call_type', CapitalCall.CallType.INVESTMENT)
+        
         for comm in fund.lp_commitments.all():
             # Allocation = (LP Commitment / Total Fund Commitment) * Total Drawdown
             lp_share = (comm.committed_amount_npr / total_committed) * amount_dec
@@ -3629,14 +3831,16 @@ class GPCapitalCallBatchView(APIView):
                 call_date=timezone.now().date(),
                 due_date=due_date,
                 amount_npr=lp_share,
+                call_type=call_type,
                 status=CapitalCall.Status.CALLED,
                 notes=request.data.get('notes', '')
             )
             calls.append(call)
             
-        # Advance project status
-        project.status = PEProject.Status.CAPITAL_CALLED
-        project.save()
+        # Advance project status only if it's an investment call
+        if call_type == CapitalCall.CallType.INVESTMENT:
+            project.status = PEProject.Status.CAPITAL_CALLED
+            project.save()
         
         # Audit
         ImmutableAuditEvent.objects.create(
@@ -3664,6 +3868,84 @@ class GPCapitalCallBatchView(APIView):
             "total_amount_npr": amount,
             "project_status": project.status
         })
+
+
+class GPFundCapitalCallBatchView(APIView):
+    """
+    POST /api/deals/funds/{id}/create-capital-calls/
+    Creates pro-rata capital calls for all LPs in the fund (fund-level, e.g. Mgmt Fees).
+    """
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdminRole]
+
+    def post(self, request, pk):
+        fund = get_object_or_404(Fund, pk=pk)
+        
+        amount = request.data.get('total_amount_npr')
+        due_date = request.data.get('due_date')
+        call_type = request.data.get('call_type', CapitalCall.CallType.MANAGEMENT_FEE)
+        
+        if not amount or not due_date:
+            return Response({"detail": "total_amount_npr and due_date are required."}, status=400)
+            
+        from decimal import Decimal
+        amount_dec = Decimal(str(amount))
+            
+        total_committed = fund.lp_commitments.aggregate(total=Sum('committed_amount_npr'))['total'] or Decimal('0')
+        if total_committed == 0:
+            return Response({"detail": "Fund has no LP commitments."}, status=400)
+            
+        # 1. Fund Sufficiency Verification
+        total_called_to_date = fund.lp_commitments.aggregate(total=Sum('called_amount_npr'))['total'] or Decimal('0')
+        uncalled_capital = total_committed - total_called_to_date
+        
+        if amount_dec > uncalled_capital:
+            return Response({
+                "detail": "Insufficient Uncalled Capital: The requested amount exceeds the fund's available capital pool.",
+                "available": float(uncalled_capital),
+                "requested": float(amount_dec)
+            }, status=400)
+            
+        # Create calls
+        calls = []
+        for comm in fund.lp_commitments.all():
+            # Allocation = (LP Commitment / Total Fund Commitment) * Total Drawdown
+            lp_share = (comm.committed_amount_npr / total_committed) * amount_dec
+            call = CapitalCall.objects.create(
+                fund=fund,
+                project=None, # Fund-level call
+                lp_commitment=comm,
+                call_date=timezone.now().date(),
+                due_date=due_date,
+                amount_npr=lp_share,
+                call_type=call_type,
+                status=CapitalCall.Status.CALLED,
+                notes=request.data.get('notes', '')
+            )
+            calls.append(call)
+            
+        # Audit
+        ImmutableAuditEvent.objects.create(
+            event_type='FUND_CAPITAL_CALLED',
+            actor=request.user,
+            object_id=fund.id,
+            object_repr=str(fund),
+            content_type_label='deals.Fund',
+            payload={
+                'total_amount': float(amount),
+                'due_date': str(due_date),
+                'call_type': call_type,
+                'call_count': len(calls)
+            }
+        )
+
+        # Trigger background emails
+        try:
+            from .tasks import batch_send_capital_call_emails
+            batch_send_capital_call_emails.delay([str(c.id) for c in calls])
+        except Exception as e:
+            logger.warning(f"Failed to trigger capital call emails task: {e}")
+
+        return Response({"status": "Fund-level capital calls issued", "count": len(calls)})
 
 
 class CapitalCallViewSet(viewsets.ModelViewSet):
