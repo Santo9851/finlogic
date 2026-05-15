@@ -5,7 +5,7 @@
  * Entrepreneur Portfolio Command — Submission tracking & status.
  */
 import { useEffect, useState } from 'react';
-import { Rocket, Clock, CheckCircle2, Eye, FileUp, Loader2, ShieldAlert, ChevronRight } from 'lucide-react';
+import { Rocket, Clock, CheckCircle2, Eye, FileUp, Loader2, ShieldAlert } from 'lucide-react';
 import { StatusBadge } from '@/components/portal/PortalShell';
 import api from '@/services/api';
 import { toast } from 'sonner';

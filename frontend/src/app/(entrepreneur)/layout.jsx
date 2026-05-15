@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Rocket, LogOut, User, Menu, X, ChevronDown, Library, ArrowLeftRight } from 'lucide-react';
+import { LayoutDashboard, LogOut, User, Menu, X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { PortalGuard } from '@/components/portal/PortalShell';
 import FinlogicLogo from '@/components/FinlogicLogo';
