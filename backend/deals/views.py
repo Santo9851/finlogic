@@ -1440,8 +1440,17 @@ class GPInvestorDashboardView(APIView):
         funds = Fund.objects.all().order_by('-vintage_year')
         from django.db.models import Sum
         commitments = LPFundCommitment.objects.aggregate(Sum('committed_amount_npr'))['committed_amount_npr__sum'] or 0
+
+        # 4. Active Proposals Count
+        active_proposals_count = GovernanceProposal.objects.filter(status='ACTIVE').count()
+
+        # 5. Latest IR Announcements
+        latest_announcements = IRDocumentSerializer(
+            IRDocument.objects.filter(is_published=True).order_by('-uploaded_at')[:3],
+            many=True
+        ).data
         
-        # 4. Fetch Internal Documents (GP Shareholder Reports / Board Minutes)
+        # 6. Fetch Internal Documents (GP Shareholder Reports / Board Minutes)
         internal_docs = FundDocument.objects.filter(
             document_type__in=['SHAREHOLDER_REPORT', 'BOARD_MINUTES'],
             is_published=True
@@ -1456,6 +1465,8 @@ class GPInvestorDashboardView(APIView):
                 'dividend_history': dividends[:5]
             } if shareholder else None,
             'total_committed_npr': float(commitments),
+            'active_proposals_count': active_proposals_count,
+            'latest_announcements': latest_announcements,
             'funds': LPDashboardFundSerializer(funds, many=True, context={'request': request}).data,
             'internal_documents': FundDocumentSerializer(internal_docs, many=True, context={'request': request}).data,
         })
@@ -2511,44 +2522,6 @@ class PortfolioKPIReportListView(generics.ListCreateAPIView):
 # GP Shareholder / Investor Portal Views
 # ---------------------------------------------------------------------------
 
-class GPInvestorDashboardView(APIView):
-    """
-    GET /api/gp-investor/dashboard/
-    """
-    permission_classes = [permissions.IsAuthenticated, IsGPInvestorRole]
-
-    def get(self, request):
-        user = request.user
-        shareholder = getattr(user, 'gp_shareholding', None)
-        
-        if not shareholder:
-            return Response({"detail": "User is not a registered GP Shareholder"}, status=403)
-
-        from django.db.models import Sum
-        from .models import Fund, GPDividend
-
-        total_dividends = GPDividend.objects.filter(
-            shareholder=shareholder, 
-            status='PAID'
-        ).aggregate(total=Sum('amount_npr'))['total'] or 0
-
-        total_aum = Fund.objects.aggregate(total=Sum('committed_capital_npr'))['total'] or 0
-
-        data = {
-            "shareholder": {
-                "shares_held": shareholder.shares_held,
-                "ownership_percentage": shareholder.ownership_percentage,
-                "vesting_status": shareholder.vesting_status,
-                "total_dividends_npr": float(total_dividends),
-            },
-            "total_committed_npr": float(total_aum),
-            "active_proposals_count": GovernanceProposal.objects.filter(status='ACTIVE').count(),
-            "latest_announcements": IRDocumentSerializer(
-                IRDocument.objects.filter(is_published=True).order_by('-uploaded_at')[:3],
-                many=True
-            ).data
-        }
-        return Response(data)
 
 
 class GPInvestorIRListView(generics.ListAPIView):
@@ -2610,6 +2583,38 @@ class GPInvestorVoteView(APIView):
 # ---------------------------------------------------------------------------
 # GP Admin / Staff Views for Shareholder Relations
 # ---------------------------------------------------------------------------
+
+class GPInvestorMeetingsView(APIView):
+    """
+    GET /api/deals/gp-investor/meetings/
+    Returns list of webinars/briefings for GP Investors.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPInvestorRole]
+
+    def get(self, request):
+        from .models import GPInvestorMeeting
+        from .serializers import GPInvestorMeetingSerializer
+        
+        meetings = GPInvestorMeeting.objects.filter(is_published=True).order_by('-scheduled_at')
+        serializer = GPInvestorMeetingSerializer(meetings, many=True)
+        return Response(serializer.data)
+
+class GPInvestorMeetingRequestView(APIView):
+    """
+    POST /api/deals/gp-investor/meetings/request/
+    Submit a request for a private consultation.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPInvestorRole]
+
+    def post(self, request):
+        from .models import GPInvestorMeetingRequest
+        from .serializers import GPInvestorMeetingRequestSerializer
+        
+        serializer = GPInvestorMeetingRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
 class GPIRDocumentViewSet(viewsets.ModelViewSet):
     """

@@ -1033,6 +1033,63 @@ class IRDocument(models.Model):
         return f'{self.title} ({self.category})'
 
 
+class GPInvestorMeeting(models.Model):
+    """Secure strategic meetings and sessions for GP Shareholders."""
+    class MeetingType(models.TextChoices):
+        VIDEO_PROTOCOL = 'VIDEO_PROTOCOL', 'Secure Video Protocol'
+        BOARD_SESSION = 'BOARD_SESSION', 'Board/IC Session'
+        TOWN_HALL = 'TOWN_HALL', 'Shareholder Town Hall'
+        STRATEGIC_REVIEW = 'STRATEGIC_REVIEW', 'Strategic Review'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    speaker = models.CharField(max_length=255, help_text="Host/Managing Partner")
+    scheduled_at = models.DateTimeField()
+    duration_minutes = models.IntegerField(default=60)
+    meeting_link = models.URLField(max_length=500, blank=True, null=True)
+    recording_url = models.URLField(max_length=500, blank=True, null=True)
+    meeting_type = models.CharField(max_length=30, choices=MeetingType.choices, default=MeetingType.VIDEO_PROTOCOL)
+    is_published = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_gp_investor_meetings'
+        ordering = ['-scheduled_at']
+
+    def __str__(self):
+        return f"{self.title} - {self.scheduled_at.date()}"
+
+
+class GPInvestorMeetingRequest(models.Model):
+    """1-on-1 meeting requests from GP Shareholders to Managing Partners."""
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        SCHEDULED = 'SCHEDULED', 'Scheduled'
+        COMPLETED = 'COMPLETED', 'Completed'
+        CANCELLED = 'CANCELLED', 'Cancelled'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='gp_meeting_requests')
+    preferred_date = models.DateField(null=True, blank=True)
+    preferred_time = models.CharField(max_length=50, blank=True, help_text="e.g. Morning, 2 PM")
+    topic = models.CharField(max_length=255)
+    notes = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_gp_meeting_requests'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Request by {self.user.email} - {self.topic}"
+
+
 # ---------------------------------------------------------------------------
 # 15. AI Infrastructure
 # ---------------------------------------------------------------------------

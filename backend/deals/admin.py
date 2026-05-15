@@ -23,11 +23,35 @@ from .models import (
     GovernanceProposal,
     ProposalVote,
     IRDocument,
+    GPInvestorMeeting,
     EntrepreneurKYBDocument,
     FilingTypeConfig,
     SEBONFilingDeadline,
     RegulatoryChecklist,
     ConflictOfInterest,
+    AICallLog,
+    PromptLibrary,
+    ExtractedFinancials,
+    QoEReport,
+    CommercialAnalysis,
+    OperationalAnalysis,
+    RedFlagPattern,
+    RedFlagFinding,
+    ScoringRun,
+    CriterionScore,
+    ComplianceGate,
+    ValuationModel,
+    DCFAssumptions,
+    LBOAssumptions,
+    DealMemo,
+    PortfolioKPIReport,
+    WaterfallModel,
+    WaterfallRun,
+    ValuationRecord,
+    ExitScenario,
+    TermSheet,
+    SPADraft,
+    GPInvestorMeetingRequest,
 )
 
 
@@ -387,3 +411,77 @@ class ConflictOfInterestAdmin(admin.ModelAdmin):
     list_filter = ('is_submitted', 'declaration_period')
     search_fields = ('declarant__email',)
     raw_id_fields = ('declarant',)
+
+
+@admin.register(GPInvestorMeeting)
+class GPInvestorMeetingAdmin(admin.ModelAdmin):
+    list_display = ('title', 'meeting_type', 'scheduled_at', 'is_published')
+    list_filter = ('meeting_type', 'is_published')
+    search_fields = ('title', 'speaker')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+
+@admin.register(AICallLog)
+class AICallLogAdmin(admin.ModelAdmin):
+    list_display = ('task_type', 'model_name', 'status', 'total_tokens', 'created_at')
+    list_filter = ('task_type', 'status', 'model_name')
+    readonly_fields = ('id', 'created_at')
+
+
+@admin.register(PromptLibrary)
+class PromptLibraryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'task_type', 'version', 'is_active')
+    list_filter = ('task_type', 'is_active')
+
+
+@admin.register(ScoringRun)
+class ScoringRunAdmin(admin.ModelAdmin):
+    list_display = ('project', 'total_deal_score', 'status', 'created_at')
+    list_filter = ('status',)
+
+
+@admin.register(ValuationRecord)
+class ValuationRecordAdmin(admin.ModelAdmin):
+    list_display = ('investment', 'valuation_date', 'fair_value_npr', 'methodology')
+    list_filter = ('methodology',)
+
+
+@admin.register(ExitScenario)
+class ExitScenarioAdmin(admin.ModelAdmin):
+    list_display = ('investment', 'name', 'exit_type', 'target_year')
+    list_filter = ('exit_type',)
+
+
+@admin.register(WaterfallModel)
+class WaterfallModelAdmin(admin.ModelAdmin):
+    list_display = ('name', 'fund', 'created_at')
+
+
+@admin.register(DealMemo)
+class DealMemoAdmin(admin.ModelAdmin):
+    list_display = ('project', 'status', 'version', 'created_at')
+    list_filter = ('status',)
+
+
+@admin.register(PortfolioKPIReport)
+class PortfolioKPIReportAdmin(admin.ModelAdmin):
+    list_display = ('project', 'reporting_period', 'revenue', 'ebitda')
+    list_filter = ('reporting_period',)
+
+
+@admin.register(TermSheet)
+class TermSheetAdmin(admin.ModelAdmin):
+    list_display = ('project', 'status', 'created_at')
+
+
+@admin.register(SPADraft)
+class SPADraftAdmin(admin.ModelAdmin):
+    list_display = ('project', 'status', 'created_at')
+
+
+@admin.register(GPInvestorMeetingRequest)
+class GPInvestorMeetingRequestAdmin(admin.ModelAdmin):
+    list_display = ('user', 'topic', 'preferred_date', 'status', 'created_at')
+    list_filter = ('status', 'preferred_date')
+    search_fields = ('user__email', 'topic')
+    readonly_fields = ('id', 'created_at', 'updated_at')

@@ -10,7 +10,8 @@ import {
   PieChart,
   Loader2,
   Lock,
-  MessageSquare
+  MessageSquare,
+  Gavel
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';

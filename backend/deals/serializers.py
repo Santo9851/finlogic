@@ -16,6 +16,8 @@ from .models import (
     GovernanceProposal,
     ProposalVote,
     IRDocument,
+    GPInvestorMeeting,
+    GPInvestorMeetingRequest,
     GPShareholder,
     LPFundCommitment,
     validate_ocr_number,
@@ -1104,3 +1106,16 @@ class SPADraftSerializer(serializers.ModelSerializer):
         model = SPADraft
         fields = '__all__'
         read_only_fields = ('id', 'project', 'ai_generated_sections', 'created_by', 'created_at', 'updated_at')
+
+
+class GPInvestorMeetingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GPInvestorMeeting
+        fields = '__all__'
+
+
+class GPInvestorMeetingRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GPInvestorMeetingRequest
+        fields = '__all__'
+        read_only_fields = ('id', 'user', 'status', 'created_at', 'updated_at')

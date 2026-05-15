@@ -93,6 +93,8 @@ from .views import (
     GPInvestorIRListView,
     GPInvestorGovernanceListView,
     GPInvestorVoteView,
+    GPInvestorMeetingsView,
+    GPInvestorMeetingRequestView,
     GPIRDocumentViewSet,
     GPGovernanceProposalViewSet,
     EntrepreneurKYBUploadView,
@@ -665,6 +667,8 @@ urlpatterns = [
     path('deals/gp-investor/ir-documents/', GPInvestorIRListView.as_view(), name='gp-invest-ir-list'),
     path('deals/gp-investor/governance/proposals/', GPInvestorGovernanceListView.as_view(), name='gp-invest-gov-props'),
     path('deals/gp-investor/governance/vote/', GPInvestorVoteView.as_view(), name='gp-invest-vote'),
+    path('deals/gp-investor/meetings/', GPInvestorMeetingsView.as_view(), name='gp-invest-meetings'),
+    path('deals/gp-investor/meetings/request/', GPInvestorMeetingRequestView.as_view(), name='gp-invest-meeting-request'),
 
     # ── Admin Viewsets ─────────────────────────────────────────────────────
     path('deals/', include(router.urls)),

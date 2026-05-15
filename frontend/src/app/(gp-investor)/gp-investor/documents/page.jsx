@@ -9,7 +9,8 @@ import {
   FileDown,
   Clock,
   ChevronRight,
-  Loader2
+  Loader2,
+  ShieldCheck
 } from 'lucide-react';
 import api from '@/services/api';
 import { toast } from 'sonner';
