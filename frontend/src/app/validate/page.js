@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, 
@@ -51,6 +51,7 @@ export default function IdeaValidatorPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
+  const autoSaveTimeout = useRef(null);
 
   useEffect(() => {
     setMounted(true);
@@ -119,7 +120,7 @@ export default function IdeaValidatorPage() {
     }
   };
 
-  const handleFieldChange = async (qNum, field, value) => {
+  const handleFieldChange = (qNum, field, value) => {
     const updatedAnswers = {
       ...answers,
       [qNum]: {
@@ -130,20 +131,24 @@ export default function IdeaValidatorPage() {
     setAnswers(updatedAnswers);
 
     if (session) {
-      const stepQuestions = questions.filter(q => q.step === currentStep);
-      const stepAnswers = stepQuestions.map(q => ({
-        question_number: q.id,
-        ...updatedAnswers[q.id]
-      }));
+      if (autoSaveTimeout.current) clearTimeout(autoSaveTimeout.current);
+      
+      autoSaveTimeout.current = setTimeout(async () => {
+        const stepQuestions = questions.filter(q => q.step === currentStep);
+        const stepAnswers = stepQuestions.map(q => ({
+          question_number: q.id,
+          ...updatedAnswers[q.id]
+        }));
 
-      try {
-        setSaving(true);
-        await validatorService.saveStep(session.id, currentStep, stepAnswers);
-      } catch (err) {
-        console.error("Auto-save failed:", err);
-      } finally {
-        setSaving(false);
-      }
+        try {
+          setSaving(true);
+          await validatorService.saveStep(session.id, currentStep, stepAnswers);
+        } catch (err) {
+          console.error("Auto-save failed:", err);
+        } finally {
+          setSaving(false);
+        }
+      }, 1000); // 1s debounce to save bandwidth and prevent race conditions
     }
   };
 
@@ -157,6 +162,17 @@ export default function IdeaValidatorPage() {
 
   const handleSubmit = async () => {
     if (!session) return;
+
+    // Validation: ensure all questions are answered
+    const unanswered = questions.filter(q => !answers[q.id]?.selected_option);
+    if (unanswered.length > 0) {
+      setError(`Validation Incomplete: ${unanswered.length} questions require your input before analysis can proceed.`);
+      // Move to the step of the first unanswered question
+      const firstUnanswered = unanswered[0];
+      setCurrentStep(firstUnanswered.step);
+      return;
+    }
+
     setSubmitting(true);
     try {
       await validatorService.submitSession(session.id);

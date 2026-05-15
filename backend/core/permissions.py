@@ -71,3 +71,13 @@ class IsSuperAdmin(permissions.BasePermission):
             request.user.is_authenticated and 
             request.user.has_role('super_admin')
         )
+
+
+class IsApproved(permissions.BasePermission):
+    """
+    Permission to only allow approved users.
+    """
+    message = "Your account is pending administrator approval."
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.is_approved)

@@ -1,4 +1,4 @@
-// import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import Layout from "@/components/Layout";
 import { AuthProvider } from "@/lib/AuthContext";
@@ -7,8 +7,9 @@ import { ThemeProvider } from "@/lib/ThemeProvider";
 import { Toaster } from "sonner";
 import Script from "next/script";
 
-// const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-// const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const playfair = Playfair_Display({ variable: "--font-serif", subsets: ["latin"] });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.finlogiccapital.com";
 
@@ -128,12 +129,9 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
         />
         {/* Preconnect for perf */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet" />
         <link rel="preconnect" href="https://images.unsplash.com" />
       </head>
-      <body className={`antialiased theme-transition`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased theme-transition`}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <Script 
             src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" 

@@ -83,6 +83,14 @@ export function middleware(request) {
     return NextResponse.redirect(new URL(home, request.url));
   }
 
+  // Approval check (only for portals, excluding superadmin/admin if desired, but safer for all)
+  const isApproved = payload.is_approved === true;
+  const isInternalStaff = roles.includes('admin') || roles.includes('super_admin');
+  
+  if (!isApproved && !isInternalStaff && pathname !== '/auth/pending') {
+    return NextResponse.redirect(new URL('/auth/pending', request.url));
+  }
+
   return NextResponse.next();
 }
 

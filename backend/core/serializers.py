@@ -391,13 +391,14 @@ class ArticleSerializer(serializers.ModelSerializer):
     snippet = serializers.SerializerMethodField()
     teaser_bullets = serializers.SerializerMethodField()
     full_content = serializers.CharField(source='content', read_only=True)
+    accessible_content = serializers.SerializerMethodField()
     tools = DownloadableToolSerializer(many=True, read_only=True)
     is_completed = serializers.SerializerMethodField()
 
     class Meta:
         model = Article
         fields = ('id', 'author', 'author_name', 'title', 'slug', 'excerpt', 
-                  'full_content', 'snippet', 'teaser_text', 'teaser_bullets',
+                  'full_content', 'accessible_content', 'snippet', 'teaser_text', 'teaser_bullets',
                   'featured_image', 'pillar', 'is_published', 'published_at',
                   'read_time', 'series', 'series_info', 'article_number', 
                   'is_free', 'access_level', 'tools', 'is_completed',
@@ -459,6 +460,12 @@ class ArticleSerializer(serializers.ModelSerializer):
         # Rule: Authenticated users get articles 1 and 2
         return 'full' if (obj.article_number or 0) <= 2 else 'cliffhanger'
 
+    def get_accessible_content(self, obj):
+        """Returns full content if accessible, else returns the teaser_text."""
+        if self.get_access_level(obj) == 'full':
+            return obj.content
+        return obj.teaser_text or ""
+
     def get_snippet(self, obj):
         if self.get_access_level(obj) == 'cliffhanger':
             return obj.content[:500] + "..." if obj.content else ""
@@ -485,6 +492,9 @@ class ArticleSerializer(serializers.ModelSerializer):
         # If cliffhanger, hide the full content
         if data.get('access_level') == 'cliffhanger':
             data['full_content'] = None
+            # Also ensure 'content' is hidden if it was somehow added by a subclass or extra field
+            if 'content' in data:
+                data['content'] = None
         return data
 
 

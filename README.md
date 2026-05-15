@@ -100,6 +100,13 @@ finlogic/
 
 For detailed deployment instructions on a VPS (like Vultr), please refer to the [SERVER_SETUP.md](./SERVER_SETUP.md) file.
 
+## 📚 Documentation
+- [Server Setup Guide](./SERVER_SETUP.md)
+- [Newsletter System Guide](./NEWSLETTER_SYSTEM_GUIDE.md)
+- [Deal Flow Documentation](./deal-flow.md)
+- [Idea Validator Docs](./IDEA_VALIDATOR_DOCS.md)
+- [User Roles Setup](./user_roles_setup_guide.md)
+
 ## 📄 License
 
 This project is proprietary and confidential. All rights reserved.

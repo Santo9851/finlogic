@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'superadmin',
     'drf_spectacular',
     'idea_validator.apps.IdeaValidatorConfig',
+    'newsletter',
 ]
 
 MIDDLEWARE = [
@@ -233,6 +234,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+        'core.permissions.IsApproved',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -318,3 +320,10 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 APPEND_SLASH = False
 
 APPEND_SLASH = False
+
+# ---------------------------------------------------------------------------
+# Newsletter Settings
+# ---------------------------------------------------------------------------
+NEWSLETTER_FROM_EMAIL = "capitallines@finlogiccapital.com"
+NEWSLETTER_FROM_NAME  = "Capital Lines · Finlogic Capital"
+NEWSLETTER_BASE_URL   = "https://finlogiccapital.com"

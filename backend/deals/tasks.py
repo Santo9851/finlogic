@@ -143,9 +143,10 @@ def extract_financials_from_document(document_id):
         else:
             doc_text = extract_text_from_pdf(file_content)
             
-        if not doc_text:
+        if not doc_text or len(doc_text) < 100:
             # Fallback for scanned PDFs or empty files
-            logger.warning(f"No text extracted from {doc.filename}. AI may struggle.")
+            logger.warning(f"No/Low text extracted from {doc.filename}. Relying on AI's native OCR.")
+            doc_text = "[SCANNED DOCUMENT DETECTED - PLEASE ANALYZE ATTACHED FILE VISUALLY]"
         
         # 3. Call AI Client
         client = AIModelClient()
