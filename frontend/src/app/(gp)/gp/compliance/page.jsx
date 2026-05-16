@@ -21,7 +21,8 @@ export default function ComplianceDashboard() {
     queryKey: ['compliance', 'sebon-deadlines'],
     queryFn: async () => {
       const res = await api.get('/compliance/sebon-deadlines/');
-      return res.data;
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     }
   });
 

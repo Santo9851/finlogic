@@ -1,10 +1,6 @@
-'use client'
+'use client';
 
-/**
- * (lp)/dashboard/page.jsx
- * Dashboard for Limited Partners — Institutional Wealth Tracking.
- */
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   PieChart,
@@ -18,15 +14,16 @@ import {
   ChevronRight,
   AlertCircle,
   Calendar,
-  ShieldCheck,
   CircleDollarSign,
   Lock,
   Info,
   HelpCircle,
   Send,
   X,
-  Clock
+  Clock,
+  ArrowDownRight
 } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import api from '@/services/api';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -118,8 +115,8 @@ export default function LPDashboard() {
                 key={fund.id}
                 onClick={() => setSelectedFundId(fund.id)}
                 className={`px-8 py-4 text-[10px] font-bold uppercase tracking-[0.3em] transition-all ${(selectedFundId === fund.id || (!selectedFundId && fund === funds[0]))
-                    ? 'bg-ls-primary text-ls-white shadow-xl'
-                    : 'text-text-muted hover:text-foreground hover:bg-border-theme/40'
+                  ? 'bg-ls-primary text-ls-white shadow-xl'
+                  : 'text-text-muted hover:text-foreground hover:bg-border-theme/40'
                   }`}
               >
                 {fund.name}
@@ -194,6 +191,33 @@ export default function LPDashboard() {
                 </motion.div>
               )}
             </div>
+          )}
+
+          {/* Capital Credit Balance Notification */}
+          {(dashboard?.total_credit_balance_npr || 0) > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="border border-emerald-500/20 bg-emerald-500/5 p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6"
+            >
+              <div className="flex items-start gap-6">
+                <div className="w-12 h-12 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                  <CircleDollarSign size={24} />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-lg font-serif font-light text-foreground tracking-tight">Capital Credit Available</p>
+                  <p className="text-[9px] text-text-muted font-bold uppercase tracking-[0.3em]">
+                    From equalization rebalancing — automatically deducted from your next capital call
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-serif font-light text-emerald-500 tracking-tighter tabular-nums">
+                  रू {formatIndianNumber(dashboard.total_credit_balance_npr)}
+                </p>
+                <p className="text-[9px] text-emerald-500/60 font-bold uppercase tracking-[0.3em] mt-1">Net-off Applied on Next Call</p>
+              </div>
+            </motion.div>
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme overflow-visible">
@@ -454,7 +478,7 @@ function MetricCard({ label, value, icon: Icon, info }) {
         <div className="flex items-center gap-3">
           {info && (
             <div className="relative">
-              <button 
+              <button
                 onMouseEnter={() => setShowInfo(true)}
                 onMouseLeave={() => setShowInfo(false)}
                 className="text-text-muted group-hover:text-ls-white/40 transition-colors"

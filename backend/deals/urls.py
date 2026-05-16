@@ -42,6 +42,7 @@ from .views import (
     LPDashboardView,
     LPFundDetailView,
     LPSupportRequestView,
+    LPCatchUpCalculationView,
     # GP Investor portal
     GPInvestorDashboardView,
     # LP Profile
@@ -127,10 +128,12 @@ from .views import (
     GPFundCapitalCallBatchView,
     # Phase 3 views
     DrawdownFundFeesView,
-
+    LPCatchUpExecutionView,
     EntrepreneurUploadSignedLOIView,
     GPCapitalCallBatchView,
     CapitalCallViewSet,
+    PEInvestmentViewSet,
+    ImmutableAuditEventViewSet,
 )
 
 from .conversion_views import IssueLOIView, SuperadminFinalizeInvestmentView
@@ -141,6 +144,8 @@ router.register(r'governance-proposals', GPGovernanceProposalViewSet, basename='
 router.register(r'valuations', ValuationRecordViewSet, basename='valuation-record')
 router.register(r'exit-scenarios', ExitScenarioViewSet, basename='exit-scenario')
 router.register(r'capital-calls', CapitalCallViewSet, basename='capital-call')
+router.register(r'investments', PEInvestmentViewSet, basename='investment')
+router.register(r'audit', ImmutableAuditEventViewSet, basename='audit')
 
 
 
@@ -706,4 +711,6 @@ urlpatterns = [
 
     # ── Admin Viewsets ─────────────────────────────────────────────────────
     path('deals/', include(router.urls)),
+    path('deals/lp-profiles/<int:lp_id>/calculate-catch-up/', LPCatchUpCalculationView.as_view(), name='lp-calculate-catch-up'),
+    path('deals/lp-profiles/<int:lp_id>/execute-catch-up/', LPCatchUpExecutionView.as_view(), name='lp-execute-catch-up'),
 ]

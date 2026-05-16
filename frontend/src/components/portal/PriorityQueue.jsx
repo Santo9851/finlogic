@@ -14,9 +14,10 @@ export default function PriorityQueue() {
     queryKey: ['deals', 'priority-queue'],
     queryFn: async () => {
       const res = await api.get('/deals/projects/?status=SUBMITTED,SCREENING');
-      const data = res.data?.results ?? res.data ?? [];
+      const data = res.data?.results ?? res.data;
+      const projectsArray = Array.isArray(data) ? data : [];
       // Sort by days waiting descending
-      return data.sort((a, b) => {
+      return projectsArray.sort((a, b) => {
         const dateA = new Date(a.created_at);
         const dateB = new Date(b.created_at);
         return dateA - dateB; // Oldest first = waiting longest

@@ -17,6 +17,7 @@ import FinlogicLogo from '@/components/FinlogicLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useTheme } from 'next-themes';
 import ProfileDropdown from '@/components/portal/ProfileDropdown';
+import { motion } from 'framer-motion';
 
 const NAV = [
   { href: '/gp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,6 +46,7 @@ const NAV = [
 function Sidebar({ collapsed, onClose }) {
   const pathname = usePathname();
   const router = require('next/navigation').useRouter();
+  const { user, logout } = useAuth();
   const { resolvedTheme } = useTheme();
   const [openSection, setOpenSection] = useState('Portfolio');
 
@@ -64,53 +66,58 @@ function Sidebar({ collapsed, onClose }) {
         className={`
           fixed top-0 left-0 h-screen z-40
           flex flex-col
-          bg-card border-r border-border-theme
+          bg-ls-primary border-r border-ls-white/5
           transition-all duration-300 ease-in-out
-          overflow-x-hidden theme-transition
-          ${collapsed ? '-translate-x-full lg:translate-x-0 lg:w-16' : 'w-64'}
+          overflow-x-hidden shadow-2xl
+          ${collapsed ? '-translate-x-full lg:translate-x-0 lg:w-20' : 'w-72'}
           lg:static lg:translate-x-0
         `}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-border-theme">
-           <FinlogicLogo size={32} variant={collapsed ? "icon" : "full"} darkBg={isDark} />
+        <div className="flex items-center gap-3 px-6 py-8 border-b border-ls-white/5">
+           <FinlogicLogo size={32} variant={collapsed ? "icon" : "full"} darkBg={true} />
            {!collapsed && (
-             <span className="text-[#F59F01] text-[10px] font-black uppercase tracking-widest mt-1 ml-auto">GP Staff</span>
+             <span className="text-ls-compliment text-[8px] font-black uppercase tracking-[0.4em] mt-1 ml-auto border border-ls-compliment/20 px-2 py-1">GP Staff</span>
            )}
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 py-4 overflow-y-auto">
+        <nav className="flex-1 py-8 px-3 overflow-y-auto space-y-1">
           {NAV.map((item) => {
             if (item.children) {
               const isOpen = openSection === item.label;
               const hasActiveChild = item.children.some(c => pathname === c.href || pathname.startsWith(c.href + '/'));
               
               return (
-                <div key={item.label} className="mb-1">
+                <div key={item.label} className="mb-2">
                   <button
                     onClick={() => {
                       if (item.href) router.push(item.href);
                       setOpenSection(isOpen ? null : item.label);
                     }}
                     className={`
-                      w-full flex items-center gap-3 px-4 py-3 mx-2 rounded-lg
-                      text-sm font-medium transition-all group
-                      ${hasActiveChild || (item.href && pathname === item.href) ? 'text-[#F59F01]' : 'text-text-muted hover:text-ls-primary dark:hover:text-white'}
+                      w-full flex items-center gap-4 px-5 py-4 transition-all group relative
+                      ${hasActiveChild || (item.href && pathname === item.href) ? 'text-ls-compliment' : 'text-ls-white/40 hover:text-ls-white hover:bg-ls-white/5'}
                     `}
                   >
+                    {hasActiveChild && !collapsed && (
+                      <motion.div 
+                        layoutId="nav-indicator-gp"
+                        className="absolute left-0 w-1 h-6 bg-ls-compliment" 
+                      />
+                    )}
                     <item.icon size={18} className="flex-shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
-                    {!collapsed && item.children && (
+                    {!collapsed && <span className="text-[10px] font-bold uppercase tracking-[0.3em]">{item.label}</span>}
+                    {!collapsed && (
                       <ChevronDown 
-                        size={14} 
+                        size={12} 
                         className={`ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} 
                       />
                     )}
                   </button>
                   
                   {isOpen && !collapsed && (
-                    <div className="mt-1 ml-9 space-y-1">
+                    <div className="mt-2 ml-10 border-l border-ls-white/10 space-y-1">
                       {item.children.map((child) => {
                         const active = pathname === child.href || pathname.startsWith(child.href + '/');
                         return (
@@ -121,8 +128,8 @@ function Sidebar({ collapsed, onClose }) {
                               if (window.innerWidth < 1024) onClose();
                             }}
                             className={`
-                              block px-4 py-2 rounded-lg text-xs font-medium transition-all
-                              ${active ? 'text-[#F59F01] bg-[#F59F01]/10' : 'text-text-muted/60 hover:text-ls-primary dark:hover:text-white'}
+                              block px-6 py-3 text-[9px] font-bold uppercase tracking-[0.3em] transition-all
+                              ${active ? 'text-ls-compliment bg-ls-compliment/5' : 'text-ls-white/30 hover:text-ls-white'}
                             `}
                           >
                             {child.label}
@@ -144,23 +151,43 @@ function Sidebar({ collapsed, onClose }) {
                   if (window.innerWidth < 1024) onClose();
                 }}
                 className={`
-                  flex items-center gap-3 px-4 py-3 mx-2 rounded-lg mb-1
-                  text-sm font-medium transition-all group
+                  relative flex items-center gap-4 px-5 py-4 transition-all group
                   ${active
-                    ? 'bg-[#F59F01]/15 text-[#F59F01]'
-                    : 'text-text-muted hover:text-ls-primary dark:hover:text-white hover:bg-ls-primary/5 dark:hover:bg-white/5'}
+                    ? 'text-ls-compliment'
+                    : 'text-ls-white/40 hover:text-ls-white hover:bg-ls-white/5'}
                 `}
               >
+                {active && !collapsed && (
+                   <div className="absolute left-0 w-1 h-6 bg-ls-compliment" />
+                )}
                 <item.icon size={18} className="flex-shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-                {!collapsed && active && <ChevronDown size={14} className="ml-auto -rotate-90" />}
+                {!collapsed && <span className="text-[10px] font-bold uppercase tracking-[0.3em]">{item.label}</span>}
               </Link>
             );
           })}
         </nav>
 
         {/* Footer */}
-        <GPSidebarFooter collapsed={collapsed} />
+        <div className="p-6 border-t border-ls-white/5">
+           {!collapsed && user && (
+             <div className="mb-6 flex items-center gap-4">
+                <div className="w-10 h-10 border border-ls-white/10 flex items-center justify-center text-ls-compliment">
+                   <User size={18} />
+                </div>
+                <div className="min-w-0">
+                   <p className="text-[10px] font-bold text-ls-white truncate uppercase tracking-widest">{user.first_name || user.username}</p>
+                   <p className="text-[8px] font-bold text-ls-white/30 truncate uppercase tracking-widest">{user.email}</p>
+                </div>
+             </div>
+           )}
+           <button 
+             onClick={logout}
+             className="flex items-center gap-3 text-[9px] font-bold text-ls-white/20 hover:text-red-400 uppercase tracking-[0.4em] transition-colors w-full group"
+           >
+             <LogOut size={14} className="group-hover:translate-x-1 transition-transform" />
+             {!collapsed && <span>Sign Out Protocol</span>}
+           </button>
+        </div>
       </aside>
     </>
   );

@@ -189,7 +189,7 @@ export default function LPPortfolioPage() {
         </div>
 
         {/* Project Registry - Archival Ledger */}
-        <div className="lg:col-span-2 bg-card border border-border-theme shadow-2xl theme-transition">
+        <div className="lg:col-span-2 bg-card border border-border-theme shadow-2xl theme-transition overflow-hidden">
           <div className="px-12 py-10 border-b border-border-theme flex items-center justify-between bg-border-theme/10">
             <h3 className="text-[10px] font-bold text-text-muted flex items-center gap-4 uppercase tracking-[0.5em]">
               <Building2 size={16} className="text-ls-compliment" />
@@ -201,44 +201,76 @@ export default function LPPortfolioPage() {
             </div>
           </div>
           
-          <div className="divide-y divide-border-theme">
-            {data?.projects?.map((project, i) => (
-              <motion.div 
-                key={project.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * i }}
-                className="p-10 flex items-center justify-between hover:bg-ls-primary group transition-all duration-500 cursor-pointer relative overflow-hidden"
-              >
-                <div className="flex items-center gap-10">
-                  <div className="w-14 h-14 border border-border-theme flex items-center justify-center text-[10px] font-bold text-text-muted/30 group-hover:text-ls-white group-hover:border-ls-white/20 transition-all">
-                    0{i + 1}
-                  </div>
-                  <div className="space-y-3">
-                    <h4 className="text-2xl font-serif font-light text-foreground group-hover:text-ls-white transition-all uppercase tracking-tight leading-none">
-                      {project.anonymized_name}
-                    </h4>
-                    <div className="flex items-center gap-6">
-                      <span className="text-[9px] font-bold text-ls-compliment uppercase tracking-[0.4em]">{project.sector_display}</span>
-                      <div className="w-px h-2 bg-border-theme group-hover:bg-ls-white/10" />
-                      <span className="text-[9px] font-bold text-text-muted/40 group-hover:text-ls-white/40 uppercase tracking-[0.4em]">{project.status}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-12">
-                  <div className="text-right space-y-2">
-                    <p className="text-[9px] font-bold text-text-muted/30 group-hover:text-ls-white/20 uppercase tracking-[0.4em]">Investment Exposure</p>
-                    <p className="text-lg font-serif font-light text-foreground group-hover:text-ls-compliment opacity-90 transition-all tabular-nums">
-                      रू {formatIndianNumber(project.investment_range_min_npr, 1)} - {formatIndianNumber(project.investment_range_max_npr, 1)}
-                    </p>
-                  </div>
-                  <div className="p-4 border border-border-theme group-hover:border-ls-white/20 text-text-muted group-hover:text-ls-compliment transition-all">
-                     <ChevronRight size={18} />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-border-theme/5 border-b border-border-theme">
+                  <th className="px-12 py-8 text-[10px] font-bold text-text-muted uppercase tracking-[0.5em]">Institutional Entity</th>
+                  <th className="px-12 py-8 text-[10px] font-bold text-text-muted uppercase tracking-[0.5em]">Taxonomy</th>
+                  <th className="px-12 py-8 text-[10px] font-bold text-text-muted uppercase tracking-[0.5em]">Invested Capital</th>
+                  <th className="px-12 py-8 text-[10px] font-bold text-text-muted uppercase tracking-[0.5em]">Current FMV</th>
+                  <th className="px-12 py-8 text-[10px] font-bold text-text-muted uppercase tracking-[0.5em] text-right">Yield</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-theme/50">
+                {data?.projects?.map((project, i) => (
+                  <motion.tr 
+                    key={project.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * i }}
+                    className="hover:bg-ls-primary transition-all duration-500 group cursor-pointer"
+                  >
+                    <td className="px-12 py-10">
+                      <div className="flex items-center gap-6">
+                        <div className="w-12 h-12 border border-border-theme flex items-center justify-center text-[10px] font-bold text-text-muted group-hover:text-ls-white group-hover:border-ls-white/20 transition-all">
+                          0{i + 1}
+                        </div>
+                        <div className="space-y-2">
+                          <h4 className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-all uppercase tracking-tight leading-tight">
+                            {project.anonymized_name}
+                          </h4>
+                          <span className="text-[9px] font-bold text-text-muted/40 group-hover:text-ls-white/20 uppercase tracking-[0.3em] font-mono">ID: {project.id.split('-')[0].toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-12 py-10">
+                      <span className="text-[9px] font-bold uppercase tracking-[0.4em] px-4 py-2 border border-border-theme group-hover:border-ls-white/20 text-text-muted group-hover:text-ls-white/40 shadow-inner">
+                        {project.sector_display}
+                      </span>
+                    </td>
+                    <td className="px-12 py-10">
+                      <div className="space-y-1">
+                        <p className="text-base font-serif font-light text-foreground group-hover:text-ls-white transition-all tabular-nums">
+                          {project.has_investment ? `रू ${formatIndianNumber(project.total_invested_npr, 0)}` : 'PROTOCOL_PENDING'}
+                        </p>
+                        <p className="text-[8px] font-bold text-text-muted/30 group-hover:text-ls-white/20 uppercase tracking-widest">{project.status}</p>
+                      </div>
+                    </td>
+                    <td className="px-12 py-10">
+                      <div className="space-y-1">
+                        <p className="text-base font-serif font-light text-foreground group-hover:text-ls-compliment transition-all tabular-nums">
+                          {project.has_investment ? `रू ${formatIndianNumber(project.current_fv_npr, 0)}` : '---'}
+                        </p>
+                        <p className="text-[8px] font-bold text-text-muted/30 group-hover:text-ls-white/20 uppercase tracking-widest">Est. Fair Value</p>
+                      </div>
+                    </td>
+                    <td className="px-12 py-10 text-right">
+                      {project.has_investment ? (
+                        <div className="space-y-1">
+                          <p className="text-lg font-serif font-light text-ls-up group-hover:text-ls-white transition-all">{project.moic.toFixed(2)}x</p>
+                          <p className="text-[8px] font-bold text-ls-up/40 group-hover:text-ls-white/20 uppercase tracking-widest">Current MOIC</p>
+                        </div>
+                      ) : (
+                        <div className="p-3 border border-border-theme group-hover:border-ls-white/20 text-text-muted group-hover:text-ls-compliment transition-all inline-block">
+                           <ChevronRight size={16} />
+                        </div>
+                      )}
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

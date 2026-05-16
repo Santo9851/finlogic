@@ -26,6 +26,7 @@ from .serializers import (
     SuperAdminFundSerializer,
     SuperAdminPromptSerializer,
     SuperAdminAuditLogSerializer,
+    SuperAdminImmutableAuditEventSerializer,
     SuperAdminValidationSerializer
 )
 from idea_validator.models import IdeaValidationSession
@@ -197,7 +198,7 @@ class SuperAdminAuditLogViewSet(viewsets.ReadOnlyModelViewSet):
             
             if actor: qs = qs.filter(actor__email__icontains=actor)
             if event_type: qs = qs.filter(event_type=event_type)
-            if project_id: qs = qs.filter(project_id=project_id)
+            if project_id: qs = qs.filter(object_id=project_id)
             return qs
 
 

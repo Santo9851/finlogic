@@ -146,6 +146,11 @@ class FundSerializer(serializers.ModelSerializer):
     )
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     management_fee_basis_display = serializers.CharField(source='get_management_fee_basis_display', read_only=True)
+    performance = serializers.SerializerMethodField()
+
+    def get_performance(self, obj):
+        from .views import _calculate_fund_performance_metrics
+        return _calculate_fund_performance_metrics(obj)
 
     class Meta:
         model = Fund
@@ -157,6 +162,7 @@ class FundSerializer(serializers.ModelSerializer):
             'management_fee_basis_display', 'management_fee_frequency_months',
             'investment_period_end_date', 'post_investment_management_fee_pct',
             'post_investment_management_fee_basis', 'carry_pct',
+            'performance',
             'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')

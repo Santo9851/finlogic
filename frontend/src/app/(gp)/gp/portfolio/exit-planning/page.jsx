@@ -21,7 +21,8 @@ export default function GPExitPlanningAggregate() {
     queryKey: ['portfolio', 'exit-scenarios'],
     queryFn: async () => {
       const res = await api.get('/deals/exit-scenarios/');
-      return res.data;
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -40,8 +41,10 @@ export default function GPExitPlanningAggregate() {
                <Compass size={16} />
                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Harvest Strategy</span>
             </div>
-            <h1 className="text-5xl font-black text-white tracking-tighter uppercase">Exit Planning</h1>
-            <p className="text-white/40 text-sm mt-2 max-w-md">Consolidated exit scenarios, IPO eligibility tracking, and secondary sale opportunities.</p>
+            <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase">Exit Planning</h1>
+            <p className="text-text-muted text-sm mt-2 max-w-lg font-medium leading-relaxed">
+              Model your harvest strategy. Evaluate <strong>IPO eligibility</strong> for Nepal's growth sector, simulate secondary sales, and plan distributions to maximize <strong>Fund IRR</strong>.
+            </p>
          </div>
       </div>
 

@@ -66,7 +66,8 @@ export default function GPDealsKanbanPage() {
     queryKey: ['deals', 'projects'],
     queryFn: async () => {
       const res = await api.get('/deals/projects/');
-      return res.data?.results ?? res.data ?? [];
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     }
   });
 

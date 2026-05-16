@@ -463,6 +463,10 @@ class LPFundCommitment(models.Model):
     called_amount_npr = models.DecimalField(
         max_digits=15, decimal_places=2, default=0
     )
+    credit_balance_npr = models.DecimalField(
+        max_digits=15, decimal_places=2, default=0,
+        help_text="Excess capital credits from equalization or refunds, available for netting."
+    )
     commitment_date = models.DateField()
     
     # Custom LP rates (Side Letters)
@@ -616,6 +620,7 @@ class CapitalCall(models.Model):
         INVESTMENT = 'INVESTMENT', 'Capital Investment'
         MANAGEMENT_FEE = 'MANAGEMENT_FEE', 'Management Fee'
         FUND_EXPENSE = 'FUND_EXPENSE', 'Fund Expense'
+        EQUALIZATION = 'EQUALIZATION', 'Equalization Catch-up'
         OTHER = 'OTHER', 'Other'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -677,11 +682,19 @@ class Distribution(models.Model):
         RETURN_OF_CAPITAL = 'RETURN_OF_CAPITAL', 'Return of Capital'
         PREFERRED_RETURN = 'PREFERRED_RETURN', 'Preferred Return'
         CARRIED_INTEREST = 'CARRIED_INTEREST', 'Carried Interest'
+        EQUALIZATION_REFUND = 'EQUALIZATION_REFUND', 'Equalization Refund'
         DIVIDEND = 'DIVIDEND', 'Dividend'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     fund = models.ForeignKey(
         Fund, on_delete=models.PROTECT, related_name='distributions'
+    )
+    project = models.ForeignKey(
+        'PEProject',
+        on_delete=models.SET_NULL,
+        related_name='distributions',
+        null=True,
+        blank=True,
     )
     lp_commitment = models.ForeignKey(
         LPFundCommitment,

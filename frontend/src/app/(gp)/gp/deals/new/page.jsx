@@ -36,7 +36,10 @@ export default function GPNewDealPage() {
   });
 
   useEffect(() => {
-    api.get('/deals/funds/').then(r => setFunds(r.data?.results ?? r.data ?? []));
+    api.get('/deals/funds/').then(r => {
+      const data = r.data?.results ?? r.data;
+      setFunds(Array.isArray(data) ? data : []);
+    });
   }, []);
 
   const onSubmit = async (data) => {

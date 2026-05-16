@@ -50,7 +50,8 @@ export default function GPIRDocumentsPage() {
   const fetchDocuments = async () => {
     try {
       const res = await api.get('/deals/admin/ir-documents/');
-      setDocuments(res.data.results || res.data || []);
+      const data = res.data?.results ?? res.data;
+      setDocuments(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error('Failed to load IR documents');
     } finally {

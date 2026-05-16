@@ -4,6 +4,7 @@ import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { 
+  DollarSign,
   TrendingUp, 
   Users, 
   BarChart3, 
@@ -23,7 +24,17 @@ export default function GPPortfolioDashboard() {
     queryKey: ['portfolio', 'kpi-reports'],
     queryFn: async () => {
       const res = await api.get('/portfolio/kpi-reports/');
-      return res.data;
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
+    }
+  });
+
+  const { data: funds } = useQuery({
+    queryKey: ['deals', 'funds'],
+    queryFn: async () => {
+      const res = await api.get('/deals/funds/');
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -49,14 +60,16 @@ export default function GPPortfolioDashboard() {
     <div className="space-y-10 max-w-7xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4 duration-1000 theme-transition">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
-         <div>
+          <div>
             <div className="flex items-center gap-2 text-[#F59F01] mb-2">
                <TrendingUp size={16} />
-               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Monitoring & Control</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Institutional Analytics</span>
             </div>
             <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase">Portfolio Performance</h1>
-            <p className="text-text-muted text-sm mt-2 max-w-md font-medium">Consolidated monthly KPIs and variance analysis for all invested companies.</p>
-         </div>
+            <p className="text-text-muted text-sm mt-2 max-w-lg font-medium leading-relaxed">
+              Consolidated monitoring hub. Track <strong>EBITDA variance</strong>, monthly revenue growth, and <strong>burn rates</strong> across all portfolio companies to ensure operational targets are met.
+            </p>
+          </div>
          <div className="flex gap-4">
             <button className="bg-card border border-border-theme px-6 py-4 rounded-3xl text-center shadow-xl hover:bg-foreground/5 transition-all group theme-transition">
                <p className="text-[10px] font-black text-text-muted/40 uppercase tracking-[0.2em] mb-1">Export Aggregated</p>
@@ -65,6 +78,27 @@ export default function GPPortfolioDashboard() {
                </div>
             </button>
          </div>
+      </div>
+
+      {/* Performance Summary Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[
+          { label: 'Total AUM (FMV)', value: `रू ${((funds?.reduce((sum, f) => sum + (f.performance?.total_rv || 0), 0) || 0) / 10000000).toFixed(2)} Cr`, icon: DollarSign, color: '#F59F01' },
+          { label: 'Aggregate TVPI', value: `${(funds?.reduce((sum, f) => sum + (f.performance?.tvpi || 0), 0) / (funds?.length || 1)).toFixed(2)}x`, icon: TrendingUp, color: '#16c784' },
+          { label: 'Avg Fund IRR', value: `${(funds?.reduce((sum, f) => sum + (f.performance?.irr || 0), 0) / (funds?.length || 1)).toFixed(1)}%`, icon: BarChart3, color: '#0B6EC3' },
+          { label: 'Capital Deployed', value: `रू ${((funds?.reduce((sum, f) => sum + (f.performance?.total_invested || 0), 0) || 0) / 10000000).toFixed(2)} Cr`, icon: CheckCircle2, color: '#F59F01' }
+        ].map((m, i) => (
+          <div key={i} className="bg-card border border-border-theme p-8 rounded-[2rem] shadow-xl group hover:bg-ls-primary transition-all duration-500">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center text-text-muted/20 group-hover:text-ls-compliment transition-colors">
+                <m.icon size={18} />
+              </div>
+              <span className="text-[10px] font-black text-text-muted/20 group-hover:text-ls-white/20 uppercase tracking-widest">Live Node</span>
+            </div>
+            <p className="text-[9px] font-black text-text-muted/40 group-hover:text-ls-white/40 uppercase tracking-[0.2em] mb-1">{m.label}</p>
+            <p className="text-2xl font-black text-foreground group-hover:text-ls-white tracking-tighter tabular-nums">{m.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* KPI Table */}

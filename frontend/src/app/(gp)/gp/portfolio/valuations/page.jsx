@@ -20,7 +20,8 @@ export default function GPValuationsAggregate() {
     queryKey: ['portfolio', 'valuations'],
     queryFn: async () => {
       const res = await api.get('/deals/valuations/');
-      return res.data;
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -40,7 +41,9 @@ export default function GPValuationsAggregate() {
                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Valuation Track</span>
             </div>
             <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase">Portfolio Valuations</h1>
-            <p className="text-text-muted text-sm mt-2 max-w-md font-medium">Historical fair value tracking and unrealized gain analysis across all funds.</p>
+            <p className="text-text-muted text-sm mt-2 max-w-lg font-medium leading-relaxed">
+               Official record of fair market values. Use this ledger to track <strong>unrealized gains/losses</strong>, update <strong>NAV reports</strong>, and maintain audit trails for SEBON-compliant valuation methodologies.
+            </p>
          </div>
       </div>
 

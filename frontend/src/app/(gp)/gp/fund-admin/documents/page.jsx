@@ -75,7 +75,8 @@ export default function GPFundDocumentsPage() {
   const fetchFunds = async () => {
     try {
       const res = await api.get('/deals/funds/');
-      const fundList = res.data.results || res.data || [];
+      const data = res.data?.results ?? res.data;
+      const fundList = Array.isArray(data) ? data : [];
       setFunds(fundList);
       if (fundList.length > 0) setSelectedFundId(fundList[0].id);
     } catch (err) {
@@ -87,7 +88,8 @@ export default function GPFundDocumentsPage() {
     setLoading(true);
     try {
       const res = await api.get(`/deals/funds/${selectedFundId}/documents/`);
-      setDocuments(res.data.results || res.data || []);
+      const data = res.data?.results ?? res.data;
+      setDocuments(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error('Failed to load documents');
     } finally {

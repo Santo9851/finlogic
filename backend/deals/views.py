@@ -87,6 +87,7 @@ from .permissions import (
     IsDealAccessible,
     IsSuperAdminRole,
 )
+from .signals import _log_audit_event
 from .serializers import (
     DocumentUploadRequestSerializer,
     FundDocumentSerializer,
@@ -190,6 +191,92 @@ def _calculate_xirr(cashflows, guess=0.1):
         if abs(v) < 0.001:
             break
     return mid
+
+def _calculate_fund_performance_metrics(fund):
+    """
+    Computes TVPI, DPI, RVPI, and Gross/Net IRR for a Fund (aggregate).
+    """
+    from datetime import date
+    from django.db.models import Sum
+    
+    # 1. Aggregate Paid-In Capital (All LPs)
+    paid_in = CapitalCall.objects.filter(
+        fund=fund,
+        status__in=['VERIFIED', 'RECEIVED']
+    ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0
+    paid_in = float(paid_in)
+
+    # 2. Total Distributed (All LPs)
+    total_dist = Distribution.objects.filter(
+        fund=fund
+    ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0
+    total_dist = float(total_dist)
+
+    # 3. Fair Market Value of active investments
+    investments = PEInvestment.objects.filter(fund=fund, exit_date__isnull=True)
+    fund_fmv = 0
+    fund_cost = 0
+    for inv in investments:
+        latest_val = ValuationRecord.objects.filter(investment=inv).order_by('-valuation_date').first()
+        fund_fmv += float(latest_val.fair_value_npr if latest_val else inv.investment_amount_npr)
+        fund_cost += float(inv.investment_amount_npr)
+    
+    # 4. Fund-level Fees
+    total_fees = float(CapitalCall.objects.filter(
+        fund=fund, 
+        status__in=['VERIFIED', 'RECEIVED'], 
+        call_type__in=['MANAGEMENT_FEE', 'FUND_EXPENSE', 'OTHER']
+    ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
+
+    # 5. Fund Cash Position
+    fund_cash = paid_in - total_dist - fund_cost - total_fees
+    
+    # 6. Residual Value
+    gross_rv = fund_fmv + fund_cash
+    
+    # 7. Carry Deduction (Estimated)
+    profit = gross_rv + total_dist - paid_in
+    estimated_carry = 0
+    if profit > 0:
+        estimated_carry = profit * (fund.carry_pct / 100.0)
+    
+    net_rv = gross_rv - estimated_carry
+
+    # 8. Multipliers
+    if paid_in > 0:
+        dpi = total_dist / paid_in
+        rvpi = net_rv / paid_in
+        tvpi = dpi + rvpi
+    else:
+        dpi = rvpi = tvpi = 0.0
+
+    # 9. XIRR (Net)
+    cf = []
+    calls = CapitalCall.objects.filter(fund=fund, status__in=['VERIFIED', 'RECEIVED'])
+    for c in calls:
+        cf.append((c.received_at.date() if c.received_at else c.call_date, -float(c.amount_npr)))
+    
+    dists = Distribution.objects.filter(fund=fund)
+    for d in dists:
+        cf.append((d.distribution_date, float(d.amount_npr)))
+    
+    if net_rv > 0:
+        cf.append((date.today(), net_rv))
+        
+    irr = _calculate_xirr(cf)
+
+    return {
+        'tvpi': round(tvpi, 2),
+        'dpi': round(dpi, 2),
+        'rvpi': round(rvpi, 2),
+        'irr': round(irr * 100, 1),
+        'total_rv': round(net_rv, 2),
+        'gross_rv': round(gross_rv, 2),
+        'estimated_carry': round(estimated_carry, 2),
+        'total_mgmt_fees': round(total_fees, 2),
+        'total_invested': round(fund_cost, 2),
+        'total_paid_in': round(paid_in, 2)
+    }
 
 def _calculate_lp_performance_metrics(lp_profile):
     """
@@ -615,13 +702,35 @@ class LPPortfolioView(APIView):
 
         fund_ids = lp_profile.fund_commitments.values_list('fund_id', flat=True)
         
+        # We want to show projects that have at least reached LOI status
         projects = PEProject.objects.filter(
             fund_id__in=fund_ids,
             status__in=[PEProject.Status.LOI_ISSUED, PEProject.Status.CONTRACT_SIGNED, PEProject.Status.CAPITAL_CALLED, PEProject.Status.CLOSED]
         ).distinct()
 
-        serializer = LPPortfolioSerializer(projects, many=True)
-        
+        # Enriched serialization with investment data
+        project_list = []
+        for p in projects:
+            p_data = LPPortfolioSerializer(p).data
+            
+            # Find investments for this project within the LP's funds
+            invs = PEInvestment.objects.filter(project=p, fund_id__in=fund_ids)
+            total_invested = invs.aggregate(Sum('investment_amount_npr'))['investment_amount_npr__sum'] or 0
+            
+            # Latest valuation
+            latest_fv = 0
+            for inv in invs:
+                val = ValuationRecord.objects.filter(investment=inv).order_by('-valuation_date').first()
+                latest_fv += float(val.fair_value_npr if val else inv.investment_amount_npr)
+            
+            p_data.update({
+                'total_invested_npr': float(total_invested),
+                'current_fv_npr': float(latest_fv),
+                'moic': float(latest_fv / total_invested) if total_invested > 0 else 1.0,
+                'has_investment': invs.exists()
+            })
+            project_list.append(p_data)
+
         # Real metrics calculation
         performance = _calculate_lp_performance_metrics(lp_profile)
         
@@ -635,7 +744,7 @@ class LPPortfolioView(APIView):
             stats['sectors'][p.sector] = stats['sectors'].get(p.sector, 0) + 1
 
         return Response({
-            'projects': serializer.data,
+            'projects': project_list,
             'stats': stats
         })
 
@@ -1602,6 +1711,7 @@ class LPDashboardView(APIView):
                 'total_paid_ltd_npr': float(performance.get('total_mgmt_fees', 0)),
             },
             'performance': performance,
+            'total_credit_balance_npr': float(sum(c.credit_balance_npr for c in commitments)),
             'pending_calls': CapitalCallSerializer(
             CapitalCall.objects.filter(lp_commitment__in=commitments, status__in=['CALLED', 'PAID', 'VERIFIED']).select_related('fund'),
                 many=True
@@ -3193,6 +3303,48 @@ class MonteCarloSimulationView(APIView):
         return Response(results)
 
 
+class PEInvestmentViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    List all active PE investments (Fund -> Project links).
+    """
+    queryset = PEInvestment.objects.all()
+    serializer_class = PEInvestmentSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get_queryset(self):
+        fund_id = self.request.query_params.get('fund_id')
+        if fund_id:
+            return self.queryset.filter(fund_id=fund_id)
+        return self.queryset
+
+
+class ImmutableAuditEventViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    GP staff view of relevant audit events.
+    Filters: 
+    1. Events where the user is the actor.
+    2. Events related to projects where the user is creator or collaborator.
+    """
+    queryset = ImmutableAuditEvent.objects.all()
+    serializer_class = ImmutableAuditEventSerializer
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.has_role('super_admin'):
+            return self.queryset.all()
+            
+        # Get projects user can access
+        project_ids = PEProject.objects.filter(
+            models.Q(created_by=user) | models.Q(collaborators=user)
+        ).values_list('id', flat=True)
+        
+        # Filter events
+        return self.queryset.filter(
+            models.Q(actor=user) | 
+            (models.Q(content_type_label__contains='PEProject') & models.Q(object_id__in=project_ids))
+        ).distinct()
+
 # ---------------------------------------------------------------------------
 # 16. Valuation & Exit Views
 # ---------------------------------------------------------------------------
@@ -3230,11 +3382,11 @@ class ValuationRecordViewSet(viewsets.ModelViewSet):
             previous_valuation_npr=prev_val
         )
         
-        ImmutableAuditEvent.objects.create(
+        _log_audit_event(
             event_type='VALUATION_CREATED',
-            project=investment.project,
-            user=self.request.user,
-            metadata={
+            obj=val_record,
+            actor=self.request.user,
+            payload={
                 "investment_id": str(investment.id),
                 "valuation_id": str(val_record.id),
                 "fair_value": str(val_record.fair_value_npr)
@@ -3243,22 +3395,22 @@ class ValuationRecordViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         val_record = serializer.save()
-        ImmutableAuditEvent.objects.create(
+        _log_audit_event(
             event_type='VALUATION_UPDATED',
-            project=val_record.investment.project,
-            user=self.request.user,
-            metadata={"valuation_id": str(val_record.id)}
+            obj=val_record,
+            actor=self.request.user,
+            payload={"valuation_id": str(val_record.id)}
         )
 
     def perform_destroy(self, instance):
         if not self.request.user.has_role('super_admin'):
             raise PermissionDenied("Only super admins can delete valuations.")
         
-        ImmutableAuditEvent.objects.create(
+        _log_audit_event(
             event_type='VALUATION_DELETED',
-            project=instance.investment.project,
-            user=self.request.user,
-            metadata={"valuation_id": str(instance.id), "fair_value": str(instance.fair_value_npr)}
+            obj=instance,
+            actor=self.request.user,
+            payload={"valuation_id": str(instance.id), "fair_value": str(instance.fair_value_npr)}
         )
         instance.delete()
 
@@ -3293,11 +3445,11 @@ class ExitScenarioViewSet(viewsets.ModelViewSet):
             scenario.ipo_eligibility_notes = report['overall_requirements']
             scenario.save()
             
-        ImmutableAuditEvent.objects.create(
+        _log_audit_event(
             event_type='EXIT_SCENARIO_CREATED',
-            project=investment.project,
-            user=self.request.user,
-            metadata={"scenario_id": str(scenario.id), "name": scenario.name}
+            obj=scenario,
+            actor=self.request.user,
+            payload={"scenario_id": str(scenario.id), "name": scenario.name}
         )
 
     @action(detail=True, methods=['post'])
@@ -3309,11 +3461,11 @@ class ExitScenarioViewSet(viewsets.ModelViewSet):
         scenario.is_approved_by_ic = True
         scenario.save()
         
-        ImmutableAuditEvent.objects.create(
+        _log_audit_event(
             event_type='EXIT_SCENARIO_APPROVED',
-            project=scenario.investment.project,
-            user=request.user,
-            metadata={"scenario_id": str(scenario.id)}
+            obj=scenario,
+            actor=request.user,
+            payload={"scenario_id": str(scenario.id)}
         )
         return Response({"status": "approved"})
 
@@ -3325,11 +3477,11 @@ class IPOEligibilityView(APIView):
         investment = get_object_or_404(PEInvestment, id=investment_id)
         report = check_ipo_eligibility(investment.project, investment)
         
-        ImmutableAuditEvent.objects.create(
+        _log_audit_event(
             event_type='IPO_ELIGIBILITY_CHECKED',
-            project=investment.project,
-            user=request.user,
-            metadata={"investment_id": str(investment_id)}
+            obj=investment,
+            actor=request.user,
+            payload={"investment_id": str(investment_id)}
         )
         return Response(report)
 
@@ -3889,10 +4041,19 @@ class GPCapitalCallBatchView(APIView):
         # Create calls
         calls = []
         call_type = request.data.get('call_type', CapitalCall.CallType.INVESTMENT)
+        apply_credits = request.data.get('apply_credits', True) # Default to True for institutional grade
         
         for comm in fund.lp_commitments.all():
             # Allocation = (LP Commitment / Total Fund Commitment) * Total Drawdown
             lp_share = (comm.committed_amount_npr / total_committed) * amount_dec
+            
+            credit_used = Decimal('0')
+            if apply_credits and comm.credit_balance_npr > 0:
+                credit_used = min(lp_share, comm.credit_balance_npr)
+                lp_share -= credit_used
+                comm.credit_balance_npr -= credit_used
+                comm.save()
+
             call = CapitalCall.objects.create(
                 fund=fund,
                 project=project,
@@ -3902,7 +4063,7 @@ class GPCapitalCallBatchView(APIView):
                 amount_npr=lp_share,
                 call_type=call_type,
                 status=CapitalCall.Status.CALLED,
-                notes=request.data.get('notes', '')
+                notes=request.data.get('notes', '') + (f" (Net of {float(credit_used)} credits applied)" if credit_used > 0 else "")
             )
             calls.append(call)
             
@@ -4276,4 +4437,138 @@ class DrawdownFundFeesView(APIView):
                 )
 
         return Response(CapitalCallSerializer(created_calls, many=True).data, status=status.HTTP_201_CREATED)
+
+
+class LPCatchUpCalculationView(APIView):
+    """
+    GET /api/deals/lp-profiles/{id}/calculate-catch-up/
+    Returns suggested capital call amounts for an LP who joined late.
+    Analyzes all deals in the fund(s) they are committed to and identifies gaps.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdminRole]
+
+    def get(self, request, lp_id):
+        lp_profile = get_object_or_404(LPProfile, pk=lp_id)
+        results = []
+        
+        # 1. Iterate through all fund commitments for this LP
+        for comm in lp_profile.fund_commitments.all():
+            fund = comm.fund
+            
+            # 2. Find all projects associated with this fund that have had capital calls
+            projects_with_calls = PEProject.objects.filter(
+                capital_calls__fund=fund
+            ).distinct()
+            
+            for project in projects_with_calls:
+                # 3. Check if this specific LP already has a capital call for this project
+                has_call = CapitalCall.objects.filter(
+                    lp_commitment=comm,
+                    project=project
+                ).exists()
+                
+                if not has_call:
+                    # 4. Calculate total amount called from other LPs for this project
+                    total_deal_drawdown = CapitalCall.objects.filter(
+                        fund=fund,
+                        project=project
+                    ).aggregate(total=Sum('amount_npr'))['total'] or Decimal('0')
+                    
+                    # 5. Calculate the current total commitment to the fund to get the denominator
+                    total_fund_commitment = fund.lp_commitments.aggregate(total=Sum('committed_amount_npr'))['total'] or Decimal('1')
+                    
+                    # 6. Suggested Equalization Share
+                    suggested_amount = (comm.committed_amount_npr / total_fund_commitment) * total_deal_drawdown
+                    
+                    results.append({
+                        'fund_id': str(fund.id),
+                        'fund_name': fund.name,
+                        'project_id': str(project.id),
+                        'project_name': project.legal_name,
+                        'lp_commitment_id': str(comm.id),
+                        'total_deal_call': float(total_deal_drawdown),
+                        'suggested_amount': float(suggested_amount),
+                        'is_catch_up': True
+                    })
+                    
+        return Response(results)
+
+
+class LPCatchUpExecutionView(APIView):
+    """
+    POST /api/deals/lp-profiles/{lp_id}/execute-catch-up/
+    Executes the equalization protocol:
+    1. Creates CapitalCall for the late LP (Principal + Interest).
+    2. (Optional) Creates Distributions for early LPs as refunds.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsSuperAdminRole]
+
+    @transaction.atomic
+    def post(self, request, lp_id):
+        lp_profile = get_object_or_404(LPProfile, pk=lp_id)
+        project_id = request.data.get('project')
+        lp_commitment_id = request.data.get('lp_commitment')
+        fund_id = request.data.get('fund')
+        
+        amount = Decimal(str(request.data.get('amount_npr', 0)))
+        interest_amount = Decimal(str(request.data.get('interest_npr', 0)))
+        due_date = request.data.get('due_date')
+        auto_redistribute = request.data.get('auto_redistribute', False)
+        redistribute_mode = request.data.get('redistribute_mode', 'REFUND') # 'REFUND' or 'CREDIT'
+        notes = request.data.get('notes', '')
+
+        project = get_object_or_404(PEProject, pk=project_id)
+        comm = get_object_or_404(LPFundCommitment, pk=lp_commitment_id)
+        fund = get_object_or_404(Fund, pk=fund_id)
+        
+        # 1. Create the Catch-up Call for the Late LP
+        total_call_amount = amount + interest_amount
+        catch_up_call = CapitalCall.objects.create(
+            fund=fund,
+            project=project,
+            lp_commitment=comm,
+            amount_npr=total_call_amount,
+            due_date=due_date,
+            call_type=CapitalCall.CallType.EQUALIZATION,
+            status=CapitalCall.Status.CALLED,
+            notes=notes
+        )
+
+        # 2. Redistribution Logic
+        if auto_redistribute:
+            # Find early LPs who previously paid for this project in this fund
+            early_calls = CapitalCall.objects.filter(
+                fund=fund,
+                project=project
+            ).exclude(lp_commitment=comm)
+            
+            total_early_principal = early_calls.aggregate(total=Sum('amount_npr'))['total'] or Decimal('1')
+            
+            for early_call in early_calls:
+                # Pro-rata share of the catch-up being received
+                share_of_refund = (early_call.amount_npr / total_early_principal) * total_call_amount
+                
+                if redistribute_mode == 'CREDIT':
+                    # Netting Engine: Add to credit balance
+                    early_comm = early_call.lp_commitment
+                    early_comm.credit_balance_npr += share_of_refund
+                    early_comm.save()
+                else:
+                    # Traditional Redistribution: Create Distribution record
+                    Distribution.objects.create(
+                        fund=fund,
+                        project=project,
+                        lp_commitment=early_call.lp_commitment,
+                        amount_npr=share_of_refund,
+                        distribution_type=Distribution.DistributionType.EQUALIZATION_REFUND,
+                        distribution_date=timezone.now().date(),
+                        notes=f"Equalization refund from late LP ({lp_profile.user.email}) for {project.legal_name}"
+                    )
+
+        return Response({
+            "status": "SUCCESS",
+            "capital_call_id": str(catch_up_call.id),
+            "redistributed": auto_redistribute,
+            "mode": redistribute_mode
+        })
 

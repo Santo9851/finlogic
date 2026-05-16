@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, PieChart, FileText, LogOut, User, Menu, X, TrendingUp, ChevronDown, Library, ArrowLeftRight } from 'lucide-react';
+import { LayoutDashboard, PieChart, FileText, LogOut, User, Menu, X, TrendingUp, ChevronDown, Library, ArrowLeftRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { PortalGuard } from '@/components/portal/PortalShell';
 import FinlogicLogo from '@/components/FinlogicLogo';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useTheme } from 'next-themes';
 import ProfileDropdown from '@/components/portal/ProfileDropdown';
+import { motion } from 'framer-motion';
 
 const NAV = [
   { href: '/lp/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -41,16 +42,16 @@ export default function LPLayout({ children }) {
 
         {/* Sidebar */}
         <aside className={`
-          fixed lg:static inset-y-0 left-0 z-50 w-64 lg:w-56 flex-shrink-0 flex flex-col bg-card border-r border-border-theme transition-transform duration-300 ease-in-out overflow-x-hidden theme-transition
+          fixed lg:static inset-y-0 left-0 z-50 w-72 lg:w-64 flex-shrink-0 flex flex-col bg-ls-primary border-r border-ls-white/5 transition-transform duration-300 ease-in-out overflow-x-hidden shadow-2xl
           ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
-          <div className="px-4 py-5 border-b border-border-theme flex items-center justify-between">
-             <FinlogicLogo size={32} variant="full" darkBg={isDark} />
-             <button className="lg:hidden text-text-muted p-1" onClick={() => setIsMobileMenuOpen(false)}>
+          <div className="px-8 py-10 border-b border-ls-white/5 flex items-center justify-between">
+             <FinlogicLogo size={36} variant="full" darkBg={true} />
+             <button className="lg:hidden text-ls-white/40 p-1" onClick={() => setIsMobileMenuOpen(false)}>
                <X size={20} />
              </button>
           </div>
-          <nav className="flex-1 py-4">
+          <nav className="flex-1 py-12 px-4 space-y-2">
             {NAV.map(({ href, label, icon: Icon }) => {
               const active = pathname === href;
               return (
@@ -58,26 +59,42 @@ export default function LPLayout({ children }) {
                   key={href}
                   href={href}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg mb-1 text-sm font-medium transition-all ${
-                    active ? 'bg-[#0B6EC3]/15 text-[#0B6EC3]' : 'text-text-muted hover:text-ls-primary dark:hover:text-white hover:bg-ls-primary/5 dark:hover:bg-white/5'
+                  className={`relative flex items-center gap-5 px-6 py-4 transition-all group ${
+                    active 
+                      ? 'text-ls-compliment' 
+                      : 'text-ls-white/40 hover:text-ls-white hover:bg-ls-white/5'
                   }`}
                 >
-                  <Icon size={17} />
-                  {label}
+                  {active && (
+                    <motion.div 
+                      layoutId="nav-indicator-lp"
+                      className="absolute left-0 w-1 h-8 bg-ls-compliment" 
+                    />
+                  )}
+                  <Icon size={18} className={`${active ? 'text-ls-compliment' : 'group-hover:text-ls-compliment'} transition-colors`} />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.4em]">{label}</span>
                 </Link>
               );
             })}
           </nav>
-          <div className="border-t border-border-theme p-4">
-            {user && (
-              <div className="mb-3">
-                <p className="text-foreground text-sm font-medium truncate">{user.first_name} {user.last_name}</p>
-                <p className="text-text-muted text-xs truncate">{user.email}</p>
-              </div>
-            )}
-            <button onClick={logout} className="flex items-center gap-2 text-text-muted hover:text-red-400 text-sm transition-colors">
-              <LogOut size={15} /> Sign out
-            </button>
+          
+          <div className="p-8 border-t border-ls-white/5">
+             <div className="flex items-center gap-4 mb-8">
+                <div className="w-10 h-10 border border-ls-white/10 flex items-center justify-center text-ls-compliment">
+                   <ShieldCheck size={20} />
+                </div>
+                <div>
+                   <p className="text-[9px] font-bold text-ls-white/60 uppercase tracking-widest">Auth Level</p>
+                   <p className="text-[10px] font-bold text-ls-compliment uppercase tracking-[0.3em]">Institutional LP</p>
+                </div>
+             </div>
+             <button 
+               onClick={logout}
+               className="flex items-center gap-3 text-[9px] font-bold text-ls-white/20 hover:text-red-400 uppercase tracking-[0.4em] transition-colors w-full group"
+             >
+               <LogOut size={14} className="group-hover:translate-x-1 transition-transform" />
+               Sign Out Protocol
+             </button>
           </div>
         </aside>
 

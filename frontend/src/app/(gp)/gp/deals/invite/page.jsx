@@ -67,7 +67,8 @@ export default function GPInvitePage() {
 
   useEffect(() => {
     api.get('/deals/funds/').then((r) => {
-      setFunds(r.data?.results ?? r.data ?? []);
+      const data = r.data?.results ?? r.data;
+      setFunds(Array.isArray(data) ? data : []);
     }).catch(() => toast.error('Could not load funds.'));
   }, []);
 

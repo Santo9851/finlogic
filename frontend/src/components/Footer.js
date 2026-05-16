@@ -18,7 +18,7 @@ export default function Footer() {
     setLoading(true);
     try {
       // Use the new newsletter endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/newsletter/subscribe/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}newsletter/subscribe/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

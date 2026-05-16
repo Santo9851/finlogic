@@ -36,7 +36,8 @@ export default function GPGovernancePage() {
   const fetchProposals = async () => {
     try {
       const res = await api.get('/deals/governance-proposals/');
-      setProposals(res.data.results || res.data || []);
+      const data = res.data?.results ?? res.data;
+      setProposals(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error('Failed to load proposals');
     } finally {

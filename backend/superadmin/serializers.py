@@ -13,6 +13,7 @@ class SuperAdminUserSerializer(serializers.ModelSerializer):
     role_list = serializers.ListField(child=serializers.CharField(), read_only=True)
     validator_quota = serializers.SerializerMethodField()
     quota_history = serializers.SerializerMethodField()
+    lp_profile_id = serializers.SerializerMethodField()
     
     class Meta:
         model = User
@@ -20,9 +21,15 @@ class SuperAdminUserSerializer(serializers.ModelSerializer):
             'id', 'email', 'first_name', 'last_name', 'phone', 
             'roles', 'role_list', 'is_active', 'is_approved', 
             'email_verified_at', 'created_at', 'updated_at',
-            'validator_quota', 'quota_history'
+            'validator_quota', 'quota_history', 'lp_profile_id'
         ]
         read_only_fields = ['id', 'email_verified_at', 'created_at', 'updated_at']
+
+    def get_lp_profile_id(self, obj):
+        try:
+            return str(obj.lp_profile.id)
+        except:
+            return None
 
     def get_validator_quota(self, obj):
         from idea_validator.logic import get_or_init_quota
@@ -73,14 +80,14 @@ class SuperAdminAuditLogSerializer(serializers.ModelSerializer):
 class SuperAdminImmutableAuditEventSerializer(serializers.ModelSerializer):
     actor_email = serializers.EmailField(source='actor.email', read_only=True)
     actor_name = serializers.CharField(source='actor.get_full_name', read_only=True)
-    project_name = serializers.CharField(source='project.legal_name', read_only=True)
     event_type_display = serializers.CharField(source='get_event_type_display', read_only=True)
 
     class Meta:
         model = ImmutableAuditEvent
         fields = [
             'id', 'event_type', 'event_type_display', 'actor', 'actor_email', 
-            'actor_name', 'project', 'project_name', 'metadata', 'created_at'
+            'actor_name', 'object_id', 'object_repr', 'content_type_label', 
+            'payload', 'created_at'
         ]
 
 class SuperAdminValidationAnswerSerializer(serializers.ModelSerializer):

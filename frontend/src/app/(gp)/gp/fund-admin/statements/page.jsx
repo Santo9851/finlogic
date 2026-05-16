@@ -25,7 +25,8 @@ export default function StatementAdmin() {
     queryKey: ['admin', 'funds'],
     queryFn: async () => {
       const res = await api.get('/deals/funds/');
-      return res.data;
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     }
   });
 
@@ -34,7 +35,8 @@ export default function StatementAdmin() {
     queryFn: async () => {
       if (!formData.fund_id) return [];
       const res = await api.get(`/deals/funds/${formData.fund_id}/lps/`);
-      return res.data;
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     },
     enabled: !!formData.fund_id
   });

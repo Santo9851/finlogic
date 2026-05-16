@@ -21,60 +21,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
-
-// Sample Audit Data
-const AUDIT_LOGS = [
-  {
-    id: 1,
-    action: 'Document Uploaded',
-    details: 'Financial_Statement_Q4.pdf uploaded for CloudScale AI',
-    user: 'Sarah Jenkins',
-    role: 'GP Staff',
-    timestamp: '2026-04-19 14:45',
-    type: 'upload',
-    status: 'success'
-  },
-  {
-    id: 2,
-    action: 'Login Success',
-    details: 'GP Staff login from IP 192.168.1.45',
-    user: 'Michael Chen',
-    role: 'Admin',
-    timestamp: '2026-04-19 09:12',
-    type: 'auth',
-    status: 'success'
-  },
-  {
-    id: 3,
-    action: 'Deal Status Changed',
-    details: 'GreenPulse moved from Due Diligence to Investment Committee',
-    user: 'Sarah Jenkins',
-    role: 'GP Staff',
-    timestamp: '2026-04-18 16:30',
-    type: 'update',
-    status: 'success'
-  },
-  {
-    id: 4,
-    action: 'Security Alert',
-    details: 'Multiple failed login attempts detected',
-    user: 'Unknown',
-    role: 'External',
-    timestamp: '2026-04-18 22:10',
-    type: 'security',
-    status: 'warning'
-  },
-  {
-    id: 5,
-    action: 'Pre-signed URL Generated',
-    details: 'Download link created for private document: Term_Sheet.pdf',
-    user: 'David Miller',
-    role: 'Managing Partner',
-    timestamp: '2026-04-18 11:05',
-    type: 'access',
-    status: 'success'
-  }
-];
+import api from '@/services/api';
+import { format } from 'date-fns';
 
 export default function GPAuditPage() {
   const { resolvedTheme } = useTheme();
@@ -83,12 +31,48 @@ export default function GPAuditPage() {
   const [logs, setLogs] = useState([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLogs(AUDIT_LOGS);
-      setLoading(false);
-    }, 800);
-    return () => clearTimeout(timer);
+    fetchLogs();
   }, []);
+
+  const fetchLogs = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/deals/audit/');
+      const data = res.data?.results ?? res.data;
+      
+      // Map API data to UI format
+      const mappedLogs = (Array.isArray(data) ? data : []).map(item => ({
+        id: item.id,
+        action: item.event_type_display,
+        details: item.object_repr || JSON.stringify(item.payload),
+        user: item.actor_email || 'System',
+        role: 'GP Staff', // Could be expanded if role info is in API
+        timestamp: format(new Date(item.created_at), 'yyyy-MM-dd HH:mm'),
+        type: mapEventTypeToIcon(item.event_type),
+        status: mapEventTypeToStatus(item.event_type)
+      }));
+      
+      setLogs(mappedLogs);
+    } catch (err) {
+      console.error('Failed to fetch audit logs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const mapEventTypeToIcon = (type) => {
+    if (type.includes('UPLOAD')) return 'upload';
+    if (type.includes('STATUS') || type.includes('UPDATE')) return 'update';
+    if (type.includes('CREATED')) return 'auth';
+    if (type.includes('ACCESS')) return 'access';
+    return 'default';
+  };
+
+  const mapEventTypeToStatus = (type) => {
+    if (type.includes('DECLINED') || type.includes('DELETE') || type.includes('FAILED')) return 'error';
+    if (type.includes('WARNING') || type.includes('DEFAULTED')) return 'warning';
+    return 'success';
+  };
 
   return (
     <div className="space-y-8 theme-transition animate-in fade-in duration-700">

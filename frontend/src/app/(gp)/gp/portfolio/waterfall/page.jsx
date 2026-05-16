@@ -11,7 +11,15 @@ export default function WaterfallCalculator() {
   const [exitProceeds, setExitProceeds] = useState('');
   const [result, setResult] = useState(null);
 
-  const [investmentId, setInvestmentId] = useState('');
+  // Fetch available investments
+  const { data: investments, isLoading: loadingInvs } = useQuery({
+    queryKey: ['portfolio', 'investments'],
+    queryFn: async () => {
+      const res = await api.get('/deals/investments/');
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
+    }
+  });
 
   const calculateMutation = useMutation({
     mutationFn: async (data) => {
@@ -26,7 +34,7 @@ export default function WaterfallCalculator() {
   const handleCalculate = (e) => {
     e.preventDefault();
     calculateMutation.mutate({
-      investment_id: investmentId,
+      investment_id: selectedInvestmentId,
       exit_proceeds: exitProceeds
     });
   };
@@ -39,16 +47,25 @@ export default function WaterfallCalculator() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "waterfall_export.csv");
+    link.setAttribute("download", `waterfall_${selectedInvestmentId}.csv`);
     document.body.appendChild(link);
     link.click();
   };
 
   return (
     <div className="space-y-8 pb-20 theme-transition">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Waterfall Calculator</h1>
-        <p className="text-text-muted text-sm mt-1 font-medium">Calculate exit distributions and GP carry</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Waterfall Calculator</h1>
+          <p className="text-text-muted text-sm mt-1 font-medium">Calculate exit distributions and GP carry</p>
+        </div>
+        
+        <div className="bg-ls-compliment/5 border border-ls-compliment/20 rounded-2xl p-4 max-w-sm">
+          <p className="text-[10px] text-ls-compliment font-black uppercase tracking-widest mb-1">Tool Insight</p>
+          <p className="text-[11px] text-text-muted leading-tight font-medium">
+            This tool models the <strong>8-8-2 distribution hierarchy</strong>: return of capital, preferred return, GP catchup, and the carry split.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -56,41 +73,74 @@ export default function WaterfallCalculator() {
           <form onSubmit={handleCalculate} className="bg-card border border-border-theme rounded-2xl p-6 space-y-6 shadow-xl theme-transition">
             <div>
               <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2 px-1">
-                Investment ID
+                Select Investment
               </label>
-              <input
-                type="text"
-                value={investmentId}
-                onChange={(e) => setInvestmentId(e.target.value)}
-                placeholder="UUID of PEInvestment"
-                className="w-full bg-foreground/5 border border-border-theme rounded-xl p-4 text-foreground focus:border-[#F59F01] outline-none transition-all placeholder:text-text-muted/20"
+              <select
+                value={selectedInvestmentId}
+                onChange={(e) => setSelectedInvestmentId(e.target.value)}
+                className="w-full bg-foreground/5 border border-border-theme rounded-xl p-4 text-foreground focus:border-[#F59F01] outline-none transition-all appearance-none cursor-pointer font-medium"
                 required
-              />
+              >
+                <option value="" className="bg-background">Choose active investment...</option>
+                {investments?.map(inv => (
+                  <option key={inv.id} value={inv.id} className="bg-background">
+                    {inv.project_name} ({inv.fund_name})
+                  </option>
+                ))}
+              </select>
+              {loadingInvs && <p className="text-[10px] text-ls-compliment mt-2 animate-pulse">Loading portfolio entities...</p>}
             </div>
             
             <div>
               <label className="block text-xs font-bold text-text-muted uppercase tracking-widest mb-2 px-1">
                 Exit Proceeds (NPR)
               </label>
-              <input
-                type="number"
-                value={exitProceeds}
-                onChange={(e) => setExitProceeds(e.target.value)}
-                placeholder="e.g. 50000000"
-                className="w-full bg-foreground/5 border border-border-theme rounded-xl p-4 text-foreground focus:border-[#F59F01] outline-none transition-all placeholder:text-text-muted/20"
-                required
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted/40 font-mono text-xs">NPR</span>
+                <input
+                  type="number"
+                  value={exitProceeds}
+                  onChange={(e) => setExitProceeds(e.target.value)}
+                  placeholder="e.g. 50000000"
+                  className="w-full bg-foreground/5 border border-border-theme rounded-xl py-4 pl-14 pr-4 text-foreground focus:border-[#F59F01] outline-none transition-all placeholder:text-text-muted/20 font-mono"
+                  required
+                />
+              </div>
             </div>
 
             <button
               type="submit"
-              disabled={calculateMutation.isPending}
+              disabled={calculateMutation.isPending || !selectedInvestmentId}
               className="w-full bg-[#F59F01] hover:bg-[#F59F01]/90 text-ls-primary-fixed font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-[#F59F01]/20 active:scale-95"
             >
               {calculateMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Calculator size={18} />}
               Calculate Waterfall
             </button>
           </form>
+
+          <div className="bg-foreground/[0.02] border border-border-theme rounded-2xl p-6 space-y-4 theme-transition">
+            <h3 className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+              <ChevronRight size={14} className="text-ls-compliment" /> Documentation
+            </h3>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-foreground">1. Capital Recovery</p>
+                <p className="text-[11px] text-text-muted leading-relaxed">First distributions return 100% of the invested capital to LPs.</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-foreground">2. Preferred Return (8%)</p>
+                <p className="text-[11px] text-text-muted leading-relaxed">LPs receive an 8% compounded annual hurdle on their capital.</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-foreground">3. GP Catchup</p>
+                <p className="text-[11px] text-text-muted leading-relaxed">Once LPs hit their hurdle, the GP receives a catch-up distribution.</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-foreground">4. Carried Interest (20%)</p>
+                <p className="text-[11px] text-text-muted leading-relaxed">Remaining proceeds are split 80/20 between LPs and GP.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="lg:col-span-2 space-y-6">

@@ -26,7 +26,8 @@ export default function GPDataRoomPage() {
         api.get(`/deals/projects/${id}/documents/`)
       ]);
       setProject(pRes.data);
-      setDocs(dRes.data?.results ?? dRes.data ?? []);
+      const data = dRes.data?.results ?? dRes.data;
+      setDocs(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error('Failed to load data room.');
     } finally {

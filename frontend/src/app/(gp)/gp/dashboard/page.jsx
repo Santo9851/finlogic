@@ -28,7 +28,8 @@ export default function GPDashboardPage() {
     queryKey: ['deals', 'projects'],
     queryFn: async () => {
       const res = await api.get('/deals/projects/?page_size=100');
-      return res.data?.results ?? res.data ?? [];
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     },
     refetchInterval: 30000,
   });
@@ -37,24 +38,27 @@ export default function GPDashboardPage() {
     queryKey: ['deals', 'funds'],
     queryFn: async () => {
       const res = await api.get('/deals/funds/');
-      return res.data?.results ?? res.data ?? [];
+      const data = res.data?.results ?? res.data;
+      return Array.isArray(data) ? data : [];
     }
   });
 
-  const totalCommitted = funds.reduce((sum, f) => sum + Number(f.committed_capital_npr), 0);
-  const formattedCapital = new Intl.NumberFormat('en-NP', {
+  const totalFMV = funds.reduce((sum, f) => sum + (f.performance?.total_rv || 0), 0);
+  const avgIRR = funds.length > 0 ? (funds.reduce((sum, f) => sum + (f.performance?.irr || 0), 0) / funds.length) : 0;
+  
+  const formattedFMV = new Intl.NumberFormat('en-NP', {
     style: 'currency',
     currency: 'NPR',
     notation: 'compact',
     maximumFractionDigits: 2
-  }).format(totalCommitted);
+  }).format(totalFMV);
 
   const count = (s) => projects.filter((d) => d.status === s).length;
 
   const metrics = [
     { label: 'Total Pipeline', value: projects.length, icon: Briefcase, color: isDark ? '#F59F01' : '#0B6EC3', href: '/gp/deals' },
-    { label: 'New Submissions', value: count('SUBMITTED'), icon: Clock, color: '#0B6EC3', href: '/gp/deals?status=SUBMITTED' },
-    { label: 'In Diligence', value: count('SCREENING'), icon: TrendingUp, color: '#16c784', href: '/gp/deals?status=SCREENING' },
+    { label: 'Avg Portfolio IRR', value: `${avgIRR.toFixed(1)}%`, icon: TrendingUp, color: '#16c784', href: '/gp/portfolio/analytics' },
+    { label: 'In Diligence', value: count('SCREENING'), icon: ShieldCheck, color: '#0B6EC3', href: '/gp/deals?status=SCREENING' },
     { label: 'IC Review', value: count('IC_REVIEW'), icon: AlertTriangle, color: '#ea3943', href: '/gp/deals?status=IC_REVIEW' },
   ];
 
@@ -70,11 +74,12 @@ export default function GPDashboardPage() {
 
   // Fund Deployment Data
   const fundDeployment = funds.map(f => {
+    const invested = Number(f.performance?.total_invested || 0);
     const committed = Number(f.committed_capital_npr);
-    const target = Number(f.target_size_npr);
     return {
       name: f.name,
-      percent: target > 0 ? (committed / target) * 100 : 0,
+      percent: committed > 0 ? (invested / committed) * 100 : 0,
+      invested: invested,
       committed: committed
     };
   }).slice(0, 3);
@@ -98,8 +103,8 @@ export default function GPDashboardPage() {
         </div>
         <div className="flex items-center gap-8 bg-card border border-border-theme p-6 rounded-[2rem] shadow-xl">
           <div className="text-right">
-            <p className="text-[9px] text-text-muted/40 uppercase tracking-[0.3em] font-black mb-1">Active Commitment</p>
-            <p className="text-xl font-black text-foreground tabular-nums tracking-tighter">{formattedCapital}</p>
+            <p className="text-[9px] text-text-muted/40 uppercase tracking-[0.3em] font-black mb-1">Total Assets (FMV)</p>
+            <p className="text-xl font-black text-foreground tabular-nums tracking-tighter">{formattedFMV}</p>
           </div>
           <div className="h-10 w-px bg-border-theme opacity-50" />
           <div className="text-right">
@@ -182,7 +187,7 @@ export default function GPDashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-black text-foreground uppercase tracking-tight truncate group-hover/item:text-emerald-500 transition-colors">{f.name}</p>
                       <p className="text-[9px] text-text-muted/40 uppercase tracking-[0.2em] font-black mt-1">
-                        {(f.committed / 1000000).toFixed(1)}M / {(f.committed / (f.percent / 100) / 1000000).toFixed(1)}M NPR
+                        Deployed: {(f.invested / 1000000).toFixed(1)}M / {(f.committed / 1000000).toFixed(1)}M NPR
                       </p>
                     </div>
                   </div>
