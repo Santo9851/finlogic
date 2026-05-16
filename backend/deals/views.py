@@ -206,7 +206,7 @@ def _calculate_lp_performance_metrics(lp_profile):
     # 1. Paid-In Capital
     paid_in = CapitalCall.objects.filter(
         lp_commitment__in=commitments,
-        status='RECEIVED'
+        status__in=['VERIFIED', 'RECEIVED']
     ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0
     paid_in = float(paid_in)
 
@@ -239,13 +239,13 @@ def _calculate_lp_performance_metrics(lp_profile):
         lp_share_cost = fund_cost * lp_share
         
         # Fund-specific Paid-in & Dist
-        lp_fund_paid_in = float(CapitalCall.objects.filter(lp_commitment=comm, status='RECEIVED').aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
+        lp_fund_paid_in = float(CapitalCall.objects.filter(lp_commitment=comm, status__in=['VERIFIED', 'RECEIVED']).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
         lp_fund_dist = float(Distribution.objects.filter(lp_commitment=comm).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
         
         # Management Fees & Expenses (Captured from non-investment call types)
         lp_fund_fees = float(CapitalCall.objects.filter(
             lp_commitment=comm, 
-            status='RECEIVED', 
+            status__in=['VERIFIED', 'RECEIVED'], 
             call_type__in=['MANAGEMENT_FEE', 'FUND_EXPENSE', 'OTHER']
         ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
         total_mgmt_fees += lp_fund_fees
@@ -290,7 +290,7 @@ def _calculate_lp_performance_metrics(lp_profile):
 
     # 6. XIRR Cash Flows (Net)
     cf = []
-    calls = CapitalCall.objects.filter(lp_commitment__in=commitments, status='RECEIVED')
+    calls = CapitalCall.objects.filter(lp_commitment__in=commitments, status__in=['VERIFIED', 'RECEIVED'])
     for c in calls:
         cf.append((c.received_at.date() if c.received_at else c.call_date, -float(c.amount_npr)))
     
@@ -1492,13 +1492,13 @@ class LPDashboardView(APIView):
         # Sum both CALLED and RECEIVED capital calls for the "Capital Called" metric
         total_called = CapitalCall.objects.filter(
             lp_commitment__in=commitments,
-            status__in=['CALLED', 'RECEIVED']
+            status__in=['CALLED', 'PAID', 'VERIFIED', 'RECEIVED']
         ).aggregate(models.Sum('amount_npr'))['amount_npr__sum'] or 0
 
         # Only sum RECEIVED for performance ratios (actual paid-in capital)
         paid_in_capital = CapitalCall.objects.filter(
             lp_commitment__in=commitments,
-            status='RECEIVED'
+            status__in=['VERIFIED', 'RECEIVED']
         ).aggregate(models.Sum('amount_npr'))['amount_npr__sum'] or 0
 
         total_distributed = Distribution.objects.filter(
@@ -1538,10 +1538,34 @@ class LPDashboardView(APIView):
         performance = _calculate_lp_performance_metrics(lp_profile)
 
         # Enrichment for Management Fees Accruals
-        accrued_unpaid = ManagementFeeAccrual.objects.filter(
+        accrued_unpaid_db = ManagementFeeAccrual.objects.filter(
             lp_commitment__in=commitments,
             is_called=False
         ).aggregate(models.Sum('fee_amount'))['fee_amount__sum'] or 0
+
+        # Calculate live accrual since last recorded period
+        total_live_accrual = 0
+        from .fee_utils import calculate_fee_for_period
+        today = date.today()
+        for comm in commitments:
+            last_accrual = ManagementFeeAccrual.objects.filter(lp_commitment=comm).order_by('-period_end_date').first()
+            if last_accrual:
+                start_date = last_accrual.period_end_date + timedelta(days=1)
+            else:
+                # Fallback if no accrual exists yet
+                start_date = max(
+                    comm.commitment_date,
+                    comm.fee_start_date_override or date(2020, 1, 1)
+                )
+            
+            if start_date < today:
+                try:
+                    live_fee, _, _ = calculate_fee_for_period(comm, start_date, today)
+                    total_live_accrual += float(live_fee)
+                except Exception as e:
+                    logger.error(f"Error calculating live fee for {comm.id}: {str(e)}")
+        
+        total_accrued_unpaid = float(accrued_unpaid_db) + total_live_accrual
 
         # Nepali Fiscal Year (Shrawan to Ashad) - approx. 16 July to 15 July
         now = timezone.now()
@@ -1568,17 +1592,18 @@ class LPDashboardView(APIView):
             'total_called_npr': float(total_called),
             'total_paid_in_npr': float(paid_in_capital),
             'total_distributed_npr': float(total_distributed),
+            'total_value_npr': float(total_distributed) + float(performance.get('total_rv', total_called - total_distributed)),
             'nav_npr': float(performance.get('total_rv', total_called - total_distributed)),
             'total_mgmt_fees_npr': float(performance.get('total_mgmt_fees', 0)),
             'estimated_carry_npr': float(performance.get('estimated_carry', 0)),
             'management_fees': {
-                'total_accrued_unpaid_npr': float(accrued_unpaid),
+                'total_accrued_unpaid_npr': float(total_accrued_unpaid),
                 'total_paid_ytd_npr': float(paid_ytd),
                 'total_paid_ltd_npr': float(performance.get('total_mgmt_fees', 0)),
             },
             'performance': performance,
             'pending_calls': CapitalCallSerializer(
-                CapitalCall.objects.filter(lp_commitment__in=commitments, status__in=['CALLED', 'PAID']).select_related('fund'),
+            CapitalCall.objects.filter(lp_commitment__in=commitments, status__in=['CALLED', 'PAID', 'VERIFIED']).select_related('fund'),
                 many=True
             ).data,
         })

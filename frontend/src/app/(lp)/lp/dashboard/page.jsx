@@ -201,48 +201,50 @@ export default function LPDashboard() {
               label="Committed Capital"
               value={formatIndianCurrency(dashboard?.total_committed_npr || 0, 1)}
               icon={Wallet}
+              info="Total capital you have legally committed to invest over the fund's lifecycle."
             />
             <MetricCard
               label="Capital Called"
               value={formatIndianCurrency(dashboard?.total_called_npr || 0, 1)}
               icon={ArrowUpRight}
+              info="Total capital requested by the GP to date, including paid, verified, and outstanding calls."
             />
             <MetricCard
               label="Institutional Returns"
               value={formatIndianCurrency(dashboard?.total_distributed_npr || 0, 1)}
               icon={PieChart}
+              info="Total cash and stock distributions returned to you to date (DPI basis)."
+            />
+            <MetricCard
+              label="Total Value"
+              value={formatIndianCurrency(dashboard?.total_value_npr || 0, 1)}
+              icon={CircleDollarSign}
+              info="Total Distributed + Net Asset Value. This represents the total wealth created for you (TVPI basis)."
             />
             <MetricCard
               label="Net Asset Value"
               value={formatIndianCurrency(dashboard?.nav_npr || 0, 1)}
               icon={TrendingUp}
-              info="Net Asset Value: Current Fair Market Value of your stake, net of estimated GP carry and fees."
+              info="Estimated Fair Market Value of your current stake, net of GP carried interest and accrued fees."
             />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border-theme border-x border-b border-border-theme overflow-visible">
-            <div className="bg-card p-6 flex items-center justify-between group hover:bg-ls-primary transition-all duration-700">
-              <div className="space-y-1">
-                <p className="text-[8px] font-bold text-text-muted group-hover:text-ls-white/40 uppercase tracking-[0.4em]">Est. Carried Interest</p>
-                <p className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight relative z-10">
-                  रू {formatIndianNumber(dashboard?.estimated_carry_npr || 0, 2)}
-                </p>
-              </div>
-              <div className="text-text-muted/20 group-hover:text-ls-compliment transition-colors relative z-10">
-                <Info size={14} />
-              </div>
-            </div>
-            <div className="bg-card p-6 flex items-center justify-between group hover:bg-ls-primary transition-all duration-700">
-              <div className="space-y-1">
-                <p className="text-[8px] font-bold text-text-muted group-hover:text-ls-white/40 uppercase tracking-[0.4em]">Life-to-Date Mgmt Fees</p>
-                <p className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight relative z-10">
-                  रू {formatIndianNumber(dashboard?.total_mgmt_fees_npr || 0, 2)}
-                </p>
-              </div>
-              <div className="text-text-muted/20 group-hover:text-ls-compliment transition-colors relative z-10">
-                <Info size={14} />
-              </div>
-            </div>
+            <MetricCard
+              label="Est. Accrued Fees"
+              value={formatIndianCurrency(dashboard?.management_fees?.total_accrued_unpaid_npr || 0, 1)}
+              icon={Clock}
+              info="Management fees accrued since inception that have not yet been called, calculated daily."
+            />
+            <MetricCard
+              label="Life-to-Date Mgmt Fees"
+              value={formatIndianCurrency(dashboard?.total_mgmt_fees_npr || 0, 1)}
+              icon={History}
+              info="Total management fees and fund expenses that have already been called and paid."
+            />
+            <MetricCard
+              label="Est. Carried Interest"
+              value={formatIndianCurrency(dashboard?.estimated_carry_npr || 0, 1)}
+              icon={Lock}
+              info="The GP's estimated share of performance-based profits (Carry) based on current unrealized gains."
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-24">
@@ -442,12 +444,33 @@ export default function LPDashboard() {
   );
 }
 
-function MetricCard({ label, value, icon: Icon }) {
+function MetricCard({ label, value, icon: Icon, info }) {
+  const [showInfo, setShowInfo] = useState(false);
+
   return (
-    <div className="p-10 bg-card flex flex-col justify-between space-y-10 group hover:bg-ls-primary transition-all duration-500 relative">
+    <div className="p-10 bg-card flex flex-col justify-between space-y-10 group hover:bg-ls-primary transition-all duration-500 relative border-r border-b border-border-theme/10 dark:border-border-theme/50 last:border-r-0">
       <div className="text-ls-compliment opacity-60 group-hover:opacity-100 transition-all flex items-center justify-between">
         <Icon size={24} />
-        <span className="text-[8px] font-mono opacity-20 group-hover:opacity-40 tracking-widest uppercase">Institutional Metric</span>
+        <div className="flex items-center gap-3">
+          {info && (
+            <div className="relative">
+              <button 
+                onMouseEnter={() => setShowInfo(true)}
+                onMouseLeave={() => setShowInfo(false)}
+                className="text-text-muted group-hover:text-ls-white/40 transition-colors"
+              >
+                <Info size={14} />
+              </button>
+              {showInfo && (
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-64 p-4 bg-ls-primary dark:bg-ls-primary border border-ls-white/10 text-[10px] font-bold uppercase tracking-widest text-ls-white shadow-2xl z-[60] animate-in fade-in slide-in-from-bottom-2">
+                  <div className="relative z-10">{info}</div>
+                  <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-ls-primary rotate-45 border-r border-b border-ls-white/10" />
+                </div>
+              )}
+            </div>
+          )}
+          <span className="text-[8px] font-mono opacity-20 group-hover:opacity-40 tracking-widest uppercase">Institutional Metric</span>
+        </div>
       </div>
       <div className="space-y-4">
         <div className="text-4xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight">{value}</div>

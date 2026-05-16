@@ -140,8 +140,10 @@ export default function LPDocumentsPage() {
             <h3 className="text-[10px] font-bold text-text-muted/40 uppercase tracking-[0.4em] mb-8 flex items-center gap-3">
               <ShieldCheck size={14} className="text-ls-compliment" /> Governance Notice
             </h3>
-            <div className="p-8 border border-ls-up/20 bg-ls-up/5 shadow-inner">
-              <p className="text-[11px] text-text-muted leading-relaxed font-serif italic opacity-80">
+            <div className="p-8 border border-ls-compliment/30 bg-ls-compliment/5 shadow-inner relative group/audit overflow-hidden transition-all hover:bg-ls-compliment/10">
+              <div className="absolute top-0 left-0 w-1 h-full bg-ls-compliment" />
+              <p className="text-[11px] text-foreground font-serif italic leading-relaxed">
+                <span className="text-ls-compliment font-bold not-italic mr-2">SECURE_LOG:</span>
                 Institutional access is logged per audit protocols. Pre-signed retrieval links expire in 60 minutes.
               </p>
             </div>
@@ -254,10 +256,13 @@ export default function LPDocumentsPage() {
                         <p className="text-xl font-serif font-light text-foreground tabular-nums">{new Date(doc.capital_call_due_date).toLocaleDateString()}</p>
                       </div>
                     </div>
-                    <button className="text-[10px] text-ls-compliment font-bold uppercase tracking-[0.4em] flex items-center gap-3 group/link">
+                    <Link 
+                      href="/lp/dashboard"
+                      className="text-[10px] text-ls-compliment font-bold uppercase tracking-[0.4em] flex items-center gap-3 group/link"
+                    >
                       <span className="border-b border-ls-compliment/30 group-hover/link:border-ls-compliment transition-colors">Settlement Protocols</span>
                       <ExternalLink size={14} />
-                    </button>
+                    </Link>
                   </div>
                 )}
               </div>
