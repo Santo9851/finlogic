@@ -47,6 +47,10 @@ def validate_ocr_number(value: str) -> None:
 class Fund(models.Model):
     """PE Fund – tracks capital raise, commitments & fund economics."""
 
+    class ManagementFeeBasis(models.TextChoices):
+        COMMITTED = 'COMMITTED', 'Committed Capital'
+        INVESTED = 'INVESTED', 'Invested Capital'
+
     class Status(models.TextChoices):
         RAISING = 'RAISING', 'Raising'
         INVESTING = 'INVESTING', 'Investing'
@@ -66,6 +70,20 @@ class Fund(models.Model):
     )
     preferred_return_pct = models.FloatField(default=8.0)
     management_fee_pct = models.FloatField(default=2.0)
+    management_fee_basis = models.CharField(
+        max_length=20, 
+        choices=ManagementFeeBasis.choices, 
+        default=ManagementFeeBasis.COMMITTED
+    )
+    management_fee_frequency_months = models.IntegerField(default=3)
+    investment_period_end_date = models.DateField(null=True, blank=True)
+    post_investment_management_fee_pct = models.FloatField(null=True, blank=True)
+    post_investment_management_fee_basis = models.CharField(
+        max_length=20, 
+        choices=ManagementFeeBasis.choices, 
+        null=True, 
+        blank=True
+    )
     carry_pct = models.FloatField(default=20.0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -430,6 +448,10 @@ class EntrepreneurKYBDocument(models.Model):
 class LPFundCommitment(models.Model):
     """Tracks an LP's capital commitment to a fund."""
 
+    class ManagementFeeBasis(models.TextChoices):
+        COMMITTED = 'COMMITTED', 'Committed Capital'
+        INVESTED = 'INVESTED', 'Invested Capital'
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     lp_profile = models.ForeignKey(
         LPProfile, on_delete=models.CASCADE, related_name='fund_commitments'
@@ -442,6 +464,20 @@ class LPFundCommitment(models.Model):
         max_digits=15, decimal_places=2, default=0
     )
     commitment_date = models.DateField()
+    
+    # Custom LP rates (Side Letters)
+    management_fee_override_pct = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+    management_fee_override_basis = models.CharField(
+        max_length=20, 
+        choices=ManagementFeeBasis.choices, 
+        null=True, 
+        blank=True
+    )
+    fee_start_date_override = models.DateField(null=True, blank=True)
+    fee_end_date_override = models.DateField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -683,7 +719,13 @@ class Distribution(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# 9. PEFormTemplate  &  PEProjectFormResponse
+# 9. ManagementFeeAccrual
+# ---------------------------------------------------------------------------
+
+
+
+# ---------------------------------------------------------------------------
+# 10. PEFormTemplate  &  PEProjectFormResponse
 # ---------------------------------------------------------------------------
 
 class PEFormTemplate(models.Model):
@@ -1911,3 +1953,35 @@ class LPSupportRequest(models.Model):
 
     def __str__(self):
         return f"Support: {self.subject} ({self.lp_profile.full_name})"
+
+class ManagementFeeAccrual(models.Model):
+    """Tracks periodic management fee accruals for each LP."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    fund = models.ForeignKey(Fund, on_delete=models.CASCADE, related_name='fee_accruals')
+    lp_commitment = models.ForeignKey(LPFundCommitment, on_delete=models.CASCADE, related_name='fee_accruals')
+    
+    period_start_date = models.DateField()
+    period_end_date = models.DateField()
+    accrual_date = models.DateField(help_text="The date this accrual was recorded")
+    
+    fee_basis_amount = models.DecimalField(max_digits=15, decimal_places=2, help_text="The capital basis used for calculation")
+    fee_pct_used = models.FloatField(help_text="The annual percentage rate used")
+    fee_amount = models.DecimalField(max_digits=15, decimal_places=2)
+    is_called = models.BooleanField(default=False)
+    capital_call = models.ForeignKey(
+        'CapitalCall', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='linked_accruals'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'pe_management_fee_accruals'
+        ordering = ['-accrual_date']
+
+    def __str__(self):
+        return f"Fee Accrual: {self.fund.name} - {self.lp_commitment.lp_profile.full_name} ({self.accrual_date})"

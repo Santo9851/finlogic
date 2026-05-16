@@ -52,6 +52,7 @@ from .models import (
     TermSheet,
     SPADraft,
     GPInvestorMeetingRequest,
+    ManagementFeeAccrual,
 )
 
 
@@ -448,7 +449,7 @@ class ValuationRecordAdmin(admin.ModelAdmin):
 
 @admin.register(ExitScenario)
 class ExitScenarioAdmin(admin.ModelAdmin):
-    list_display = ('investment', 'scenario_name', 'exit_type', 'target_exit_date')
+    list_display = ('investment', 'name', 'exit_type', 'target_date')
     list_filter = ('exit_type',)
 
 
@@ -484,4 +485,11 @@ class GPInvestorMeetingRequestAdmin(admin.ModelAdmin):
     list_display = ('user', 'topic', 'preferred_date', 'status', 'created_at')
     list_filter = ('status', 'preferred_date')
     search_fields = ('user__email', 'topic')
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+@admin.register(ManagementFeeAccrual)
+class ManagementFeeAccrualAdmin(admin.ModelAdmin):
+    list_display = ('fund', 'lp_commitment', 'period_start_date', 'period_end_date', 'fee_amount', 'is_called')
+    list_filter = ('is_called', 'fund')
+    raw_id_fields = ('fund', 'lp_commitment', 'capital_call')
     readonly_fields = ('id', 'created_at', 'updated_at')

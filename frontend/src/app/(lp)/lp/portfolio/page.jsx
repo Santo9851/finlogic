@@ -26,6 +26,7 @@ import api from '@/services/api';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
 import LPNoProfileError from '@/components/portal/LPNoProfileError';
+import { formatIndianNumber } from '@/lib/formatters';
 
 const COLORS = ['#F59F01', '#3B82F6', '#10B981', '#8B5CF6', '#F43F5E'];
 
@@ -229,7 +230,7 @@ export default function LPPortfolioPage() {
                   <div className="text-right space-y-2">
                     <p className="text-[9px] font-bold text-text-muted/30 group-hover:text-ls-white/20 uppercase tracking-[0.4em]">Investment Exposure</p>
                     <p className="text-lg font-serif font-light text-foreground group-hover:text-ls-compliment opacity-90 transition-all tabular-nums">
-                      रू {(project.investment_range_min_npr / 10000000).toFixed(1)}Cr - {(project.investment_range_max_npr / 10000000).toFixed(1)}Cr
+                      रू {formatIndianNumber(project.investment_range_min_npr, 1)} - {formatIndianNumber(project.investment_range_max_npr, 1)}
                     </p>
                   </div>
                   <div className="p-4 border border-border-theme group-hover:border-ls-white/20 text-text-muted group-hover:text-ls-compliment transition-all">

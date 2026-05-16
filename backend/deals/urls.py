@@ -126,6 +126,7 @@ from .views import (
     GPDownloadSPAPDFView,
     GPFundCapitalCallBatchView,
     # Phase 3 views
+    DrawdownFundFeesView,
 
     EntrepreneurUploadSignedLOIView,
     GPCapitalCallBatchView,
@@ -155,6 +156,7 @@ urlpatterns = [
     # ── Funds ──────────────────────────────────────────────────────────────
     path('deals/funds/', FundListCreateView.as_view(), name='fund-list-create'),
     path('deals/funds/<uuid:pk>/', FundDetailView.as_view(), name='fund-detail'),
+    path('deals/funds/<uuid:fund_id>/drawdown-fees/', DrawdownFundFeesView.as_view(), name='fund-drawdown-fees'),
 
     # ── GP Project Management ───────────────────────────────────────────────
     # IMPORTANT: specific routes before generic {id} routes

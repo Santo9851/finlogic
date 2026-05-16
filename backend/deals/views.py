@@ -9,7 +9,9 @@ URL namespace: api/deals/  (GP & public)
 """
 import logging
 import mimetypes
-from datetime import timedelta
+from datetime import date, timedelta
+from decimal import Decimal
+from django.db import transaction
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -58,6 +60,7 @@ from .models import (
     EntrepreneurKYBDocument,
     GovernanceProposal,
     ProposalVote,
+    ManagementFeeAccrual,
     IRDocument,
     GPShareholder,
     WaterfallModel,
@@ -223,26 +226,42 @@ def _calculate_lp_performance_metrics(lp_profile):
         fund_total_committed = LPFundCommitment.objects.filter(fund=fund).aggregate(Sum('committed_amount_npr'))['committed_amount_npr__sum'] or 1
         lp_share = float(comm.committed_amount_npr) / float(fund_total_committed)
         
-        # FMV for this fund commitment
+        # FMV and Cost for this fund commitment
         fund_fmv = 0
+        fund_cost = 0
         investments = PEInvestment.objects.filter(fund=fund, exit_date__isnull=True)
         for inv in investments:
             latest_val = ValuationRecord.objects.filter(investment=inv).order_by('-valuation_date').first()
             fund_fmv += float(latest_val.fair_value_npr if latest_val else inv.investment_amount_npr)
+            fund_cost += float(inv.investment_amount_npr)
         
-        lp_fund_rv_gross = fund_fmv * lp_share
-        total_gross_rv += lp_fund_rv_gross
+        lp_share_fmv = fund_fmv * lp_share
+        lp_share_cost = fund_cost * lp_share
         
         # Fund-specific Paid-in & Dist
         lp_fund_paid_in = float(CapitalCall.objects.filter(lp_commitment=comm, status='RECEIVED').aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
         lp_fund_dist = float(Distribution.objects.filter(lp_commitment=comm).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
         
-        # Mgmt Fees for this fund
-        lp_fund_mgmt_fees = float(CapitalCall.objects.filter(lp_commitment=comm, status='RECEIVED', call_type='MANAGEMENT_FEE').aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
-        total_mgmt_fees += lp_fund_mgmt_fees
+        # Management Fees & Expenses (Captured from non-investment call types)
+        lp_fund_fees = float(CapitalCall.objects.filter(
+            lp_commitment=comm, 
+            status='RECEIVED', 
+            call_type__in=['MANAGEMENT_FEE', 'FUND_EXPENSE', 'OTHER']
+        ).aggregate(Sum('amount_npr'))['amount_npr__sum'] or 0)
+        total_mgmt_fees += lp_fund_fees
 
-        # Carry Logic
-        lp_fund_profit = lp_fund_dist + lp_fund_rv_gross - lp_fund_paid_in
+        # Uninvested Cash attributed to this LP
+        # Cash = Paid-in - Distributed - Invested Cost - Fees
+        # We allow this to be negative to represent the LP's liability for investments 
+        # made by the fund but not yet funded by this specific LP.
+        lp_fund_cash = lp_fund_paid_in - lp_fund_dist - lp_share_cost - lp_fund_fees
+        
+        # Gross Residual Value includes both current FMV of investments and unspent cash
+        lp_fund_rv_gross = lp_share_fmv + lp_fund_cash
+        total_gross_rv += lp_fund_rv_gross
+        
+        # Carry Logic (Calculated on Net Profit including realized/unrealized value)
+        lp_fund_profit = lp_fund_rv_gross + lp_fund_dist - lp_fund_paid_in
         if lp_fund_profit > 0:
             carry_deduction = lp_fund_profit * (fund.carry_pct / 100.0)
             lp_fund_rv_net = lp_fund_rv_gross - carry_deduction
@@ -1518,6 +1537,26 @@ class LPDashboardView(APIView):
         # Calculate real metrics using helper
         performance = _calculate_lp_performance_metrics(lp_profile)
 
+        # Enrichment for Management Fees Accruals
+        accrued_unpaid = ManagementFeeAccrual.objects.filter(
+            lp_commitment__in=commitments,
+            is_called=False
+        ).aggregate(models.Sum('fee_amount'))['fee_amount__sum'] or 0
+
+        # Nepali Fiscal Year (Shrawan to Ashad) - approx. 16 July to 15 July
+        now = timezone.now()
+        if now.month > 7 or (now.month == 7 and now.day >= 16):
+            fy_start = date(now.year, 7, 16)
+        else:
+            fy_start = date(now.year - 1, 7, 16)
+            
+        paid_ytd = CapitalCall.objects.filter(
+            lp_commitment__in=commitments,
+            call_type=CapitalCall.CallType.MANAGEMENT_FEE,
+            status=CapitalCall.Status.RECEIVED,
+            call_date__gte=fy_start
+        ).aggregate(models.Sum('amount_npr'))['amount_npr__sum'] or 0
+
         return Response({
             'lp_profile': LPProfileSerializer(lp_profile).data,
             'funds': LPDashboardFundSerializer(
@@ -1532,6 +1571,11 @@ class LPDashboardView(APIView):
             'nav_npr': float(performance.get('total_rv', total_called - total_distributed)),
             'total_mgmt_fees_npr': float(performance.get('total_mgmt_fees', 0)),
             'estimated_carry_npr': float(performance.get('estimated_carry', 0)),
+            'management_fees': {
+                'total_accrued_unpaid_npr': float(accrued_unpaid),
+                'total_paid_ytd_npr': float(paid_ytd),
+                'total_paid_ltd_npr': float(performance.get('total_mgmt_fees', 0)),
+            },
             'performance': performance,
             'pending_calls': CapitalCallSerializer(
                 CapitalCall.objects.filter(lp_commitment__in=commitments, status__in=['CALLED', 'PAID']).select_related('fund'),
@@ -4121,4 +4165,90 @@ class CapitalCallViewSet(viewsets.ModelViewSet):
         )
         
         return Response({"status": "Capital call approved and marked as received"})
+
+class DrawdownFundFeesView(APIView):
+    """
+    POST /api/deals/funds/<uuid:fund_id>/drawdown-fees/
+    Draw down accrued management fees into capital calls for a whole fund.
+    """
+    permission_classes = [permissions.IsAuthenticated, IsGPStaff]
+
+    def post(self, request, fund_id):
+        fund = get_object_or_404(Fund, pk=fund_id)
+        
+        # Get all uncalled accruals for this fund
+        uncalled_accruals = ManagementFeeAccrual.objects.filter(
+            fund=fund,
+            is_called=False
+        ).select_related('lp_commitment', 'lp_commitment__lp_profile')
+        
+        if not uncalled_accruals.exists():
+            return Response({"detail": "No uncalled accruals found for this fund."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Group by commitment
+        commitment_totals = {}
+        for accrual in uncalled_accruals:
+            comm_id = str(accrual.lp_commitment_id)
+            if comm_id not in commitment_totals:
+                commitment_totals[comm_id] = {
+                    'commitment': accrual.lp_commitment,
+                    'amount': Decimal('0'),
+                    'accruals': []
+                }
+            commitment_totals[comm_id]['amount'] += accrual.fee_amount
+            commitment_totals[comm_id]['accruals'].append(accrual)
+            
+        created_calls = []
+        today = date.today()
+        due_date = request.data.get('due_date', (today + timedelta(days=15)).isoformat())
+        notes = request.data.get('notes', f"Management fee drawdown as of {today}")
+
+        with transaction.atomic():
+            for comm_id, data in commitment_totals.items():
+                comm = data['commitment']
+                amount = data['amount']
+                
+                # Validation: Cannot call more than remaining committed capital
+                if amount > comm.uncalled_amount_npr:
+                    raise ValidationError(
+                        f"Insufficient uncalled capital for {comm.lp_profile.full_name}. "
+                        f"Required: NPR {amount:,.2f}, Available: NPR {comm.uncalled_amount_npr:,.2f}"
+                    )
+                
+                # Create Capital Call
+                call = CapitalCall.objects.create(
+                    fund=fund,
+                    lp_commitment=comm,
+                    call_date=today,
+                    due_date=due_date,
+                    amount_npr=amount,
+                    call_type=CapitalCall.CallType.MANAGEMENT_FEE,
+                    status=CapitalCall.Status.CALLED,
+                    notes=notes
+                )
+                
+                # Link accruals
+                for accrual in data['accruals']:
+                    accrual.capital_call = call
+                    accrual.is_called = True
+                    accrual.save()
+                    
+                created_calls.append(call)
+                
+                # Audit log
+                ImmutableAuditEvent.objects.create(
+                    event_type='FUND_MANAGEMENT',
+                    actor=request.user,
+                    object_id=call.id,
+                    object_repr=str(call),
+                    content_type_label='deals.CapitalCall',
+                    payload={
+                        'description': f"Management fee drawdown of NPR {amount:,.2f} issued for {comm.lp_profile.full_name}",
+                        'fund_id': str(fund.id),
+                        'lp_profile_id': str(comm.lp_profile_id),
+                        'accrual_ids': [str(a.id) for a in data['accruals']]
+                    }
+                )
+
+        return Response(CapitalCallSerializer(created_calls, many=True).data, status=status.HTTP_201_CREATED)
 

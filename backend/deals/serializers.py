@@ -54,6 +54,7 @@ from .models import (
     TermSheet,
     SPADraft,
     LPSupportRequest,
+    ManagementFeeAccrual,
 )
 
 
@@ -144,14 +145,18 @@ class FundSerializer(serializers.ModelSerializer):
         max_digits=15, decimal_places=2, read_only=True
     )
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    management_fee_basis_display = serializers.CharField(source='get_management_fee_basis_display', read_only=True)
 
     class Meta:
         model = Fund
         fields = (
-            'id', 'name', 'vintage_year',
+            'id', 'name', 'legal_name', 'vintage_year',
             'target_size_npr', 'committed_capital_npr', 'uncalled_capital_npr',
             'status', 'status_display',
-            'preferred_return_pct', 'management_fee_pct', 'carry_pct',
+            'preferred_return_pct', 'management_fee_pct', 'management_fee_basis',
+            'management_fee_basis_display', 'management_fee_frequency_months',
+            'investment_period_end_date', 'post_investment_management_fee_pct',
+            'post_investment_management_fee_basis', 'carry_pct',
             'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
@@ -619,6 +624,7 @@ class LPFundCommitmentSerializer(serializers.ModelSerializer):
     uncalled_amount_npr = serializers.DecimalField(
         max_digits=15, decimal_places=2, read_only=True
     )
+    management_fee_override_basis_display = serializers.CharField(source='get_management_fee_override_basis_display', read_only=True)
 
     class Meta:
         model = LPFundCommitment
@@ -626,7 +632,11 @@ class LPFundCommitmentSerializer(serializers.ModelSerializer):
             'id', 'lp_profile', 'lp_profile_detail',
             'fund', 'fund_detail',
             'committed_amount_npr', 'called_amount_npr', 'uncalled_amount_npr',
-            'commitment_date', 'created_at', 'updated_at',
+            'commitment_date',
+            'management_fee_override_pct', 'management_fee_override_basis',
+            'management_fee_override_basis_display', 'fee_start_date_override',
+            'fee_end_date_override',
+            'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
         extra_kwargs = {
@@ -668,6 +678,9 @@ class PEInvestmentSerializer(serializers.ModelSerializer):
 # ---------------------------------------------------------------------------
 
 class CapitalCallSerializer(serializers.ModelSerializer):
+    linked_accrual_ids = serializers.PrimaryKeyRelatedField(
+        source='linked_accruals', many=True, read_only=True
+    )
     fund_name = serializers.CharField(source='fund.name', read_only=True)
     project_name = serializers.CharField(source='project.legal_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -684,7 +697,7 @@ class CapitalCallSerializer(serializers.ModelSerializer):
             'status', 'status_display',
             'call_type', 'call_type_display',
             'notice_sent_at', 'received_at', 'payment_proof', 'notes',
-            'created_at', 'updated_at',
+            'linked_accrual_ids', 'created_at', 'updated_at',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
 
@@ -794,6 +807,11 @@ class LPDashboardFundSerializer(serializers.ModelSerializer):
         ).values_list('document_id', flat=True)
         
         return docs_requiring_ack.exclude(id__in=acknowledged_ids).count()
+
+class ManagementFeeAccrualSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ManagementFeeAccrual
+        fields = '__all__'
 
 
 # ---------------------------------------------------------------------------

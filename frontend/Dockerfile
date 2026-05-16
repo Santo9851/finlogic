@@ -16,8 +16,7 @@ COPY . .
 
 # NEXT_PUBLIC_ vars must be set at build time
 ARG NEXT_PUBLIC_API_URL=http://backend:8000
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
-    NEXT_FONT_GOOGLE_MOCK=1
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN npm run build
 

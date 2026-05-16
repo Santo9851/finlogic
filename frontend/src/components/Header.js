@@ -12,7 +12,13 @@ import {
   ShieldCheck,
   Menu,
   X,
-  Library
+  Library,
+  Zap,
+  Target,
+  Users,
+  BookOpen,
+  Mail,
+  Info
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import FinlogicLogo from '@/components/FinlogicLogo';
@@ -20,27 +26,111 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 
+const NavDropdown = ({ category, isDark, accentTextClass }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const timeoutRef = useRef(null);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 150);
+  };
+
+  return (
+    <div 
+      className="relative group"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button
+        className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass} ${isOpen ? 'text-foreground' : ''}`}
+      >
+        {category.name}
+        <ChevronDown size={12} className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            className="absolute left-1/2 -translate-x-1/2 mt-4 w-72 rounded-[2rem] bg-background border border-border-theme shadow-[0_48px_96px_-24px_rgba(0,0,0,0.3)] overflow-hidden p-2 z-[100] theme-transition"
+          >
+            <div className="grid gap-1">
+              {category.links.map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="group/item flex items-start gap-4 p-4 rounded-2xl hover:bg-foreground/[0.03] transition-all"
+                >
+                  <div className={`mt-1 p-2 rounded-xl bg-foreground/[0.03] text-text-muted group-hover/item:text-ls-compliment group-hover/item:bg-ls-compliment/10 transition-all`}>
+                    {link.icon}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-foreground group-hover/item:text-ls-compliment transition-colors">
+                      {link.name}
+                    </p>
+                    <p className="text-[9px] leading-relaxed text-text-muted/60 font-medium">
+                      {link.description}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export default function Header() {
   const { user, logout } = useAuth();
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeAccordion, setActiveAccordion] = useState(null);
+  const menuRef = useRef(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const isDark = mounted && resolvedTheme === "dark";
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const menuRef = useRef(null);
 
-  const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Idea Validator', href: '/validate' },
-    { name: 'About Us', href: '/about' },
-    { name: 'Philosophy', href: '/philosophy' },
-    { name: 'Insights', href: '/insights' },
-    { name: 'Contact', href: '/contact' },
+  const categories = [
+    {
+      name: 'Platform',
+      links: [
+        { name: 'Idea Validator', href: '/validate', icon: <Zap size={14} />, description: 'Institutional framework for project viability.' },
+        ...(!user ? [
+          { name: 'Entrepreneurs', href: '/for-entrepreneurs', icon: <Briefcase size={14} />, description: 'Scalability protocols and capital activation.' },
+          { name: 'Investors', href: '/for-investors', icon: <TrendingUp size={14} />, description: 'Private mandates and strategic alignment.' }
+        ] : [])
+      ]
+    },
+    {
+      name: 'Intelligence',
+      links: [
+        { name: 'Insights', href: '/insights', icon: <BookOpen size={14} />, description: 'Strategic perspectives on Nepal’s growth.' },
+        { name: 'Philosophy', href: '/philosophy', icon: <Target size={14} />, description: 'The principles governing our vision.' },
+      ]
+    },
+    {
+      name: 'Firm',
+      links: [
+        { name: 'About Us', href: '/about', icon: <Info size={14} />, description: 'Orchestrating excellence since inception.' },
+        { name: 'Contact', href: '/contact', icon: <Mail size={14} />, description: 'Establish bilateral communication.' },
+      ]
+    },
   ];
 
   // Close menu when clicking outside
@@ -76,7 +166,6 @@ export default function Header() {
     }
   };
 
-  // Theme-aware dynamic styles
   const accentTextClass = isDark ? "hover:text-ls-compliment" : "hover:text-ls-secondary";
   const accentBgClass = isDark ? "bg-ls-compliment" : "bg-ls-secondary";
   const accentBadgeGradient = isDark ? "from-ls-compliment to-yellow-200" : "from-ls-secondary to-blue-300";
@@ -89,24 +178,16 @@ export default function Header() {
           <FinlogicLogo size={44} variant="full" className="block" />
         </Link>
 
-
-        {/* Navigation */}
-        <nav className="hidden space-x-10 xl:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass}`}
-            >
-              {link.name}
-            </Link>
+        {/* Desktop Navigation */}
+        <nav className="hidden space-x-12 xl:flex items-center">
+          {categories.map((category) => (
+            <NavDropdown 
+              key={category.name} 
+              category={category} 
+              isDark={isDark} 
+              accentTextClass={accentTextClass} 
+            />
           ))}
-          {!user && (
-            <>
-              <Link href="/for-entrepreneurs" className={`text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass}`}>For Entrepreneurs</Link>
-              <Link href="/for-investors" className={`text-[10px] font-black uppercase tracking-[0.2em] text-text-muted transition-all ${accentTextClass}`}>For Investors</Link>
-            </>
-          )}
         </nav>
 
         {/* Actions */}
@@ -231,19 +312,51 @@ export default function Header() {
             exit={{ opacity: 0, height: 0 }}
             className="xl:hidden border-t border-border-theme bg-background/98 backdrop-blur-xl overflow-hidden"
           >
-            <nav className="flex flex-col px-6 py-10 space-y-6">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-xl font-black uppercase tracking-tight text-foreground transition-all ${accentTextClass}`}
-                >
-                  {link.name}
-                </Link>
+            <nav className="flex flex-col px-6 py-10 space-y-4">
+              {categories.map((category) => (
+                <div key={category.name} className="space-y-2">
+                  <button
+                    onClick={() => setActiveAccordion(activeAccordion === category.name ? null : category.name)}
+                    className="w-full flex items-center justify-between py-4 text-xl font-black uppercase tracking-tight text-foreground transition-all"
+                  >
+                    {category.name}
+                    <ChevronDown size={20} className={`transition-transform duration-300 ${activeAccordion === category.name ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {activeAccordion === category.name && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden bg-foreground/[0.02] rounded-2xl"
+                      >
+                        <div className="flex flex-col p-4 space-y-4">
+                          {category.links.map((link) => (
+                            <Link
+                              key={link.name}
+                              href={link.href}
+                              onClick={() => setIsMobileMenuOpen(false)}
+                              className="flex items-center gap-4 py-2 group"
+                            >
+                              <div className="p-2 rounded-lg bg-foreground/5 text-text-muted group-hover:text-ls-compliment transition-colors">
+                                {link.icon}
+                              </div>
+                              <span className="text-sm font-bold uppercase tracking-widest text-text-muted group-hover:text-foreground transition-colors">
+                                {link.name}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               ))}
+
+              <div className="h-px bg-border-theme my-6" />
+
               {user ? (
-                <>
+                <div className="space-y-6">
                   <Link 
                     href={getDashboardLink()}
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -267,24 +380,9 @@ export default function Header() {
                   >
                     <LogOut size={24} /> Terminate Session
                   </button>
-                </>
+                </div>
               ) : (
-                <>
-                  <Link 
-                    href="/for-entrepreneurs" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`text-xl font-black uppercase tracking-tight transition-all ${accentTextClass}`}
-                  >
-                    For Entrepreneurs
-                  </Link>
-                  <Link 
-                    href="/for-investors" 
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`text-xl font-black uppercase tracking-tight transition-all ${accentTextClass}`}
-                  >
-                    For Investors
-                  </Link>
-                  <div className="h-px bg-border-theme my-4" />
+                <div className="space-y-8">
                   <Link 
                     href="/auth/login" 
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -292,7 +390,14 @@ export default function Header() {
                   >
                     Access Portal
                   </Link>
-                </>
+                  <Link 
+                    href="/auth/register" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`block w-full py-5 rounded-2xl ${accentBgClass} text-center text-xl font-black uppercase tracking-widest text-white shadow-2xl`}
+                  >
+                    Join Network
+                  </Link>
+                </div>
               )}
             </nav>
           </motion.div>

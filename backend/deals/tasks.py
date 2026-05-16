@@ -1472,3 +1472,20 @@ def batch_send_capital_call_emails(call_ids):
                 call.save(update_fields=['notice_sent_at'])
         except Exception as e:
             logger.error(f"Failed to send email for capital call {call_id}: {e}")
+
+@shared_task
+def generate_management_fee_accruals():
+    """
+    Quarterly task to generate management fee accruals for all active funds.
+    """
+    from .models import Fund
+    from .fee_utils import generate_accruals_for_fund
+    
+    funds = Fund.objects.filter(status__in=[Fund.Status.INVESTING, Fund.Status.HARVESTING])
+    accrual_count = 0
+    
+    for fund in funds:
+        created = generate_accruals_for_fund(fund)
+        accrual_count += created
+        
+    return f"Generated {accrual_count} fee accruals across {funds.count()} funds."

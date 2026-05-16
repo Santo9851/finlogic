@@ -24,7 +24,8 @@ import {
   Info,
   HelpCircle,
   Send,
-  X
+  X,
+  Clock
 } from 'lucide-react';
 import api from '@/services/api';
 import { useTheme } from 'next-themes';
@@ -32,6 +33,8 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import LPNoProfileError from '@/components/portal/LPNoProfileError';
 import { motion } from 'framer-motion';
+import { formatIndianNumber, formatIndianCurrency } from '@/lib/formatters';
+
 
 export default function LPDashboard() {
   const { resolvedTheme } = useTheme();
@@ -193,26 +196,25 @@ export default function LPDashboard() {
             </div>
           )}
 
-          {/* Metrics Ledger - High Fidelity */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-border-theme border border-border-theme overflow-visible">
             <MetricCard
               label="Committed Capital"
-              value={`रू ${((dashboard?.total_committed_npr || 0) / 1e6).toFixed(1)}M`}
+              value={formatIndianCurrency(dashboard?.total_committed_npr || 0, 1)}
               icon={Wallet}
             />
             <MetricCard
               label="Capital Called"
-              value={`रू ${((dashboard?.total_called_npr || 0) / 1e6).toFixed(1)}M`}
+              value={formatIndianCurrency(dashboard?.total_called_npr || 0, 1)}
               icon={ArrowUpRight}
             />
             <MetricCard
               label="Institutional Returns"
-              value={`रू ${((dashboard?.total_distributed_npr || 0) / 1e6).toFixed(1)}M`}
+              value={formatIndianCurrency(dashboard?.total_distributed_npr || 0, 1)}
               icon={PieChart}
             />
             <MetricCard
               label="Net Asset Value"
-              value={`रू ${((dashboard?.nav_npr || 0) / 1e6).toFixed(1)}M`}
+              value={formatIndianCurrency(dashboard?.nav_npr || 0, 1)}
               icon={TrendingUp}
               info="Net Asset Value: Current Fair Market Value of your stake, net of estimated GP carry and fees."
             />
@@ -223,7 +225,7 @@ export default function LPDashboard() {
               <div className="space-y-1">
                 <p className="text-[8px] font-bold text-text-muted group-hover:text-ls-white/40 uppercase tracking-[0.4em]">Est. Carried Interest</p>
                 <p className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight relative z-10">
-                  रू {((dashboard?.estimated_carry_npr || 0) / 1e6).toFixed(2)}M
+                  रू {formatIndianNumber(dashboard?.estimated_carry_npr || 0, 2)}
                 </p>
               </div>
               <div className="text-text-muted/20 group-hover:text-ls-compliment transition-colors relative z-10">
@@ -234,7 +236,7 @@ export default function LPDashboard() {
               <div className="space-y-1">
                 <p className="text-[8px] font-bold text-text-muted group-hover:text-ls-white/40 uppercase tracking-[0.4em]">Life-to-Date Mgmt Fees</p>
                 <p className="text-xl font-serif font-light text-foreground group-hover:text-ls-white transition-colors tracking-tight relative z-10">
-                  रू {((dashboard?.total_mgmt_fees_npr || 0) / 1e6).toFixed(2)}M
+                  रू {formatIndianNumber(dashboard?.total_mgmt_fees_npr || 0, 2)}
                 </p>
               </div>
               <div className="text-text-muted/20 group-hover:text-ls-compliment transition-colors relative z-10">
@@ -304,8 +306,8 @@ export default function LPDashboard() {
                   <p className="text-[9px] font-bold text-text-muted uppercase tracking-[0.3em]">Institutional Transparency Protocol</p>
                 </div>
                 <div className="flex gap-12 text-[9px] font-mono font-bold uppercase tracking-widest text-text-muted/60">
-                  <span>Mgmt Fees: रू {((dashboard?.performance?.total_mgmt_fees || 0) / 1e6).toFixed(2)}M</span>
-                  <span>Est. Carry: रू {((dashboard?.performance?.estimated_carry || 0) / 1e6).toFixed(2)}M</span>
+                  <span>Mgmt Fees: {formatIndianCurrency(dashboard?.performance?.total_mgmt_fees || 0, 2)}</span>
+                  <span>Est. Carry: {formatIndianCurrency(dashboard?.performance?.estimated_carry || 0, 2)}</span>
                 </div>
               </div>
 
@@ -425,7 +427,7 @@ export default function LPDashboard() {
                           {new Date(act.date).toLocaleDateString()}
                         </span>
                         <span className={`text-[10px] font-bold uppercase tracking-widest ${act.type === 'CAPITAL_CALL' ? 'text-ls-compliment' : 'text-ls-up'}`}>
-                          {act.type === 'CAPITAL_CALL' ? '-' : '+'} रू {(act.amount / 1e6).toFixed(2)}M
+                          {act.type === 'CAPITAL_CALL' ? '-' : '+'} {formatIndianCurrency(act.amount, 2)}
                         </span>
                       </div>
                     </div>

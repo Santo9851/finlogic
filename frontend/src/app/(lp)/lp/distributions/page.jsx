@@ -7,6 +7,7 @@ import { Loader2, PieChart } from 'lucide-react';
 import { MetricCard } from '@/components/portal/PortalShell';
 import { useTheme } from 'next-themes';
 import LPNoProfileError from '@/components/portal/LPNoProfileError';
+import { formatIndianCurrency } from '@/lib/formatters';
 
 export default function LPDistributions() {
   const { resolvedTheme } = useTheme();
@@ -74,7 +75,7 @@ export default function LPDistributions() {
           <div className="space-y-4">
             <p className="text-[9px] font-bold text-text-muted group-hover:text-ls-white/30 uppercase tracking-[0.5em]">Aggregate Yield</p>
             <h3 className="text-5xl font-serif font-light text-foreground group-hover:text-ls-white transition-all tracking-tight tabular-nums">
-              रू {(totalDist / 1e7).toFixed(2)}<span className="text-2xl ml-1">Cr</span>
+              {formatIndianCurrency(totalDist, 2)}
             </h3>
             <p className="text-base font-serif italic text-text-muted/40 group-hover:text-ls-white/20 transition-all pt-2">Capital Returns Disbursed</p>
           </div>
@@ -125,7 +126,7 @@ export default function LPDistributions() {
                   </td>
                   <td className="px-12 py-10 text-right">
                     <span className="text-2xl font-serif font-light text-ls-up group-hover:text-ls-compliment transition-all tabular-nums">
-                      रू {(parseFloat(dist.amount_npr) / 1e7).toFixed(3)}<span className="text-sm ml-1 opacity-60">Cr</span>
+                      {formatIndianCurrency(dist.amount_npr, 2)}
                     </span>
                   </td>
                 </motion.tr>

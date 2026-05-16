@@ -39,6 +39,17 @@ const HERO_SLIDES = [
   }
 ];
 
+const FadeInView = ({ children, delay = 0, y = 20 }) => (
+  <motion.div
+    initial={{ opacity: 0, y }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, amount: 0.2 }}
+    transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}
+  >
+    {children}
+  </motion.div>
+);
+
 export default function RedesignPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [mounted, setMounted] = useState(false);
@@ -194,17 +205,25 @@ export default function RedesignPage() {
           <div className="grid grid-cols-1 gap-20 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <div className="sticky top-32 space-y-8">
-                <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">The Finlogic Edge</h2>
-                <h3 className="text-5xl font-light leading-tight md:text-7xl font-serif">Orchestrating Excellence in Nepal's Growth</h3>
-                <p className="text-xl leading-relaxed text-text-muted">
-                  We combine deep local insight with global investment standards to unlock value where others see only complexity.
-                </p>
-                <div className="pt-8">
-                  <Link href="/about" className="group inline-flex items-center space-x-4 text-ls-primary font-bold">
-                    <span className="border-b-2 border-ls-compliment pb-1 uppercase tracking-widest">Our Story</span>
-                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
-                  </Link>
-                </div>
+                <FadeInView>
+                  <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">The Finlogic Edge</h2>
+                </FadeInView>
+                <FadeInView delay={0.2}>
+                  <h3 className="text-5xl font-light leading-tight md:text-7xl font-serif">Orchestrating Excellence in Nepal's Growth</h3>
+                </FadeInView>
+                <FadeInView delay={0.4}>
+                  <p className="text-xl leading-relaxed text-text-muted">
+                    We combine deep local insight with global investment standards to unlock value where others see only complexity.
+                  </p>
+                </FadeInView>
+                <FadeInView delay={0.6}>
+                  <div className="pt-8">
+                    <Link href="/about" className="group inline-flex items-center space-x-4 text-ls-primary font-bold">
+                      <span className="border-b-2 border-ls-compliment pb-1 uppercase tracking-widest">Our Story</span>
+                      <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />
+                    </Link>
+                  </div>
+                </FadeInView>
               </div>
             </div>
             
@@ -226,11 +245,13 @@ export default function RedesignPage() {
                   num: '03'
                 }
               ].map((item, i) => (
-                <div key={i} className="group border-b border-border-theme pb-16 transition-colors hover:border-ls-compliment">
-                  <span className="mb-8 block text-sm font-bold text-ls-compliment/40">{item.num}</span>
-                  <h4 className="mb-6 text-3xl font-light md:text-4xl font-serif">{item.title}</h4>
-                  <p className="text-xl text-text-muted leading-relaxed max-w-xl">{item.desc}</p>
-                </div>
+                <FadeInView key={i} delay={i * 0.2}>
+                  <div className="group border-b border-border-theme pb-16 transition-all duration-700 hover:border-ls-compliment hover:pl-4">
+                    <span className="mb-8 block text-sm font-bold text-ls-compliment/40 group-hover:text-ls-compliment transition-colors">{item.num}</span>
+                    <h4 className="mb-6 text-3xl font-light md:text-4xl font-serif group-hover:text-ls-compliment transition-colors">{item.title}</h4>
+                    <p className="text-xl text-text-muted leading-relaxed max-w-xl group-hover:text-foreground transition-colors">{item.desc}</p>
+                  </div>
+                </FadeInView>
               ))}
             </div>
           </div>
@@ -240,10 +261,12 @@ export default function RedesignPage() {
       {/* Foundational Pillars - Modern Grid */}
       <section className="bg-ls-primary py-24 text-ls-white lg:py-40">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="mb-24 text-center">
-            <h2 className="mb-6 text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Foundational Pillars</h2>
-            <h3 className="text-5xl font-light font-serif md:text-7xl">The DNA of Our Strategy</h3>
-          </div>
+          <FadeInView>
+            <div className="mb-24 text-center">
+              <h2 className="mb-6 text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Foundational Pillars</h2>
+              <h3 className="text-5xl font-light font-serif md:text-7xl">The DNA of Our Strategy</h3>
+            </div>
+          </FadeInView>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-ls-white/10">
             {[
@@ -254,15 +277,18 @@ export default function RedesignPage() {
               { title: 'Global Alignment', icon: <Users /> },
               { title: 'Resilient Returns', icon: <ArrowRight /> },
             ].map((pillar, i) => (
-              <div key={i} className="bg-ls-primary p-12 transition-all hover:bg-ls-supporting/20 group">
-                <div className="mb-8 text-ls-compliment opacity-60 group-hover:opacity-100 transition-opacity">
-                  {pillar.icon}
+              <FadeInView key={i} delay={i * 0.1}>
+                <div className="bg-ls-primary p-12 h-full transition-all duration-700 hover:bg-ls-supporting/20 group relative overflow-hidden">
+                  <div className="mb-8 text-ls-compliment opacity-60 group-hover:opacity-100 transition-all duration-500 transform group-hover:scale-110 group-hover:-translate-y-1">
+                    {pillar.icon}
+                  </div>
+                  <h4 className="text-2xl font-light font-serif md:text-3xl group-hover:text-ls-compliment transition-colors">{pillar.title}</h4>
+                  <p className="mt-4 text-ls-white/40 group-hover:text-ls-white/60 transition-colors">
+                    Integrating long-term vision with operational excellence to drive superior outcomes.
+                  </p>
+                  <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-ls-compliment transition-all duration-700 group-hover:w-full" />
                 </div>
-                <h4 className="text-2xl font-light font-serif md:text-3xl">{pillar.title}</h4>
-                <p className="mt-4 text-ls-white/40 group-hover:text-ls-white/60 transition-colors">
-                  Integrating long-term vision with operational excellence to drive superior outcomes.
-                </p>
-              </div>
+              </FadeInView>
             ))}
           </div>
         </div>
@@ -271,19 +297,21 @@ export default function RedesignPage() {
       {/* Latest Insights - Editorial Feed */}
       <section className="bg-background py-24 lg:py-40 theme-transition">
         <div className="container mx-auto px-4 lg:px-8">
-          <div className="mb-20 flex flex-col items-end justify-between md:flex-row md:items-center border-b border-border-theme pb-12">
-            <div className="space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Thought Leadership</h2>
-              <h3 className="text-5xl font-light font-serif md:text-7xl">Latest Insights</h3>
+          <FadeInView>
+            <div className="mb-20 flex flex-col items-end justify-between md:flex-row md:items-center border-b border-border-theme pb-12">
+              <div className="space-y-4">
+                <h2 className="text-sm font-bold uppercase tracking-[0.4em] text-ls-compliment">Thought Leadership</h2>
+                <h3 className="text-5xl font-light font-serif md:text-7xl">Latest Insights</h3>
+              </div>
+              <Link
+                href="/insights"
+                className="group mt-10 inline-flex items-center space-x-3 font-bold md:mt-0"
+              >
+                <span className="uppercase tracking-widest border-b-2 border-ls-compliment pb-1">All Perspectives</span>
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
-            <Link
-              href="/insights"
-              className="group mt-10 inline-flex items-center space-x-3 font-bold md:mt-0"
-            >
-              <span className="uppercase tracking-widest border-b-2 border-ls-compliment pb-1">All Perspectives</span>
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
+          </FadeInView>
 
           <div className="grid gap-16 md:grid-cols-3">
             {loadingInsights ? (
@@ -298,32 +326,35 @@ export default function RedesignPage() {
               ))
             ) : latestInsights.length > 0 ? (
               latestInsights.map((post, i) => (
-                <Link key={post.id || i} href={`/insights/articles/${post.slug}`} className="group">
-                  <div className="space-y-8">
-                    <div className="relative aspect-[4/5] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700">
-                      {post.featured_image ? (
-                        <img 
-                          src={post.featured_image} 
-                          alt={post.title} 
-                          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105" 
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-ls-supporting/10" />
-                      )}
-                      <div className="absolute top-0 right-0 bg-ls-primary px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-ls-white">
-                        {PILLAR_LABELS[post.pillar?.toLowerCase()] || post.pillar || 'Insight'}
+                <FadeInView key={post.id || i} delay={i * 0.2}>
+                  <Link href={`/insights/articles/${post.slug}`} className="group">
+                    <div className="space-y-8">
+                      <div className="relative aspect-[4/5] overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-1000">
+                        {post.featured_image ? (
+                          <img 
+                            src={post.featured_image} 
+                            alt={post.title} 
+                            className="h-full w-full object-cover transition-transform duration-[2000ms] group-hover:scale-110" 
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-ls-supporting/10" />
+                        )}
+                        <div className="absolute top-0 right-0 bg-ls-primary px-6 py-3 text-[10px] font-bold uppercase tracking-[0.2em] text-ls-white transform translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-700">
+                          {PILLAR_LABELS[post.pillar?.toLowerCase()] || post.pillar || 'Insight'}
+                        </div>
+                        <div className="absolute inset-0 border-[0px] border-ls-compliment/0 group-hover:border-[1px] group-hover:border-ls-compliment/20 transition-all duration-700" />
+                      </div>
+                      <div className="space-y-4">
+                        <span className="text-xs font-bold uppercase tracking-widest text-text-muted group-hover:text-ls-compliment transition-colors">
+                          {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : ''}
+                        </span>
+                        <h4 className="text-2xl font-light font-serif leading-tight group-hover:text-ls-compliment transition-colors">
+                          {post.title}
+                        </h4>
                       </div>
                     </div>
-                    <div className="space-y-4">
-                      <span className="text-xs font-bold uppercase tracking-widest text-text-muted">
-                        {post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : ''}
-                      </span>
-                      <h4 className="text-2xl font-light font-serif leading-tight group-hover:text-ls-compliment transition-colors">
-                        {post.title}
-                      </h4>
-                    </div>
-                  </div>
-                </Link>
+                  </Link>
+                </FadeInView>
               ))
             ) : (
               <p className="text-text-muted col-span-3 text-center py-10">No insights published yet.</p>
@@ -345,15 +376,18 @@ export default function RedesignPage() {
             <div className="flex flex-wrap justify-center gap-8 pt-8">
               <Link
                 href="/for-investors"
-                className="bg-ls-compliment px-12 py-6 text-xl font-bold text-ls-primary hover:bg-ls-white transition-all"
+                className="group relative bg-ls-compliment px-12 py-6 text-xl font-bold text-ls-primary hover:bg-ls-white transition-all overflow-hidden"
               >
-                For Investors
+                <span className="relative z-10">For Investors</span>
+                <div className="absolute inset-0 bg-ls-white transform -translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
               </Link>
               <Link
                 href="/for-entrepreneurs"
-                className="border border-ls-white/20 px-12 py-6 text-xl font-bold text-ls-white hover:bg-ls-white hover:text-ls-primary transition-all"
+                className="group relative border border-ls-white/20 px-12 py-6 text-xl font-bold text-ls-white hover:border-ls-white transition-all overflow-hidden"
               >
-                For Entrepreneurs
+                <span className="relative z-10">For Entrepreneurs</span>
+                <div className="absolute inset-0 bg-ls-white transform -translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                <span className="absolute inset-0 flex items-center justify-center text-ls-primary transform translate-y-full group-hover:translate-y-0 transition-transform duration-500 z-20">For Entrepreneurs</span>
               </Link>
             </div>
           </motion.div>

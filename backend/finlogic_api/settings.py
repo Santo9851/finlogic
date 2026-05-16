@@ -327,3 +327,15 @@ APPEND_SLASH = False
 NEWSLETTER_FROM_EMAIL = "capitallines@finlogiccapital.com"
 NEWSLETTER_FROM_NAME  = "Capital Lines · Finlogic Capital"
 NEWSLETTER_BASE_URL   = "https://finlogiccapital.com"
+
+# ---------------------------------------------------------------------------
+# Celery Beat Schedule
+# ---------------------------------------------------------------------------
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'generate-management-fee-accruals-quarterly': {
+        'task': 'deals.tasks.generate_management_fee_accruals',
+        'schedule': crontab(day_of_month=1, month_of_year='1,4,7,10', hour=0, minute=0),
+    },
+}
