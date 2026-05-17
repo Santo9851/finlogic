@@ -90,9 +90,12 @@ class AIModelClient:
                     try:
                         file_path = document.local_file.path if document.local_file else None
                         if file_path and os.path.exists(file_path):
-                            with open(file_path, "rb") as f:
-                                file_data = f.read()
-                                contents.append(types.Part.from_bytes(data=file_data, mime_type=document.mime_type or "application/pdf"))
+                            mime = document.mime_type or "application/pdf"
+                            # Only attach if it is a supported file type for Gemini (PDF, images)
+                            if mime == "application/pdf" or mime.startswith("image/"):
+                                with open(file_path, "rb") as f:
+                                    file_data = f.read()
+                                    contents.append(types.Part.from_bytes(data=file_data, mime_type=mime))
                     except:
                         pass # Fallback to text only
 

@@ -138,17 +138,21 @@ export default function GPFundDocumentsPage() {
 
       await api.post(`/deals/funds/${selectedFundId}/documents/`, payload);
       toast.success('Document uploaded successfully');
-      setShowUploadModal(false);
-      setNewDoc({
-        title: '',
-        description: '',
-        document_type: 'OTHER',
-        requires_acknowledgment: false,
-        capital_call_amount: '',
-        capital_call_due_date: '',
-        file: null,
-      });
-      fetchDocuments();
+      
+      // Delay closing of the modal by 1.8 seconds so the user can see the green checkmark success feedback!
+      setTimeout(() => {
+        setShowUploadModal(false);
+        setNewDoc({
+          title: '',
+          description: '',
+          document_type: 'OTHER',
+          requires_acknowledgment: false,
+          capital_call_amount: '',
+          capital_call_due_date: '',
+          file: null,
+        });
+        fetchDocuments();
+      }, 1800);
     } catch (err) {
       toast.error('Failed to save document record');
     }

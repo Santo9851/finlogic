@@ -78,6 +78,7 @@ from .views import (
     GPClearComplianceGateView,
     GPResetComplianceGateView,
     GPProjectUploadLocalView,
+    GPFundUploadLocalView,
 
     GPDCFValuationView,
     GPLBOValuationView,
@@ -591,6 +592,11 @@ urlpatterns = [
         'deals/funds/<uuid:fund_id>/get-upload-url/',
         GPFundGetUploadURLView.as_view(),
         name='gp-fund-get-upload-url',
+    ),
+    path(
+        'deals/funds/<uuid:fund_id>/upload-local/',
+        GPFundUploadLocalView.as_view(),
+        name='gp-fund-upload-local',
     ),
     
     path(

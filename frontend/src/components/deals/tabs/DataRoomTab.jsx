@@ -69,7 +69,10 @@ export default function DataRoomTab({
               projectId={deal.id} 
               onSuccess={() => {
                 onRefresh?.();
-                setShowUpload(false);
+                // Delayed closing so GP staff can see the green checkmark success feedback!
+                setTimeout(() => {
+                  setShowUpload(false);
+                }, 1800);
               }} 
             />
           </div>

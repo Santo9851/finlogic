@@ -167,11 +167,30 @@ export default function GPDealDetailPage() {
       const res = await api.post(`/deals/projects/${id}/extract-financials/`, { document_id });
       return res.data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            Extraction: 'processing'
+          }
+        });
+      }
+      return { previousDeal };
+    },
     onSuccess: () => {
       toast.success('Financial extraction task triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
     },
-    onError: (err) => toast.error(err.response?.data?.detail || 'Extraction failed')
+    onError: (err, variables, context) => {
+      toast.error(err.response?.data?.detail || 'Extraction failed');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
+    }
   });
 
   const qoeMutation = useMutation({
@@ -179,11 +198,30 @@ export default function GPDealDetailPage() {
       const res = await api.get(`/deals/projects/${id}/qoe-analysis/?trigger=true`);
       return res.data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            QoE: 'processing'
+          }
+        });
+      }
+      return { previousDeal };
+    },
     onSuccess: () => {
       toast.success('QoE analysis task triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
     },
-    onError: (err) => toast.error(err.response?.data?.detail || 'QoE analysis failed')
+    onError: (err, variables, context) => {
+      toast.error(err.response?.data?.detail || 'QoE analysis failed');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
+    }
   });
 
   const updateQoEMutation = useMutation({
@@ -222,9 +260,29 @@ export default function GPDealDetailPage() {
       const res = await api.post(`/deals/projects/${id}/run-commercial-analysis/`);
       return res.data;
     },
+    onMutate: async () => {
+      await queryClient.cancelQueries(['deals', 'project', id]);
+      const previousDeal = queryClient.getQueryData(['deals', 'project', id]);
+      if (previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], {
+          ...previousDeal,
+          analysis_progress: {
+            ...(previousDeal.analysis_progress || {}),
+            Commercial: 'processing'
+          }
+        });
+      }
+      return { previousDeal };
+    },
     onSuccess: () => {
       toast.success('Commercial analysis triggered');
       queryClient.invalidateQueries(['deals', 'project', id]);
+    },
+    onError: (err, variables, context) => {
+      toast.error(err.response?.data?.detail || 'Commercial analysis failed');
+      if (context?.previousDeal) {
+        queryClient.setQueryData(['deals', 'project', id], context.previousDeal);
+      }
     }
   });
 
