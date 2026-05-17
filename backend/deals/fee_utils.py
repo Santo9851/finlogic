@@ -56,10 +56,51 @@ def calculate_fee_for_period(lp_commitment, start_date, end_date):
     
     return fee.quantize(Decimal('0.01')), basis_amount, float(fee_pct)
 
+def get_aligned_period_end(start_date, months):
+    """
+    Determine the next calendar-aligned period end date based on the start date and frequency (in months).
+    Monthly (1), Quarterly (3), Semi-annually (6), Annually (12).
+    """
+    import datetime
+    from calendar import monthrange
+    
+    if months == 1:
+        # Monthly: last day of current month
+        last_day = monthrange(start_date.year, start_date.month)[1]
+        return datetime.date(start_date.year, start_date.month, last_day)
+        
+    elif months == 3:
+        # Quarterly
+        if start_date.month in [1, 2, 3]:
+            return datetime.date(start_date.year, 3, 31)
+        elif start_date.month in [4, 5, 6]:
+            return datetime.date(start_date.year, 6, 30)
+        elif start_date.month in [7, 8, 9]:
+            return datetime.date(start_date.year, 9, 30)
+        else:
+            return datetime.date(start_date.year, 12, 31)
+            
+    elif months == 6:
+        # Semi-annually
+        if start_date.month <= 6:
+            return datetime.date(start_date.year, 6, 30)
+        else:
+            return datetime.date(start_date.year, 12, 31)
+            
+    elif months == 12:
+        # Annually
+        return datetime.date(start_date.year, 12, 31)
+        
+    else:
+        # Fallback to standard days-based interval if custom
+        period_days = months * 30
+        return start_date + datetime.timedelta(days=period_days) - datetime.timedelta(days=1)
+
 def generate_accruals_for_fund(fund, as_of_date=None):
     """
     Idempotent generator for periodic management fee accruals.
     Accepts fund object or ID.
+    Supports aligned periods and automatic proration for LPs who join mid-period.
     """
     if as_of_date is None:
         as_of_date = date.today()
@@ -89,11 +130,9 @@ def generate_accruals_for_fund(fund, as_of_date=None):
             
         # 2. Loop through periods until we hit as_of_date
         while start_date < as_of_date:
-            # End of period based on frequency
+            # End of period based on frequency (aligned to calendar intervals)
             months = fund.management_fee_frequency_months or 3
-            # Simple approximation: 30 days per month
-            period_days = months * 30
-            end_date = start_date + timedelta(days=period_days) - timedelta(days=1)
+            end_date = get_aligned_period_end(start_date, months)
             
             # Don't accrue into the future
             if end_date > as_of_date:
@@ -125,3 +164,4 @@ def generate_accruals_for_fund(fund, as_of_date=None):
             start_date = end_date + timedelta(days=1)
             
     return created_count
+
