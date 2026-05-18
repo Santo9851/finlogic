@@ -16,9 +16,9 @@ import { toast } from 'sonner';
 // --- Local UI Shims (Since shadcn isn't installed) ---
 const Progress = ({ value }) => (
   <div className="h-2 w-full bg-ls-primary/5 dark:bg-white/5 rounded-full overflow-hidden theme-transition">
-    <div
-      className="h-full bg-[#F59F01] transition-all duration-300"
-      style={{ width: `${value}%` }}
+    <div 
+      className="h-full bg-[#F59F01] transition-all duration-300" 
+      style={{ width: `${value}%` }} 
     />
   </div>
 );
@@ -33,12 +33,12 @@ const Alert = ({ children, variant = 'default' }) => {
   );
 };
 
-export default function FileUploader({
-  projectId,
+export default function FileUploader({ 
+  projectId, 
   fundId,
-  category,
-  token = null,
-  onSuccess = () => { },
+  category, 
+  token = null, 
+  onSuccess = () => {},
   label = "Upload Document",
   hideCategory = false,
   isLocal = false,
@@ -48,12 +48,12 @@ export default function FileUploader({
   allowedExtensions = ".pdf,.docx,.xlsx,.png,.jpg,.jpeg",
   formatText = "PDF, DOCX, or Image",
   isEntrepreneur = false,
-  onRemove = () => { }
+  onRemove = () => {}
 }) {
   const [file, setFile] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(category || 'OTHER');
   // If a value (document_id) is already saved from a previous session, start in success state.
-  const [status, setStatus] = useState(value ? 'success' : 'idle');
+  const [status, setStatus] = useState(value ? 'success' : 'idle'); 
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
@@ -109,173 +109,59 @@ export default function FileUploader({
   const uploadFile = async () => {
     if (!file) return;
 
-    // Handle Local Upload (Direct Multipart to Django)
-    if (isLocal) {
-      setStatus('uploading');
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('document_type', selectedCategory);
-
-        const res = await api.post(uploadUrl, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          onUploadProgress: (progressEvent) => {
-            const pct = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setProgress(pct);
-          },
-        });
-
-        setStatus('success');
-        toast.success(`${file.name} uploaded successfully.`);
-        onSuccess(res.data.document_id);
-        return;
-      } catch (err) {
-        console.error('Local Upload Error:', err);
-        setStatus('error');
-        setError(err.response?.data?.detail || err.message || 'Upload failed');
-        toast.error('Upload failed');
-        return;
-      }
-    }
-
-    // Handle B2 Upload (Pre-signed URL flow)
-    setStatus('presigning');
+    setStatus('uploading');
     try {
-      // 1. Get Pre-signed URL
-      let urlPath = '';
-      if (token) {
-        urlPath = `deals/projects/invite/${token}/get-upload-url/`;
-      } else if (fundId) {
-        urlPath = `deals/funds/${fundId}/get-upload-url/`;
-      } else if (projectId) {
-        urlPath = isEntrepreneur
-          ? `entrepreneur/submissions/${projectId}/get-upload-url/`
-          : `deals/projects/${projectId}/get-upload-url/`;
-      }
-
-      const res = await api.post(urlPath, {
-        filename: file.name,
-        file_size: file.size,
-        content_type: file.type,
-        category: selectedCategory
-      });
-
-      const { url, document_id, content_type } = res.data;
-
-      // 2. Upload to B2 via PUT
-      setStatus('uploading');
-
-      const xhr = new XMLHttpRequest();
-      xhr.open('PUT', url, true);
-      // For PUT, we must set the Content-Type header to match the pre-signed URL
-      xhr.setRequestHeader('Content-Type', content_type || file.type || 'application/octet-stream');
-
-      xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          setProgress(pct);
+      // Dynamically resolve the direct local upload path
+      let localUrl = uploadUrl;
+      if (!localUrl) {
+        if (token) {
+          localUrl = `/deals/projects/invite/${token}/upload-local/`;
+        } else if (fundId) {
+          localUrl = `/deals/funds/${fundId}/upload-local/`;
+        } else if (projectId) {
+          localUrl = isEntrepreneur 
+            ? `/entrepreneur/submissions/${projectId}/upload-local/`
+            : `/deals/projects/${projectId}/upload-local/`;
         }
-      };
-
-      const uploadPromise = new Promise((resolve, reject) => {
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            console.error('B2 Upload Error Response:', xhr.responseText);
-            reject(new Error(`B2 Error ${xhr.status}: ${xhr.statusText}`));
-          }
-        };
-
-        xhr.onerror = () => {
-          console.error('B2 Network Error - check CORS and Endpoint');
-          reject(new Error('Network error: Browser blocked the request to B2 (likely CORS)'));
-        };
-
-        // Send the file directly as binary data
-        xhr.send(file);
-      });
-      await uploadPromise;
-
-      // 3. Confirm with Backend
-      // Only for projects - Fund documents are finalized via the page POST
-      if (!fundId) {
-        const confirmPath = token
-          ? `deals/projects/invite/${token}/documents/${document_id}/confirm/`
-          : `deals/projects/${projectId}/documents/${document_id}/confirm/`;
-
-        await api.post(confirmPath);
       }
+
+      if (!localUrl) {
+        throw new Error('Local upload URL could not be resolved.');
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('document_type', selectedCategory);
+
+      const res = await api.post(localUrl, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent) => {
+          const pct = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setProgress(pct);
+        },
+      });
 
       setStatus('success');
       toast.success(`${file.name} uploaded successfully.`);
-      // For funds, we return the file_key and metadata for the parent page to save
-      onSuccess(fundId ? {
-        file_key: res.data.file_key,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: res.data.content_type || file.type
-      } : document_id);
-    } catch (err) {
-      console.warn('B2 Upload failed, attempting automatic local upload fallback:', err);
-      toast.info('B2 storage unreachable. Falling back to local storage upload...');
-
-      // Determine the fallback local upload URL
-      let fallbackUrl = '';
-      if (token) {
-        fallbackUrl = `/deals/projects/invite/${token}/upload-local/`;
-      } else if (fundId) {
-        fallbackUrl = `/deals/funds/${fundId}/upload-local/`;
-      } else if (projectId) {
-        fallbackUrl = isEntrepreneur
-          ? `/entrepreneur/submissions/${projectId}/upload-local/`
-          : `/deals/projects/${projectId}/upload-local/`;
-      }
-
-      if (fallbackUrl) {
-        setStatus('uploading');
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('document_type', selectedCategory);
-
-          const res = await api.post(fallbackUrl, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-            onUploadProgress: (progressEvent) => {
-              const pct = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-              setProgress(pct);
-            },
-          });
-
-          setStatus('success');
-          toast.success(`${file.name} uploaded successfully to local storage.`);
-
-          // For funds, return the same metadata structure
-          if (fundId) {
-            onSuccess({
-              file_key: res.data.file_key,
-              file_name: res.data.file_name,
-              file_size: res.data.file_size,
-              mime_type: res.data.content_type || file.type
-            });
-          } else {
-            onSuccess(res.data.document_id);
-          }
-        } catch (localErr) {
-          console.error('Local fallback upload failed:', localErr);
-          setStatus('error');
-          setError(localErr.response?.data?.detail || localErr.message || 'Upload failed');
-          toast.error('Local fallback upload failed');
-        }
+      
+      // For funds, return the same metadata structure
+      if (fundId) {
+        onSuccess({
+          file_key: res.data.file_key,
+          file_name: res.data.file_name,
+          file_size: res.data.file_size,
+          mime_type: res.data.content_type || file.type
+        });
       } else {
-        setStatus('error');
-        setError(err.response?.data?.detail || err.message || 'Upload failed');
-        toast.error('Upload failed');
+        onSuccess(res.data.document_id);
       }
+    } catch (err) {
+      console.error('Local Upload Error:', err);
+      setStatus('error');
+      setError(err.response?.data?.detail || err.message || 'Upload failed');
+      toast.error('Upload failed');
     }
   };
 
@@ -286,10 +172,11 @@ export default function FileUploader({
           {description}
         </p>
       )}
-      <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all theme-transition ${status === 'idle' ? 'border-border-theme bg-card dark:bg-white/2' :
-          status === 'success' ? 'border-emerald-500/30 bg-emerald-500/5' :
-            status === 'error' ? 'border-red-500/30 bg-red-500/5' : 'border-[#F59F01]/30 bg-[#F59F01]/5'
-        }`}>
+      <div className={`relative border-2 border-dashed rounded-xl p-6 transition-all theme-transition ${
+        status === 'idle' ? 'border-border-theme bg-card dark:bg-white/2' : 
+        status === 'success' ? 'border-emerald-500/30 bg-emerald-500/5' :
+        status === 'error' ? 'border-red-500/30 bg-red-500/5' : 'border-[#F59F01]/30 bg-[#F59F01]/5'
+      }`}>
         {status === 'idle' && (
           <div className="flex flex-col items-center justify-center text-center space-y-4">
             {!file ? (
@@ -301,8 +188,8 @@ export default function FileUploader({
                   <p className="text-sm font-medium text-ls-primary dark:text-white">{label}</p>
                   <p className="text-xs text-text-muted mt-1">{formatText} (Max 3MB)</p>
                 </div>
-                <input
-                  type="file"
+                <input 
+                  type="file" 
                   accept={allowedExtensions}
                   ref={fileInputRef}
                   onChange={handleFileChange}
@@ -317,8 +204,8 @@ export default function FileUploader({
                     <p className="text-xs font-bold text-ls-primary dark:text-white truncate">{file.name}</p>
                     <p className="text-[10px] text-text-muted uppercase">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
                   </div>
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); reset(); }}
+                  <button 
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); reset(); }} 
                     className="p-1.5 hover:bg-ls-primary/10 dark:hover:bg-white/10 rounded-lg text-ls-primary/40 dark:text-white/40 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   >
                     <X size={16} />
@@ -328,7 +215,7 @@ export default function FileUploader({
                 {!hideCategory && (
                   <div className="w-full max-w-sm space-y-1.5 text-left">
                     <label className="text-[10px] uppercase tracking-widest text-text-muted font-bold ml-1">Document Category</label>
-                    <select
+                    <select 
                       value={selectedCategory}
                       onChange={(e) => setSelectedCategory(e.target.value)}
                       className="w-full bg-background dark:bg-[#08001a] border border-border-theme rounded-lg px-3 py-2 text-xs text-ls-primary dark:text-white outline-none focus:border-[#F59F01]/40 transition-all appearance-none"
@@ -341,8 +228,8 @@ export default function FileUploader({
                     </select>
                   </div>
                 )}
-
-                <button
+                
+                <button 
                   onClick={(e) => { e.preventDefault(); uploadFile(); }}
                   className="bg-[#F59F01] text-ls-primary text-xs font-bold px-8 py-2.5 rounded-lg hover:scale-105 transition-all shadow-lg shadow-[#F59F01]/20"
                 >
@@ -384,7 +271,7 @@ export default function FileUploader({
                 <p className="text-xs mt-0.5">{error}</p>
               </div>
             </Alert>
-            <button
+            <button 
               onClick={reset}
               className="w-full py-2 bg-ls-primary/5 dark:bg-white/5 hover:bg-ls-primary/10 dark:hover:bg-white/10 text-ls-primary dark:text-white text-xs rounded-lg transition-colors"
             >

@@ -340,6 +340,7 @@ def run_qoe_analysis(project_id):
             status = 'CAUTION'
             
         # 4. Create Report
+        QoEReport.objects.filter(project=project).delete()
         QoEReport.objects.create(
             project=project,
             report_text=report_text,
@@ -393,9 +394,11 @@ def run_commercial_analysis(project_id):
         # --- NEW: SCAN PITCH DECK/BUSINESS PLAN ---
         # Expanded to include COMMERCIAL category and filename heuristics
         pitch_deck = project.documents.filter(
-            models.Q(category__in=['PITCH_DECK', 'BUSINESS_PLAN', 'COMMERCIAL']) |
-            models.Q(filename__icontains='deck') |
-            models.Q(filename__icontains='pitch')
+            models.Q(is_confirmed=True) & (
+                models.Q(category__in=['PITCH_DECK', 'BUSINESS_PLAN', 'COMMERCIAL']) |
+                models.Q(filename__icontains='deck') |
+                models.Q(filename__icontains='pitch')
+            )
         ).first()
         
         pitch_deck_content = ""
@@ -472,6 +475,7 @@ def run_commercial_analysis(project_id):
             data = {"customer_concentration_pct": 0, "top_customer_names": "", "market_positioning_notes": raw_json}
 
         # Create Record
+        CommercialAnalysis.objects.filter(project=project).delete()
         CommercialAnalysis.objects.create(
             project=project,
             customer_concentration_pct=data.get("customer_concentration_pct", 0),
@@ -525,22 +529,60 @@ def run_operational_analysis(project_id, manual_context=""):
 
         # --- NEW: SCAN DOCUMENTS FOR OPERATIONAL DATA ---
         op_doc = project.documents.filter(
-            models.Q(category__in=['PITCH_DECK', 'BUSINESS_PLAN', 'TECHNICAL', 'COMMERCIAL', 'OPERATIONAL_AUDIT', 'TECH_STACK', 'ORG_CHART']) |
-            models.Q(filename__icontains='tech') |
-            models.Q(filename__icontains='ops')
+            models.Q(is_confirmed=True) & (
+                models.Q(category__in=['PITCH_DECK', 'BUSINESS_PLAN', 'TECHNICAL', 'COMMERCIAL', 'OPERATIONAL_AUDIT', 'TECH_STACK', 'ORG_CHART']) |
+                models.Q(filename__icontains='tech') |
+                models.Q(filename__icontains='ops')
+            )
         ).first()
         
         doc_insights = ""
         if op_doc:
             try:
+                # 1. Get file content
+                doc_content = None
+                if op_doc.local_file:
+                    try:
+                        with op_doc.local_file.open('rb') as f:
+                            doc_content = f.read()
+                    except Exception as e:
+                        logger.warning(f"Could not read local operational doc: {e}")
+                
+                if not doc_content:
+                    download_url = generate_presigned_download_url(op_doc.file_key)
+                    response = requests.get(download_url)
+                    if response.status_code == 200:
+                        doc_content = response.content
+                
+                # 2. Extract text based on file extension
+                doc_text = ""
+                if doc_content:
+                    doc_ext = op_doc.filename.split('.')[-1].lower()
+                    if doc_ext in ['xlsx', 'xlsm']:
+                        doc_text = extract_text_from_excel(doc_content)
+                    elif doc_ext == 'pdf':
+                        doc_text = extract_text_from_pdf(doc_content)
+                    elif doc_ext in ['pptx', 'pptm', 'potx', 'potm', 'ppt']:
+                        doc_text = extract_text_from_pptx(doc_content)
+                    elif doc_ext in ['docx', 'docm', 'dotx', 'dotm', 'doc']:
+                        doc_text = extract_text_from_docx(doc_content)
+                
+                if not doc_text or len(doc_text) < 50:
+                    doc_text = "[No readable text found in document]"
+                
                 doc_insights = client.execute_task(
                     "document_qualitative_summary", 
-                    {"filename": op_doc.filename, "focus": "technology stack, operational logic, and founder expertise"}, 
+                    {
+                        "filename": op_doc.filename,
+                        "document_text": doc_text,
+                        "focus": "technology stack, operational logic, and founder expertise"
+                    }, 
                     project=project,
                     document=op_doc
                 )
-            except:
-                doc_insights = "No document insights available."
+            except Exception as scan_err:
+                logger.error(f"--- OPERATIONAL SCAN FAILED: {str(scan_err)} ---")
+                doc_insights = "No document insights available. Document scanning failed."
 
         context_data = {
             "project_name": project.legal_name,
@@ -601,13 +643,36 @@ def run_operational_analysis(project_id, manual_context=""):
         except Exception as e:
             logger.warning(f"Operational JSON parsing failed: {e}")
 
+        # Enforce defaults and fallback values if parsed data is invalid or None
+        tech_stack = data.get("technology_stack", {})
+        if not isinstance(tech_stack, dict):
+            tech_stack = {}
+            
+        key_score = data.get("key_person_risk_score", 5)
+        if key_score is None:
+            key_score = 5
+        else:
+            try:
+                key_score = int(float(key_score))
+            except:
+                key_score = 5
+
+        supply_chain = data.get("supply_chain_risks", [])
+        if not isinstance(supply_chain, list):
+            supply_chain = []
+            
+        red_flags = data.get("operational_red_flags", [])
+        if not isinstance(red_flags, list):
+            red_flags = []
+
         # Create Record
+        OperationalAnalysis.objects.filter(project=project).delete()
         OperationalAnalysis.objects.create(
             project=project,
-            technology_stack=data.get("technology_stack", {}),
-            key_person_risk_score=data.get("key_person_risk_score", 5),
-            supply_chain_risks=data.get("supply_chain_risks", []),
-            operational_red_flags=data.get("operational_red_flags", []),
+            technology_stack=tech_stack,
+            key_person_risk_score=key_score,
+            supply_chain_risks=supply_chain,
+            operational_red_flags=red_flags,
             thesis_markdown=data.get("thesis_markdown", raw_output),
             ai_call_log=AICallLog.objects.filter(project=project, task_type='operational_analysis').first()
         )
@@ -985,10 +1050,16 @@ def run_full_analysis(project_id, user_id=None):
         project.save()
         
         # 1. Find the most recent financial document
-        doc = project.documents.filter(category='FINANCIAL').order_by('-uploaded_at').first()
-        legal_doc = project.documents.filter(category='LEGAL').order_by('-uploaded_at').first()
+        doc = project.documents.filter(is_confirmed=True, category__in=['FINANCIAL', 'FINANCIALS']).order_by('-uploaded_at').first()
+        legal_doc = project.documents.filter(is_confirmed=True, category='LEGAL').order_by('-uploaded_at').first()
         
         if not doc:
+            # Let's set progress to failed so user is notified why it aborted
+            progress = project.analysis_progress or {}
+            for k in progress:
+                progress[k] = 'failed'
+            project.analysis_progress = progress
+            project.save()
             return f"Full analysis aborted: No financial document found for {project.legal_name}"
 
         # 2. Build the chain dynamically

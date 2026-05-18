@@ -48,16 +48,17 @@ class AIModelClient:
     
     # Model Mappings — All tasks route to Gemini
     TASK_ROUTING = {
-        "financial_extraction": "gemini-flash-latest",
-        "scoring": "gemini-flash-latest", 
-        "legal_scan": "gemini-flash-latest",
-        "memo_draft": "gemini-flash-latest",
-        "qoe_analysis": "gemini-flash-latest",
-        "commercial_analysis": "gemini-flash-latest",
-        "operational_analysis": "gemini-flash-latest",
-        "valuation_generation": "gemini-flash-latest",
-        "term_sheet_draft": "gemini-flash-latest",
-        "spa_draft": "gemini-flash-latest",
+        "financial_extraction": "gemini-2.5-flash",
+        "scoring": "gemini-2.5-flash", 
+        "legal_scan": "gemini-2.5-flash",
+        "memo_draft": "gemini-2.5-flash",
+        "qoe_analysis": "gemini-2.5-flash",
+        "commercial_analysis": "gemini-2.5-flash",
+        "operational_analysis": "gemini-2.5-flash",
+        "valuation_generation": "gemini-2.5-flash",
+        "term_sheet_draft": "gemini-2.5-flash",
+        "spa_draft": "gemini-2.5-flash",
+        "document_qualitative_summary": "gemini-2.5-flash",
     }
 
     def __init__(self):
@@ -65,7 +66,7 @@ class AIModelClient:
         self.deepseek_api_key = os.environ.get("DEEPSEEK_API_KEY")
 
     def get_model_for_task(self, task_type):
-        return self.TASK_ROUTING.get(task_type, "gemini-2.0-flash")
+        return self.TASK_ROUTING.get(task_type, "gemini-2.5-flash")
 
     def _call_gemini(self, model_name, system_prompt, user_prompt, document=None):
         max_retries = 3
@@ -107,7 +108,7 @@ class AIModelClient:
                 latency = int((time.time() - start_time) * 1000)
                 
                 # Metadata
-                text = response.text
+                text = response.text or ""
                 prompt_tokens = len(system_prompt + user_prompt) // 4
                 completion_tokens = len(text) // 4
                 
@@ -121,31 +122,21 @@ class AIModelClient:
                 logging.getLogger('django').error(f"Gemini Call failed (Attempt {attempt+1}): {str(e)}")
                 
                 if "429" in str(e) or "ResourceExhausted" in str(e):
-                    # If we hit a "limit: 0" error, it's a project/tier restriction. Fallback immediately.
-                    if "limit: 0" in str(e):
-                         import logging
-                         # Progressive Fallback: 2.0 -> 1.5 Flash -> 1.5 Pro
-                         if "2.0" in model_name:
-                             next_model = "gemini-flash-latest"
-                         elif "flash" in model_name:
-                             next_model = "gemini-1.5-pro"
-                         else:
-                             raise e
-                             
-                         logging.getLogger('django').warning(f"Gemini hit quota restriction. Falling back to {next_model} immediately.")
-                         return self._call_gemini(next_model, system_prompt, user_prompt, document=document)
-
-                    if attempt == max_retries - 1:
-                        # Final attempt with the most stable model
-                        if "flash" in model_name:
-                            return self._call_gemini("gemini-1.5-pro", system_prompt, user_prompt, document=document)
+                    import logging
+                    if "2.5-flash" in model_name:
+                        next_model = "gemini-2.0-flash"
+                    elif "2.0-flash" in model_name:
+                        next_model = "gemini-flash-latest"
+                    else:
                         raise e
-                    time.sleep(backoff)
-                    backoff *= 2
+                    
+                    logging.getLogger('django').warning(f"Gemini hit quota/rate restriction on {model_name}. Falling back to {next_model} immediately.")
+                    return self._call_gemini(next_model, system_prompt, user_prompt, document=document)
                 elif "404" in str(e):
-                    # Fallback to 1.5 if 2.0 is not available (common in some regions)
-                    if "2.0" in model_name or "gemini-3" in model_name:
-                        return self._call_gemini("gemini-1.5-flash", system_prompt, user_prompt)
+                    if "2.5-flash" in model_name:
+                        return self._call_gemini("gemini-2.0-flash", system_prompt, user_prompt, document=document)
+                    elif "2.0-flash" in model_name:
+                        return self._call_gemini("gemini-flash-latest", system_prompt, user_prompt, document=document)
                     raise e
                 else:
                     raise e

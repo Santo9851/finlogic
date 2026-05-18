@@ -186,15 +186,15 @@ class PEProject(models.Model):
         Percentage of required document categories present in the data room.
         Required categories: FINANCIAL, LEGAL, COMMERCIAL.
         """
-        required = {'FINANCIAL', 'LEGAL', 'COMMERCIAL'}
+        required = {'FINANCIAL', 'FINANCIALS', 'LEGAL', 'COMMERCIAL'}
         uploaded = set(
             self.documents.filter(
                 category__in=list(required)
             ).values_list('category', flat=True).distinct()
         )
-        if not required:
-            return 100
-        return int(len(uploaded & required) / len(required) * 100)
+        normalized_uploaded = {c if c != 'FINANCIALS' else 'FINANCIAL' for c in uploaded}
+        target = {'FINANCIAL', 'LEGAL', 'COMMERCIAL'}
+        return int(len(normalized_uploaded & target) / len(target) * 100)
 
     @property
     def business_description(self) -> str:
