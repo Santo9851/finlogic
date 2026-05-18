@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Briefcase, PieChart, ShieldCheck,
-  UserPlus, LogOut, Menu, X, ChevronDown, Files, User, FileText, Settings, HelpCircle, ArrowLeftRight, Library, CircleDollarSign
+  UserPlus, LogOut, Menu, X, ChevronDown, Files, User, FileText, Settings, HelpCircle, ArrowLeftRight, Library, CircleDollarSign, BookOpen, BarChart3
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
@@ -37,6 +37,9 @@ const NAV = [
   },
   { href: '/gp/fund-admin/drawdowns', label: 'Drawdown Management', icon: CircleDollarSign },
   { href: '/gp/fund-admin/documents', label: 'Fund Admin', icon: Files },
+  { href: '/gp/research/sector-reports', label: 'Sector Research', icon: BookOpen },
+  { href: '/gp/research/comps', label: 'Peer Benchmarking', icon: BarChart3 },
+  { href: '/gp/research/regulatory-updates', label: 'Regulatory Updates', icon: ShieldCheck },
   { href: '/gp/ir-documents', label: 'Shareholder IR', icon: FileText },
   { href: '/gp/audit', label: 'Audit Log', icon: ShieldCheck },
   { href: '/gp/deals/invite', label: 'Invite Entrepreneur', icon: UserPlus },
@@ -66,7 +69,7 @@ function Sidebar({ collapsed, onClose }) {
         className={`
           fixed top-0 left-0 h-screen z-40
           flex flex-col
-          bg-ls-primary border-r border-ls-white/5
+          bg-background border-r border-border-theme
           transition-all duration-300 ease-in-out
           overflow-x-hidden shadow-2xl
           ${collapsed ? '-translate-x-full lg:translate-x-0 lg:w-20' : 'w-72'}
@@ -74,8 +77,8 @@ function Sidebar({ collapsed, onClose }) {
         `}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-8 border-b border-ls-white/5">
-           <FinlogicLogo size={32} variant={collapsed ? "icon" : "full"} darkBg={true} />
+        <div className="flex items-center gap-3 px-6 py-8 border-b border-border-theme">
+           <FinlogicLogo size={32} variant={collapsed ? "icon" : "full"} darkBg={isDark} />
            {!collapsed && (
              <span className="text-ls-compliment text-[8px] font-black uppercase tracking-[0.4em] mt-1 ml-auto border border-ls-compliment/20 px-2 py-1">GP Staff</span>
            )}
@@ -90,54 +93,54 @@ function Sidebar({ collapsed, onClose }) {
               
               return (
                 <div key={item.label} className="mb-2">
-                  <button
-                    onClick={() => {
-                      if (item.href) router.push(item.href);
-                      setOpenSection(isOpen ? null : item.label);
-                    }}
-                    className={`
-                      w-full flex items-center gap-4 px-5 py-4 transition-all group relative
-                      ${hasActiveChild || (item.href && pathname === item.href) ? 'text-ls-compliment' : 'text-ls-white/40 hover:text-ls-white hover:bg-ls-white/5'}
-                    `}
-                  >
-                    {hasActiveChild && !collapsed && (
-                      <motion.div 
-                        layoutId="nav-indicator-gp"
-                        className="absolute left-0 w-1 h-6 bg-ls-compliment" 
-                      />
+                    <button
+                      onClick={() => {
+                        if (item.href) router.push(item.href);
+                        setOpenSection(isOpen ? null : item.label);
+                      }}
+                      className={`
+                        w-full flex items-center gap-4 px-5 py-4 transition-all group relative
+                        ${hasActiveChild || (item.href && pathname === item.href) ? 'text-ls-compliment' : 'text-text-muted hover:text-foreground hover:bg-foreground/5'}
+                      `}
+                    >
+                      {hasActiveChild && !collapsed && (
+                        <motion.div 
+                          layoutId="nav-indicator-gp"
+                          className="absolute left-0 w-1 h-6 bg-ls-compliment" 
+                        />
+                      )}
+                      <item.icon size={18} className="flex-shrink-0" />
+                      {!collapsed && <span className="text-[10px] font-bold uppercase tracking-[0.3em]">{item.label}</span>}
+                      {!collapsed && (
+                        <ChevronDown 
+                          size={12} 
+                          className={`ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} 
+                        />
+                      )}
+                    </button>
+                    
+                    {isOpen && !collapsed && (
+                      <div className="mt-2 ml-10 border-l border-border-theme space-y-1">
+                        {item.children.map((child) => {
+                          const active = pathname === child.href || pathname.startsWith(child.href + '/');
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => {
+                                if (window.innerWidth < 1024) onClose();
+                              }}
+                              className={`
+                                block px-6 py-3 text-[9px] font-bold uppercase tracking-[0.3em] transition-all
+                                ${active ? 'text-ls-compliment bg-ls-compliment/5' : 'text-text-muted hover:text-foreground'}
+                              `}
+                            >
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
                     )}
-                    <item.icon size={18} className="flex-shrink-0" />
-                    {!collapsed && <span className="text-[10px] font-bold uppercase tracking-[0.3em]">{item.label}</span>}
-                    {!collapsed && (
-                      <ChevronDown 
-                        size={12} 
-                        className={`ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} 
-                      />
-                    )}
-                  </button>
-                  
-                  {isOpen && !collapsed && (
-                    <div className="mt-2 ml-10 border-l border-ls-white/10 space-y-1">
-                      {item.children.map((child) => {
-                        const active = pathname === child.href || pathname.startsWith(child.href + '/');
-                        return (
-                          <Link
-                            key={child.href}
-                            href={child.href}
-                            onClick={() => {
-                              if (window.innerWidth < 1024) onClose();
-                            }}
-                            className={`
-                              block px-6 py-3 text-[9px] font-bold uppercase tracking-[0.3em] transition-all
-                              ${active ? 'text-ls-compliment bg-ls-compliment/5' : 'text-ls-white/30 hover:text-ls-white'}
-                            `}
-                          >
-                            {child.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               );
             }
@@ -154,7 +157,7 @@ function Sidebar({ collapsed, onClose }) {
                   relative flex items-center gap-4 px-5 py-4 transition-all group
                   ${active
                     ? 'text-ls-compliment'
-                    : 'text-ls-white/40 hover:text-ls-white hover:bg-ls-white/5'}
+                    : 'text-text-muted hover:text-foreground hover:bg-foreground/5'}
                 `}
               >
                 {active && !collapsed && (
@@ -168,21 +171,21 @@ function Sidebar({ collapsed, onClose }) {
         </nav>
 
         {/* Footer */}
-        <div className="p-6 border-t border-ls-white/5">
+        <div className="p-6 border-t border-border-theme">
            {!collapsed && user && (
              <div className="mb-6 flex items-center gap-4">
-                <div className="w-10 h-10 border border-ls-white/10 flex items-center justify-center text-ls-compliment">
+                <div className="w-10 h-10 border border-border-theme flex items-center justify-center text-ls-compliment">
                    <User size={18} />
                 </div>
                 <div className="min-w-0">
-                   <p className="text-[10px] font-bold text-ls-white truncate uppercase tracking-widest">{user.first_name || user.username}</p>
-                   <p className="text-[8px] font-bold text-ls-white/30 truncate uppercase tracking-widest">{user.email}</p>
+                   <p className="text-[10px] font-bold text-foreground truncate uppercase tracking-widest">{user.first_name || user.username}</p>
+                   <p className="text-[8px] font-bold text-text-muted truncate uppercase tracking-widest">{user.email}</p>
                 </div>
              </div>
            )}
            <button 
              onClick={logout}
-             className="flex items-center gap-3 text-[9px] font-bold text-ls-white/20 hover:text-red-400 uppercase tracking-[0.4em] transition-colors w-full group"
+             className="flex items-center gap-3 text-[9px] font-bold text-text-muted hover:text-red-400 uppercase tracking-[0.4em] transition-colors w-full group"
            >
              <LogOut size={14} className="group-hover:translate-x-1 transition-transform" />
              {!collapsed && <span>Sign Out Protocol</span>}
@@ -235,7 +238,7 @@ export default function GPLayout({ children }) {
           {/* Top bar */}
           <header className="h-16 flex items-center gap-3 px-4 border-b border-border-theme bg-card/80 backdrop-blur flex-shrink-0 z-[100] theme-transition">
             <button
-              className="lg:hidden text-text-muted hover:text-ls-primary dark:hover:text-white p-1"
+              className="lg:hidden text-text-muted hover:text-foreground p-1"
               onClick={() => setSidebarOpen((v) => !v)}
             >
               {sidebarOpen ? <X size={20} /> : <Menu size={20} />}

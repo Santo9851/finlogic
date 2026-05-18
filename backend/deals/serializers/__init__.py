@@ -70,9 +70,24 @@ from .governance import (
     ProposalVoteSerializer
 )
 
+from .market_intel import (
+    ComparableCompanyConfirmSerializer,
+    ComparableCompanySerializer,
+    ComparableCompanyUpsertRowSerializer,
+    SectorReportCreateSerializer,
+    SectorReportPublicSerializer,
+    SectorReportSerializer,
+    SectorReportUpdateSerializer,
+    RegulatoryUpdateSerializer,
+    RegulatoryUpdateCreateUpdateSerializer
+)
+
 __all__ = [
     'CapitalCallSerializer',
     'CommercialAnalysisSerializer',
+    'ComparableCompanyConfirmSerializer',
+    'ComparableCompanySerializer',
+    'ComparableCompanyUpsertRowSerializer',
     'ComplianceGateSerializer',
     'ConflictOfInterestSerializer',
     'CriterionScoreSerializer',
@@ -116,9 +131,15 @@ __all__ = [
     'RedFlagFindingSerializer',
     'RedFlagPatternSerializer',
     'RegulatoryChecklistSerializer',
+    'RegulatoryUpdateSerializer',
+    'RegulatoryUpdateCreateUpdateSerializer',
     'SEBONFilingDeadlineSerializer',
     'SPADraftSerializer',
     'ScoringRunSerializer',
+    'SectorReportCreateSerializer',
+    'SectorReportPublicSerializer',
+    'SectorReportSerializer',
+    'SectorReportUpdateSerializer',
     'TermSheetSerializer',
     'UserMiniSerializer',
     'ValuationModelSerializer',

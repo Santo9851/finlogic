@@ -132,6 +132,22 @@ from .governance import (
     GPInvestorVoteView
 )
 
+from .market_intel import (
+    CompsConfirmView,
+    CompsDetailView,
+    CompsListView,
+    CompsUploadView,
+    PublicSectorReportDetailView,
+    PublicSectorReportListView,
+    SectorChoicesView,
+    SectorReportDetailView,
+    SectorReportListCreateView,
+    RegulatoryUpdateListCreateView,
+    RegulatoryUpdateDetailView,
+    RegulatoryUpdateGenerateSummaryView,
+    PublicRegulatoryUpdateListView
+)
+
 from .helpers import (
     _get_client_ip,
     get_deal_for_user
@@ -139,6 +155,10 @@ from .helpers import (
 
 __all__ = [
     'CapitalCallViewSet',
+    'CompsConfirmView',
+    'CompsDetailView',
+    'CompsListView',
+    'CompsUploadView',
     'DistributionCreateView',
     'DocumentConfirmView',
     'DocumentDeleteView',
@@ -246,6 +266,15 @@ __all__ = [
     'PEInvestmentViewSet',
     'PortfolioKPIReportDetailView',
     'PortfolioKPIReportListView',
+    'PublicSectorReportDetailView',
+    'PublicSectorReportListView',
+    'PublicRegulatoryUpdateListView',
+    'RegulatoryUpdateDetailView',
+    'RegulatoryUpdateGenerateSummaryView',
+    'RegulatoryUpdateListCreateView',
+    'SectorChoicesView',
+    'SectorReportDetailView',
+    'SectorReportListCreateView',
     'ValuationRecordViewSet',
     'WaterfallCalculateView',
     'WaterfallHistoryView',

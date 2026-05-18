@@ -201,7 +201,7 @@ export default function GPInvitePage() {
           <button
             type="submit"
             disabled={submitting}
-            className={`w-full flex items-center justify-center gap-3 ${isDark ? 'bg-ls-compliment' : 'bg-ls-secondary'} text-white font-black py-4 rounded-2xl shadow-xl hover:scale-[1.01] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-[0.3em] text-[10px]`}
+            className={`w-full flex items-center justify-center gap-3 ${isDark ? 'bg-ls-compliment text-ls-primary-fixed' : 'bg-ls-secondary text-white'} font-black py-4 rounded-2xl shadow-xl hover:scale-[1.01] transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-[0.3em] text-[10px]`}
           >
             <Send size={16} />
             {submitting ? 'Executing Protocol…' : 'Send Institutional Invitation'}

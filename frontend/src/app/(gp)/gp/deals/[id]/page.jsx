@@ -668,7 +668,7 @@ export default function GPDealDetailPage() {
 
   if (isLoading) return (
     <div className="h-[60vh] flex flex-col items-center justify-center gap-4 theme-transition">
-      <Loader2 className="w-8 h-8 text-[#F59F01] animate-spin" />
+      <Loader2 className="w-8 h-8 text-ls-compliment animate-spin" />
       <p className="text-text-muted text-sm animate-pulse font-bold uppercase tracking-widest">Loading detailed deal flow...</p>
     </div>
   );
@@ -698,7 +698,7 @@ export default function GPDealDetailPage() {
         <Building2 className="w-8 h-8" />
       </div>
       <h2 className="text-foreground font-black text-xl uppercase tracking-widest">Deal Not Found</h2>
-      <Link href="/gp/deals" className="text-[#F59F01] hover:underline text-xs font-black uppercase tracking-widest">Return to Pipeline</Link>
+      <Link href="/gp/deals" className="text-ls-compliment hover:underline text-xs font-black uppercase tracking-widest">Return to Pipeline</Link>
     </div>
   );
 
@@ -767,7 +767,7 @@ export default function GPDealDetailPage() {
       
       {/* Breadcrumb & Quick Actions */}
       <div className="flex items-center justify-between gap-4">
-        <Link href="/gp/deals" className="flex items-center gap-1.5 text-text-muted hover:text-[#F59F01] text-xs font-bold uppercase tracking-widest transition-colors">
+        <Link href="/gp/deals" className="flex items-center gap-1.5 text-text-muted hover:text-ls-compliment text-xs font-bold uppercase tracking-widest transition-colors">
           <ChevronLeft size={16} /> Back to Pipeline
         </Link>
         <div className="flex items-center gap-2">
@@ -788,7 +788,7 @@ export default function GPDealDetailPage() {
            <StatusBadge status={deal.status} />
         </div>
         <div className="relative z-10 flex items-start gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-[#F59F01]/10 flex items-center justify-center text-[#F59F01] border border-[#F59F01]/20 shadow-lg">
+          <div className="w-20 h-20 rounded-2xl bg-ls-compliment/10 flex items-center justify-center text-ls-compliment border border-ls-compliment/20 shadow-lg">
              <Building2 size={40} />
           </div>
           <div>
@@ -798,7 +798,7 @@ export default function GPDealDetailPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-border-theme" />
               <span>OCR: {deal.ocr_registration_number}</span>
               <span className="w-1.5 h-1.5 rounded-full bg-border-theme" />
-              <span className="text-[#F59F01] font-black uppercase tracking-tighter">{deal.deal_type_display}</span>
+              <span className="text-ls-compliment font-black uppercase tracking-tighter">{deal.deal_type_display}</span>
             </div>
           </div>
         </div>
@@ -812,7 +812,7 @@ export default function GPDealDetailPage() {
             onClick={() => setActiveTab(t.id)}
             className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
               activeTab === t.id
-                ? 'bg-[#F59F01] text-ls-primary-fixed shadow-lg shadow-[#F59F01]/20'
+                ? 'bg-ls-compliment text-ls-primary-fixed shadow-lg shadow-ls-compliment/20'
                 : 'text-text-muted hover:text-foreground hover:bg-foreground/5'
             }`}
           >

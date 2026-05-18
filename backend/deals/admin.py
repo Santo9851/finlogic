@@ -53,6 +53,8 @@ from .models import (
     SPADraft,
     GPInvestorMeetingRequest,
     ManagementFeeAccrual,
+    SectorReport,
+    RegulatoryUpdate,
 )
 
 
@@ -493,3 +495,57 @@ class ManagementFeeAccrualAdmin(admin.ModelAdmin):
     list_filter = ('is_called', 'fund')
     raw_id_fields = ('fund', 'lp_commitment', 'capital_call')
     readonly_fields = ('id', 'created_at', 'updated_at')
+
+
+# ---------------------------------------------------------------------------
+# Sector Research Reports (Market Intelligence)
+# ---------------------------------------------------------------------------
+
+@admin.register(SectorReport)
+class SectorReportAdmin(admin.ModelAdmin):
+    list_display = ('title', 'sector', 'report_date', 'status', 'generated_by', 'created_at')
+    list_filter = ('status', 'sector', 'report_date')
+    search_fields = ('title', 'sector', 'summary')
+    raw_id_fields = ('generated_by',)
+    readonly_fields = ('id', 'created_at', 'updated_at', 'extracted_data')
+    fieldsets = (
+        ('Report Identity', {
+            'fields': ('id', 'sector', 'report_date', 'title', 'status'),
+        }),
+        ('Content', {
+            'fields': ('summary', 'content'),
+        }),
+        ('Source Data', {
+            'fields': ('source_file', 'extracted_data'),
+            'classes': ('collapse',),
+        }),
+        ('Metadata', {
+            'fields': ('generated_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )
+
+
+@admin.register(RegulatoryUpdate)
+class RegulatoryUpdateAdmin(admin.ModelAdmin):
+    list_display = ('title', 'source_name', 'published_date', 'status', 'created_by', 'created_at')
+    list_filter = ('status', 'source_name', 'published_date')
+    search_fields = ('title', 'source_name', 'raw_text', 'summary')
+    raw_id_fields = ('created_by',)
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    date_hierarchy = 'published_date'
+    fieldsets = (
+        ('Regulatory Update Info', {
+            'fields': ('id', 'title', 'source_name', 'source_url', 'published_date', 'status'),
+        }),
+        ('Content', {
+            'fields': ('summary', 'raw_text'),
+        }),
+        ('Source File', {
+            'fields': ('original_file',),
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
+        }),
+    )

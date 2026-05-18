@@ -480,6 +480,10 @@ class ImmutableAuditEvent(models.Model):
         QUOTA_ADJUSTED = 'QUOTA_ADJUSTED', 'Validator Quota Adjusted'
         RED_TEAM_REPORT_ACCESSED = 'RED_TEAM_REPORT_ACCESSED', 'Red-Team Report Accessed'
         RED_TEAM_REPORT_TRIGGERED = 'RED_TEAM_REPORT_TRIGGERED', 'Red-Team Report Triggered'
+        # Market Intelligence events
+        SECTOR_REPORT_EDITED = 'SECTOR_REPORT_EDITED', 'Sector Report Edited'
+        SECTOR_REPORT_PUBLISHED = 'SECTOR_REPORT_PUBLISHED', 'Sector Report Published'
+        COMPS_UPSERTED = 'COMPS_UPSERTED', 'Comps Upserted'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     event_type = models.CharField(max_length=50, choices=EventType.choices)

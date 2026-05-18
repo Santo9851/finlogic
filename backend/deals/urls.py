@@ -137,6 +137,22 @@ from .views import (
     ImmutableAuditEventViewSet,
 )
 
+from .views.market_intel import (
+    CompsConfirmView,
+    CompsDetailView,
+    CompsListView,
+    CompsUploadView,
+    SectorReportListCreateView,
+    SectorReportDetailView,
+    PublicSectorReportListView,
+    PublicSectorReportDetailView,
+    SectorChoicesView,
+    RegulatoryUpdateListCreateView,
+    RegulatoryUpdateDetailView,
+    RegulatoryUpdateGenerateSummaryView,
+    PublicRegulatoryUpdateListView,
+)
+
 from .conversion_views import IssueLOIView, SuperadminFinalizeInvestmentView
 
 router = DefaultRouter()
@@ -714,6 +730,29 @@ urlpatterns = [
     path('deals/gp-investor/governance/vote/', GPInvestorVoteView.as_view(), name='gp-invest-vote'),
     path('deals/gp-investor/meetings/', GPInvestorMeetingsView.as_view(), name='gp-invest-meetings'),
     path('deals/gp-investor/meetings/request/', GPInvestorMeetingRequestView.as_view(), name='gp-invest-meeting-request'),
+
+    # ── Market Intelligence: Sector Reports (GP) ──────────────────────────
+    path('market-intel/sector-reports/', SectorReportListCreateView.as_view(), name='sector-report-list-create'),
+    path('market-intel/sector-reports/<uuid:pk>/', SectorReportDetailView.as_view(), name='sector-report-detail'),
+    path('market-intel/sectors/', SectorChoicesView.as_view(), name='sector-choices'),
+
+    # ── Market Intelligence: NEPSE Comps (GP) ────────────────────────────
+    path('market-intel/comps/', CompsListView.as_view(), name='comps-list'),
+    path('market-intel/comps/upload/', CompsUploadView.as_view(), name='comps-upload'),
+    path('market-intel/comps/confirm/', CompsConfirmView.as_view(), name='comps-confirm'),
+    path('market-intel/comps/<uuid:pk>/', CompsDetailView.as_view(), name='comps-detail'),
+
+    # ── Market Intelligence: Regulatory Updates (GP) ─────────────────────
+    path('market-intel/regulatory-updates/', RegulatoryUpdateListCreateView.as_view(), name='regulatory-update-list-create'),
+    path('market-intel/regulatory-updates/<uuid:pk>/', RegulatoryUpdateDetailView.as_view(), name='regulatory-update-detail'),
+    path('market-intel/regulatory-updates/<uuid:pk>/generate-summary/', RegulatoryUpdateGenerateSummaryView.as_view(), name='regulatory-update-generate-summary'),
+
+    # ── Public Insights: Sector Reports ────────────────────────────────────
+    path('insights/sector-reports/', PublicSectorReportListView.as_view(), name='public-sector-report-list'),
+    path('insights/sector-reports/<uuid:pk>/', PublicSectorReportDetailView.as_view(), name='public-sector-report-detail'),
+
+    # ── Public Insights: Regulatory Updates ────────────────────────────────
+    path('insights/regulatory-updates/', PublicRegulatoryUpdateListView.as_view(), name='public-regulatory-update-list'),
 
     # ── Admin Viewsets ─────────────────────────────────────────────────────
     path('deals/', include(router.urls)),

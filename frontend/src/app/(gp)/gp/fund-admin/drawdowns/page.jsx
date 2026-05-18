@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import api from '@/services/api';
 import { StatusBadge } from '@/components/portal/PortalShell';
+import { toast } from 'sonner';
 
 export default function DrawdownManagement() {
   const queryClient = useQueryClient();
@@ -76,7 +77,7 @@ export default function DrawdownManagement() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase">Drawdown Reconciliation</h1>
-          <p className="text-text-muted text-sm mt-1">Institutional capital tracking and payment verification hub.</p>
+          <p className="text-text-muted text-sm mt-1 font-medium leading-relaxed">Institutional capital tracking and payment verification hub.</p>
         </div>
         
         <div className="flex bg-card border border-border-theme p-1.5 rounded-2xl shadow-inner">
@@ -85,7 +86,7 @@ export default function DrawdownManagement() {
               key={f}
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                filter === f ? 'bg-ls-compliment text-white shadow-lg' : 'text-text-muted hover:text-foreground'
+                filter === f ? 'bg-ls-compliment text-ls-primary-fixed shadow-lg shadow-ls-compliment/10' : 'text-text-muted hover:text-foreground'
               }`}
             >
               {f === 'PAID' ? 'Awaiting Verification' : f}
@@ -102,7 +103,7 @@ export default function DrawdownManagement() {
           placeholder="Search by LP name or Fund..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-card border border-border-theme rounded-[2rem] py-6 pl-16 pr-8 text-sm focus:ring-2 focus:ring-ls-compliment/20 outline-none transition-all shadow-xl"
+          className="w-full bg-card border border-border-theme rounded-[2rem] py-6 pl-16 pr-8 text-sm focus:ring-2 focus:ring-ls-compliment/20 outline-none transition-all shadow-xl text-foreground placeholder-text-muted/50"
         />
       </div>
 
@@ -144,13 +145,13 @@ export default function DrawdownManagement() {
                     <StatusBadge status={call.status} />
                   </td>
                   <td className="px-8 py-6 text-right">
-                    <div className="flex items-center justify-end gap-3">
+                    <div className="flex items-center justify-end gap-3 font-bold text-xs">
                       {call.payment_proof && (
                         <a 
                           href={call.payment_proof} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-all shadow-lg"
+                          className="p-2.5 rounded-xl bg-ls-secondary/10 text-ls-secondary hover:bg-ls-secondary hover:text-white transition-all shadow-lg border border-ls-secondary/20 active:scale-95"
                           title="View Payment Proof"
                         >
                           <FileText size={18} />
@@ -169,7 +170,7 @@ export default function DrawdownManagement() {
                             }
                           }}
                           disabled={markVerified.isLoading}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-purple-500/20 active:scale-95 disabled:opacity-50"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50"
                         >
                           {markVerified.isLoading ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                           Verify & Confirm
@@ -214,7 +215,7 @@ function GPProxyUpload({ call, onUpload }) {
     <>
       <button 
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-lg active:scale-95"
+        className="flex items-center gap-2 px-4 py-2.5 bg-ls-secondary/10 text-ls-secondary border border-ls-secondary/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-ls-secondary hover:text-white transition-all shadow-lg active:scale-95"
       >
         <FileText size={14} />
         Upload on Behalf
@@ -222,21 +223,21 @@ function GPProxyUpload({ call, onUpload }) {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setOpen(false)} />
           <div className="relative bg-card border border-border-theme rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
             <h3 className="text-xl font-black text-foreground uppercase tracking-tight mb-2">Proxy Payment Upload</h3>
             <p className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-8 opacity-60">
               Uploading for: {call.lp_commitment_name}
             </p>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8 text-left">
               <div className="space-y-4">
-                <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest text-left">Select Proof (PDF/JPG)</label>
+                <label className="block text-[10px] font-black text-text-muted uppercase tracking-widest">Select Proof (PDF/JPG)</label>
                 <input 
                   type="file" 
                   onChange={(e) => setFile(e.target.files[0])}
                   required
-                  className="w-full bg-foreground/5 border border-border-theme p-4 rounded-2xl text-xs focus:ring-2 focus:ring-ls-compliment/20 outline-none"
+                  className="w-full bg-foreground/5 border border-border-theme p-4 rounded-2xl text-xs focus:ring-2 focus:ring-ls-compliment/20 outline-none text-foreground"
                 />
               </div>
 
@@ -250,7 +251,7 @@ function GPProxyUpload({ call, onUpload }) {
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white shadow-xl hover:scale-105 transition-all active:scale-95"
+                  className="flex-1 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-ls-secondary text-white shadow-xl hover:bg-ls-secondary/90 transition-all hover:scale-[1.02] active:scale-95"
                 >
                   Confirm Upload
                 </button>

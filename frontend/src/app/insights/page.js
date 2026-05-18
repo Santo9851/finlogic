@@ -154,6 +154,7 @@ function FilterTabs({ activeTab, setActiveTab, isDark }) {
   const tabs = [
     { id: 'all', label: 'All Intelligence' },
     { id: 'articles', label: 'Research Papers' },
+    { id: 'sector-reports', label: 'Sector Research', href: '/insights/sector-reports' },
     { id: 'series', label: 'Learning Series' },
     { id: 'courses', label: 'Institutional Courses' },
     { id: 'webinars', label: 'Recorded Sessions' },
@@ -162,6 +163,15 @@ function FilterTabs({ activeTab, setActiveTab, isDark }) {
   return (
     <div className="flex flex-wrap justify-center gap-6 mb-16 border-b border-border-theme pb-8">
       {tabs.map((tab) => (
+        tab.href ? (
+          <Link
+            key={tab.id}
+            href={tab.href}
+            className="text-[10px] font-bold uppercase tracking-[0.3em] transition-all duration-300 pb-2 border-b-2 border-transparent text-text-muted hover:text-ls-primary"
+          >
+            {tab.label}
+          </Link>
+        ) : (
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
@@ -172,6 +182,7 @@ function FilterTabs({ activeTab, setActiveTab, isDark }) {
         >
           {tab.label}
         </button>
+        )
       ))}
     </div>
   );

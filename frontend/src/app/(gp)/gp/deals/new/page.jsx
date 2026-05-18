@@ -23,7 +23,7 @@ const schema = z.object({
   sector: z.string().min(1, 'Sector is required'),
 });
 
-const inputCls = "w-full bg-foreground/[0.03] border border-border-theme rounded-xl px-4 py-3 text-foreground text-sm outline-none focus:border-[#F59F01]/40 transition-all font-medium shadow-inner placeholder:text-text-muted/20";
+const inputCls = "w-full bg-foreground/[0.03] border border-border-theme rounded-xl px-4 py-3 text-foreground text-sm outline-none focus:border-ls-compliment/40 transition-all font-medium shadow-inner placeholder:text-text-muted/20";
 
 export default function GPNewDealPage() {
   const [funds, setFunds] = useState([]);
@@ -62,10 +62,10 @@ export default function GPNewDealPage() {
       </Link>
 
       <div className="rounded-[2.5rem] border border-border-theme bg-card p-10 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#F59F01]/5 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-ls-compliment/5 blur-[60px] rounded-full -mr-16 -mt-16 pointer-events-none" />
         
         <div className="flex items-center gap-4 mb-10">
-          <div className="w-12 h-12 rounded-xl bg-foreground/5 flex items-center justify-center text-[#F59F01] border border-border-theme shadow-inner">
+          <div className="w-12 h-12 rounded-xl bg-foreground/5 flex items-center justify-center text-ls-compliment border border-border-theme shadow-inner">
             <Plus size={24} />
           </div>
           <div>
@@ -115,7 +115,7 @@ export default function GPNewDealPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-[#F59F01] text-ls-primary-fixed text-[10px] font-black uppercase tracking-[0.3em] py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-2xl shadow-[#F59F01]/20"
+              className="w-full bg-ls-compliment text-ls-primary-fixed text-[10px] font-black uppercase tracking-[0.3em] py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 shadow-2xl shadow-ls-compliment/20"
             >
               {submitting ? 'Creating Pipeline Entry...' : 'Finalize & Create Deal'}
             </button>

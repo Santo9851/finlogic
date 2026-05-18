@@ -28,9 +28,15 @@ from .analysis import (
     scan_legal_document
 )
 
+from .market_intel import (
+    extract_sector_report_data,
+    generate_sector_report
+)
+
 __all__ = [
     'batch_send_capital_call_emails',
     'extract_financials_from_document',
+    'extract_sector_report_data',
     'extract_text_from_excel',
     'extract_text_from_pdf',
     'generate_ai_spa_draft',
@@ -39,6 +45,7 @@ __all__ = [
     'generate_lp_statements',
     'generate_management_fee_accruals',
     'generate_memo_draft',
+    'generate_sector_report',
     'move_project_documents_to_b2',
     'run_commercial_analysis',
     'run_finlo_scoring',

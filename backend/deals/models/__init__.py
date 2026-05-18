@@ -67,10 +67,18 @@ from .governance import (
     ProposalVote
 )
 
+from .market_intel import (
+    ComparableCompany,
+    RegulatoryUpdate,
+    SectorChoices,
+    SectorReport
+)
+
 __all__ = [
     'AICallLog',
     'CapitalCall',
     'CommercialAnalysis',
+    'ComparableCompany',
     'ComplianceGate',
     'ConflictOfInterest',
     'CriterionScore',
@@ -110,9 +118,12 @@ __all__ = [
     'RedFlagFinding',
     'RedFlagPattern',
     'RegulatoryChecklist',
+    'RegulatoryUpdate',
     'SEBONFilingDeadline',
     'SPADraft',
     'ScoringRun',
+    'SectorChoices',
+    'SectorReport',
     'TermSheet',
     'ValuationModel',
     'ValuationRecord',

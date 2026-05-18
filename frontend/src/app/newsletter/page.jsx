@@ -23,13 +23,16 @@ export const metadata = {
 export default async function NewsletterArchivePage() {
   let issues = [];
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/newsletter/api/archive/`, {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+    const res = await fetch(`${apiUrl}/newsletter/api/archive/`, {
       next: { revalidate: 300 }
     });
-    const data = await res.json();
-    issues = data.issues || [];
+    if (res.ok) {
+      const data = await res.json();
+      issues = data.issues || [];
+    }
   } catch (error) {
-    console.error('Failed to fetch newsletter archive:', error);
+    console.error('Failed to fetch newsletter archive:', error.message);
   }
 
   const sections = [
@@ -90,30 +93,30 @@ export default async function NewsletterArchivePage() {
     <div className="min-h-screen bg-background text-foreground theme-transition">
       <main>
         {/* HERO SECTION */}
-        <section className="relative overflow-hidden bg-ls-primary pt-32 pb-20 text-white lg:pt-48 lg:pb-32">
+        <section className="relative overflow-hidden bg-ls-primary pt-24 pb-16 text-white sm:pt-32 sm:pb-20 lg:pt-48 lg:pb-32">
           <div className="absolute inset-0 bg-abstract-gradient opacity-10"></div>
-          <div className="container relative z-10 mx-auto px-4 lg:px-8">
-            <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
+          <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid gap-12 sm:gap-16 lg:grid-cols-2 lg:items-center">
               <div>
-                <span className="mb-6 inline-block text-xs font-black uppercase tracking-[0.3em] text-ls-compliment">
+                <span className="mb-4 sm:mb-6 inline-block text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-ls-compliment">
                   A Publication by Finlogic Capital
                 </span>
-                <h1 className="mb-8 font-serif text-5xl font-bold leading-[1.1] lg:text-7xl">
+                <h1 className="mb-6 sm:mb-8 font-serif text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.15] lg:leading-[1.1]">
                   Investing Beyond the <span className="italic text-ls-compliment">Obvious</span> — in Nepal's Capital
                 </h1>
-                <p className="mb-10 text-xl leading-relaxed text-white/80 lg:text-2xl">
+                <p className="mb-8 sm:mb-10 text-base sm:text-lg md:text-xl leading-relaxed text-white/80 lg:text-2xl">
                   Bi-weekly intelligence on Nepal's private equity and investment landscape. For founders preparing for institutional capital, investors building frameworks, and observers tracking South Asia's most underestimated market.
                 </p>
                 
-                <ul className="mb-12 space-y-4">
+                <ul className="mb-10 sm:mb-12 space-y-3 sm:space-y-4">
                   {[
                     "Evidence-based analysis of Nepal's investment environment",
                     "Practical founder intelligence: what investors actually look for",
                     "LP education that closes the knowledge gap, issue by issue",
                     "Zero advertising. Zero sponsored content."
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center space-x-3 text-sm text-white/60">
-                      <ShieldCheck className="h-4 w-4 text-ls-compliment" />
+                    <li key={i} className="flex items-start sm:items-center space-x-3 text-xs sm:text-sm text-white/60">
+                      <ShieldCheck className="h-4 w-4 text-ls-compliment shrink-0 mt-0.5 sm:mt-0" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -122,16 +125,16 @@ export default async function NewsletterArchivePage() {
                 <div className="flex items-center space-x-4">
                   <div className="flex -space-x-2">
                     {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="h-10 w-10 rounded-full border-2 border-ls-primary bg-card" />
+                      <div key={i} className="h-8 w-8 sm:h-10 sm:w-10 rounded-full border-2 border-ls-primary bg-card" />
                     ))}
                   </div>
-                  <span className="text-xs font-black uppercase tracking-widest text-white/40">
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/40">
                     Join 1,200+ Network Members
                   </span>
                 </div>
               </div>
 
-              <div id="subscribe">
+              <div id="subscribe" className="w-full max-w-xl mx-auto lg:max-w-none">
                 <NewsletterForm />
               </div>
             </div>
@@ -139,16 +142,16 @@ export default async function NewsletterArchivePage() {
         </section>
 
         {/* STATS BAR */}
-        <section className="border-y border-border-theme bg-card/30 py-12 theme-transition">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+        <section className="border-y border-border-theme bg-card/30 py-8 sm:py-12 theme-transition">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-4">
               {stats.map((stat, i) => (
                 <div key={i} className="flex flex-col items-center text-center">
-                  <div className="mb-4 text-ls-compliment">
-                    <stat.icon className="h-6 w-6" />
+                  <div className="mb-2 sm:mb-4 text-ls-compliment">
+                    <stat.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <div className="mb-1 font-serif text-4xl font-bold text-foreground">{stat.value}</div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">{stat.sub}</div>
+                  <div className="mb-1 font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">{stat.value}</div>
+                  <div className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] text-text-muted">{stat.sub}</div>
                 </div>
               ))}
             </div>
@@ -156,23 +159,23 @@ export default async function NewsletterArchivePage() {
         </section>
 
         {/* WHAT'S INSIDE */}
-        <section className="py-24 lg:py-32">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="mb-20 max-w-2xl">
-              <span className="mb-4 inline-block text-xs font-black uppercase tracking-widest text-ls-compliment">Contents</span>
-              <h2 className="mb-6 font-serif text-4xl font-bold lg:text-6xl">What's inside <span className="italic">every</span> issue</h2>
-              <p className="text-xl text-text-muted">Six sections. One coherent argument. Delivered in under 20 minutes of reading.</p>
+        <section className="py-16 sm:py-24 lg:py-32">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-12 sm:mb-20 max-w-2xl">
+              <span className="mb-2 sm:mb-4 inline-block text-[10px] sm:text-xs font-black uppercase tracking-widest text-ls-compliment">Contents</span>
+              <h2 className="mb-4 sm:mb-6 font-serif text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold">What's inside <span className="italic">every</span> issue</h2>
+              <p className="text-base sm:text-lg md:text-xl text-text-muted leading-relaxed">Six sections. One coherent argument. Delivered in under 20 minutes of reading.</p>
             </div>
 
-            <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
               {sections.map((section, i) => (
-                <div key={i} className="group relative rounded-2xl border border-border-theme bg-card p-10 transition-all hover:border-ls-compliment/30 theme-transition">
-                  <div className="mb-8 flex h-12 w-12 items-center justify-center rounded-xl bg-ls-primary text-ls-compliment shadow-lg shadow-ls-primary/20">
-                    <section.icon className="h-6 w-6" />
+                <div key={i} className="group relative rounded-2xl border border-border-theme bg-card p-6 sm:p-10 transition-all hover:border-ls-compliment/30 theme-transition">
+                  <div className="mb-6 sm:mb-8 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-xl bg-ls-primary text-ls-compliment shadow-lg shadow-ls-primary/20">
+                    <section.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                   </div>
-                  <h3 className="mb-2 font-serif text-2xl font-bold text-foreground group-hover:text-ls-compliment transition-colors">{section.title}</h3>
-                  <div className="mb-4 text-[10px] font-black uppercase tracking-widest text-ls-compliment/70">{section.label}</div>
-                  <p className="text-sm leading-relaxed text-text-muted">{section.desc}</p>
+                  <h3 className="mb-2 font-serif text-xl sm:text-2xl font-bold text-foreground group-hover:text-ls-compliment transition-colors">{section.title}</h3>
+                  <div className="mb-3 sm:mb-4 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-ls-compliment/70">{section.label}</div>
+                  <p className="text-xs sm:text-sm leading-relaxed text-text-muted">{section.desc}</p>
                 </div>
               ))}
             </div>
@@ -180,15 +183,15 @@ export default async function NewsletterArchivePage() {
         </section>
 
         {/* PHILOSOPHY SECTION */}
-        <section className="bg-ls-primary py-24 text-white lg:py-40">
-          <div className="container mx-auto px-4 lg:px-8">
+        <section className="bg-ls-primary py-16 sm:py-24 text-white lg:py-40">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-4xl text-center">
-              <h2 className="mb-12 font-serif text-4xl font-bold lg:text-6xl">Rooted in Finlogic Capital's <span className="text-ls-compliment">Investment Philosophy</span></h2>
-              <p className="mb-16 text-xl text-white/60">Capital Lines reflects all five pillars of our institutional framework</p>
+              <h2 className="mb-8 sm:mb-12 font-serif text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold leading-snug">Rooted in Finlogic Capital's <span className="text-ls-compliment">Investment Philosophy</span></h2>
+              <p className="mb-10 sm:mb-16 text-base sm:text-lg md:text-xl text-white/60">Capital Lines reflects all five pillars of our institutional framework</p>
               
-              <div className="flex flex-wrap justify-center gap-6">
+              <div className="flex flex-wrap justify-center gap-3 sm:gap-6">
                 {pillars.map((pillar, i) => (
-                  <div key={i} className="rounded-full border border-white/10 bg-white/5 px-8 py-4 text-sm font-black uppercase tracking-widest text-ls-compliment transition-all hover:bg-white/10">
+                  <div key={i} className="rounded-full border border-white/10 bg-white/5 px-5 py-3 sm:px-8 sm:py-4 text-xs sm:text-sm font-black uppercase tracking-widest text-ls-compliment transition-all hover:bg-white/10">
                     {pillar}
                   </div>
                 ))}
@@ -198,39 +201,39 @@ export default async function NewsletterArchivePage() {
         </section>
 
         {/* ARCHIVE LIST */}
-        <section className="py-24 lg:py-40">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="mb-16 flex flex-col space-y-4 md:flex-row md:items-end md:justify-between md:space-y-0">
+        <section className="py-16 sm:py-24 lg:py-40">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-10 sm:mb-16 flex flex-col space-y-3 md:flex-row md:items-end md:justify-between md:space-y-0">
               <div className="max-w-xl">
-                <span className="mb-4 inline-block text-xs font-black uppercase tracking-widest text-ls-compliment">Archive</span>
-                <h2 className="font-serif text-4xl font-bold lg:text-6xl text-foreground">Past Dispatches</h2>
+                <span className="mb-2 sm:mb-4 inline-block text-[10px] sm:text-xs font-black uppercase tracking-widest text-ls-compliment">Archive</span>
+                <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-foreground">Past Dispatches</h2>
               </div>
-              <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-widest text-text-muted">
+              <div className="flex items-center space-x-2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-text-muted">
                 <span>{issues.length} Editions Published</span>
                 <ArrowRight className="h-4 w-4" />
               </div>
             </div>
 
             {issues.length > 0 ? (
-              <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
                 {issues.map((issue) => (
                   <Link 
                     key={issue.slug} 
                     href={`/newsletter/${issue.slug}`}
                     className="group flex flex-col overflow-hidden rounded-2xl border border-border-theme bg-card shadow-sm transition-all hover:-translate-y-2 hover:shadow-2xl theme-transition"
                   >
-                    <div className="p-10">
-                      <div className="mb-4 flex items-center justify-between">
-                        <span className="font-mono text-[10px] font-black uppercase tracking-widest text-ls-compliment">ISSUE {issue.issue_number}</span>
+                    <div className="p-6 sm:p-10">
+                      <div className="mb-3 sm:mb-4 flex items-center justify-between">
+                        <span className="font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-ls-compliment">ISSUE {issue.issue_number}</span>
                         <Sparkles className="h-4 w-4 text-ls-compliment opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                      <h3 className="mb-4 font-serif text-2xl font-bold leading-tight text-foreground group-hover:text-ls-compliment transition-colors">
+                      <h3 className="mb-3 sm:mb-4 font-serif text-xl sm:text-2xl font-bold leading-tight text-foreground group-hover:text-ls-compliment transition-colors">
                         {issue.title}
                       </h3>
-                      <p className="mb-8 line-clamp-3 text-sm leading-relaxed text-text-muted/80">
+                      <p className="mb-6 sm:mb-8 line-clamp-3 text-xs sm:text-sm leading-relaxed text-text-muted/80">
                         {issue.deck}
                       </p>
-                      <div className="mt-auto flex items-center justify-between pt-6 border-t border-border-theme/30 text-[10px] font-black uppercase tracking-widest text-text-muted/50">
+                      <div className="mt-auto flex items-center justify-between pt-4 sm:pt-6 border-t border-border-theme/30 text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-text-muted/50">
                         <span>{new Date(issue.sent_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
                         <span className="group-hover:text-ls-compliment transition-colors">Read Dispatch →</span>
                       </div>
@@ -239,8 +242,8 @@ export default async function NewsletterArchivePage() {
                 ))}
               </div>
             ) : (
-              <div className="py-20 text-center border-2 border-dashed border-border-theme rounded-3xl">
-                <p className="text-xl text-text-muted">No dispatches found in the archive.</p>
+              <div className="py-16 sm:py-20 text-center border-2 border-dashed border-border-theme rounded-3xl">
+                <p className="text-base sm:text-lg text-text-muted font-medium">No dispatches found in the archive.</p>
               </div>
             )}
           </div>
@@ -248,11 +251,11 @@ export default async function NewsletterArchivePage() {
       </main>
       
       {/* FINAL CTA */}
-      <section className="bg-ls-compliment py-16 text-ls-primary">
+      <section className="bg-ls-compliment py-12 sm:py-16 text-ls-primary">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="mb-4 font-serif text-3xl font-bold">Stay at the frontier of Nepal's investment landscape</h2>
-          <p className="mb-8 font-black uppercase tracking-widest opacity-70">Delivered every other Tuesday at 8am NPT</p>
-          <Link href="#subscribe" className="inline-block rounded-md border-2 border-ls-primary px-10 py-4 font-black uppercase tracking-widest transition-all hover:bg-ls-primary hover:text-white">
+          <h2 className="mb-3 sm:mb-4 font-serif text-2xl sm:text-3xl font-bold">Stay at the frontier of Nepal's investment landscape</h2>
+          <p className="mb-6 sm:mb-8 text-xs sm:text-sm font-black uppercase tracking-widest opacity-70">Delivered every other Tuesday at 8am NPT</p>
+          <Link href="#subscribe" className="inline-block rounded-md border-2 border-ls-primary px-8 py-3.5 sm:px-10 sm:py-4 text-xs sm:text-sm font-black uppercase tracking-widest transition-all hover:bg-ls-primary hover:text-white">
             Join the Network
           </Link>
         </div>
