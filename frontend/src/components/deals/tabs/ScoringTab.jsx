@@ -572,7 +572,11 @@ function SubTaskItem({ task, projectId, onChange, onViewTemplate }) {
 
   useEffect(() => {
     const hasInput = !!docId || notes.trim().length > 0;
+<<<<<<< HEAD
     const isDone = task.isMandatory
+=======
+    const isDone = task.isMandatory 
+>>>>>>> 5b3f52a768598bcc3e5a89f835fcbb912e3e2468
       ? (status === 'FULFILLED' && (task.requiresFile ? !!docId : hasInput))
       : (status === 'FULFILLED' || status === 'NOT_NEEDED');
 
@@ -590,6 +594,7 @@ function SubTaskItem({ task, projectId, onChange, onViewTemplate }) {
   };
 
   return (
+<<<<<<< HEAD
     <div className={`border-[2px] rounded-[2.5rem] p-8 transition-all duration-500 theme-transition ${status === 'FULFILLED' ? 'bg-emerald-500/5 border-emerald-500/30 shadow-xl' :
         status === 'NOT_NEEDED' ? 'bg-foreground/5 border-border-theme opacity-40 grayscale shadow-inner' : 'bg-foreground/[0.02] border-border-theme hover:border-foreground/10 shadow-lg'
       }`}>
@@ -601,6 +606,90 @@ function SubTaskItem({ task, projectId, onChange, onViewTemplate }) {
             </p>
             {task.isMandatory && (
               <span className="px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase tracking-widest rounded-full border border-rose-500/20">Mandatory</span>
+=======
+    <div className={`border-[2px] rounded-[2.5rem] p-8 transition-all duration-500 theme-transition ${
+      status === 'FULFILLED' ? 'bg-emerald-500/5 border-emerald-500/30 shadow-xl' : 
+      status === 'NOT_NEEDED' ? 'bg-foreground/5 border-border-theme opacity-40 grayscale shadow-inner' : 'bg-foreground/[0.02] border-border-theme hover:border-foreground/10 shadow-lg'
+    }`}>
+       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+          <div className="space-y-3">
+             <div className="flex items-center gap-3">
+                <p className={`text-base font-black uppercase tracking-tight ${status === 'FULFILLED' ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+                  {task.label}
+                </p>
+                {task.isMandatory && (
+                  <span className="px-3 py-1 bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase tracking-widest rounded-full border border-rose-500/20">Mandatory</span>
+                )}
+             </div>
+             <p className="text-[11px] text-text-muted leading-relaxed max-w-md font-medium">{task.help}</p>
+             
+             {task.templateName && (
+               <button 
+                 onClick={onViewTemplate}
+                 className="flex items-center gap-2 px-5 py-2.5 bg-[#F59F01]/10 border border-[#F59F01]/30 rounded-xl text-[#F59F01] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#F59F01] hover:text-ls-primary-fixed transition-all shadow-xl shadow-[#F59F01]/10 mt-4 active:scale-95"
+               >
+                  <FileText size={16} />
+                  View & Print Template
+               </button>
+             )}
+          </div>
+          
+          <div className="flex gap-3 shrink-0 self-end sm:self-start">
+             {!task.isMandatory && (
+               <button 
+                 onClick={() => toggleStatus('NOT_NEEDED')}
+                 className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${
+                   status === 'NOT_NEEDED' ? 'bg-foreground text-background' : 'bg-foreground/5 text-text-muted/40 hover:text-foreground'
+                 }`}
+               >
+                 Exempt
+               </button>
+             )}
+             <button 
+               onClick={() => toggleStatus('FULFILLED')}
+               className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-2xl ${
+                 status === 'FULFILLED' ? 'bg-emerald-500 text-white' : 'bg-foreground/5 text-text-muted/20 hover:text-emerald-500 hover:bg-emerald-500/10'
+               }`}
+             >
+                <Check size={24} strokeWidth={4} />
+             </button>
+          </div>
+       </div>
+
+       {showForm && (
+         <div className="mt-8 pt-8 border-t border-border-theme space-y-6 animate-in fade-in slide-in-from-top-6 duration-700">
+            <div className="space-y-3">
+               <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em] ml-1">
+                  Verification Audit Log
+               </label>
+               <textarea 
+                 value={notes}
+                 onChange={(e) => setNotes(e.target.value)}
+                 placeholder={status === 'FULFILLED' ? "Reference numbers, approval dates, key person names..." : "Explain precisely why this requirement is being waived..."}
+                 className="w-full bg-background border border-border-theme rounded-2xl p-6 text-sm text-foreground focus:outline-none focus:border-[#F59F01] transition-all min-h-[120px] shadow-inner font-medium"
+               />
+            </div>
+
+            {status === 'FULFILLED' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between ml-1">
+                   <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">Evidence Bundle</label>
+                    {task.isMandatory && task.requiresFile && !docId && <span className="text-[9px] text-rose-500 font-black animate-pulse uppercase tracking-widest bg-rose-500/10 px-3 py-1 rounded-full">* Evidence Required</span>}
+                    {task.isMandatory && !task.requiresFile && !docId && !notes.trim() && <span className="text-[9px] text-[#F59F01] font-black uppercase tracking-widest bg-[#F59F01]/10 px-3 py-1 rounded-full">* Comment or File Required</span>}
+                </div>
+                <div className="bg-background p-6 rounded-[2rem] border border-border-theme shadow-inner">
+                  <FileUploader 
+                    projectId={projectId}
+                    category="COMPLIANCE"
+                    isLocal={true}
+                    uploadUrl={`deals/projects/${projectId}/upload-local/`}
+                    onSuccess={(id) => setDocId(id)}
+                    label="Upload Executed Document"
+                    description="Upload the scanned declaration with necessary ID attachments (PDF/JPG)"
+                  />
+                </div>
+              </div>
+>>>>>>> 5b3f52a768598bcc3e5a89f835fcbb912e3e2468
             )}
           </div>
           <p className="text-[11px] text-text-muted leading-relaxed max-w-md font-medium">{task.help}</p>
@@ -735,12 +824,21 @@ function ComplianceGateRow({ gate, deal, onClear, onReset, onViewUBO }) {
         {isCleared ? 'View Audit' : 'Clear Gate'}
       </button>
 
+<<<<<<< HEAD
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-12 bg-background/90 backdrop-blur-3xl overflow-y-auto theme-transition">
           <div className="bg-card border border-border-theme p-12 rounded-[4rem] max-w-3xl w-full max-h-[85vh] overflow-y-auto pr-6 shadow-2xl space-y-10 relative animate-in fade-in zoom-in duration-500 mb-20 theme-transition scrollbar-thin">
             <button onClick={() => setShowModal(false)} className="absolute top-12 right-12 text-text-muted/20 hover:text-foreground transition-all p-3 hover:bg-foreground/5 rounded-2xl border border-border-theme/50">
               <X size={28} />
             </button>
+=======
+       {showModal && (
+         <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-12 bg-background/90 backdrop-blur-3xl overflow-y-auto theme-transition">
+            <div className="bg-card border border-border-theme p-12 rounded-[4rem] max-w-3xl w-full max-h-[85vh] overflow-y-auto pr-6 shadow-2xl space-y-10 relative animate-in fade-in zoom-in duration-500 mb-20 theme-transition scrollbar-thin">
+               <button onClick={() => setShowModal(false)} className="absolute top-12 right-12 text-text-muted/20 hover:text-foreground transition-all p-3 hover:bg-foreground/5 rounded-2xl border border-border-theme/50">
+                  <X size={28} />
+               </button>
+>>>>>>> 5b3f52a768598bcc3e5a89f835fcbb912e3e2468
 
             <div className="space-y-4">
               <div className="flex items-center gap-4 text-[#F59F01]">
