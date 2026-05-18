@@ -19,29 +19,94 @@ const GATE_METADATA = {
         label: 'UBO Declaration', 
         help: 'Identify all individual shareholders with >5% equity. Mandatory for PMLA compliance.', 
         isMandatory: true,
-        templateName: 'UBO_FORM'
+        templateName: 'UBO_FORM',
+        requiresFile: true
+      },
+      {
+        id: 'pep_check',
+        label: 'PEP Screening',
+        help: 'Verify if any ultimate beneficial owners or directors are Politically Exposed Persons (PEPs).',
+        isMandatory: false
+      },
+      {
+        id: 'source_funds',
+        label: 'Source of Funds Verification',
+        help: 'Confirm and document the legitimacy of incoming promoter capital and funding sources.',
+        isMandatory: false
       }
     ]
   },
   FITTA: {
     title: "FITTA Approval",
     info: "Verification of approval from the Department of Industry (DoI) or Investment Board Nepal (IBN) under the Foreign Investment and Technology Transfer Act.",
-    subtasks: []
+    subtasks: [
+      {
+        id: 'doi_approval',
+        label: 'DoI / IBN Foreign Investment Approval',
+        help: 'Formal FDI approval certificate from the Department of Industry or Investment Board Nepal.',
+        isMandatory: true
+      },
+      {
+        id: 'nrb_record',
+        label: 'NRB Inward Remittance Recording',
+        help: 'Official record of foreign investment inward remittance from Nepal Rastra Bank.',
+        isMandatory: true
+      }
+    ]
   },
   FINANCIAL_AUDIT: {
     title: "Financial Audit Verification",
     info: "Validation of historical financial statements, tax clearance certificates, and independent audit integrity.",
-    subtasks: []
+    subtasks: [
+      {
+        id: 'three_years_audited',
+        label: '3 Years Audited Financial Statements',
+        help: 'Signed auditor reports and financial statements for the past three consecutive fiscal years.',
+        isMandatory: true
+      },
+      {
+        id: 'tax_clearance',
+        label: 'Tax Clearance Certificate',
+        help: 'Latest tax clearance certificate from the Inland Revenue Department (IRD).',
+        isMandatory: true
+      }
+    ]
   },
   LEGAL_STRUCTURE: {
     title: "Legal Structure Validity",
     info: "Assessment of incorporation documents, MOA/AOA, and shareholding structure validity.",
-    subtasks: []
+    subtasks: [
+      {
+        id: 'ocr_certificate',
+        label: 'Office of Company Registrar (OCR) Check',
+        help: 'Valid Certificate of Incorporation and updated Share Register signed by OCR.',
+        isMandatory: true
+      },
+      {
+        id: 'moa_aoa',
+        label: 'MOA & AOA Validity Check',
+        help: 'Verify active Memorandum and Articles of Association including any capital amendments.',
+        isMandatory: true
+      }
+    ]
   },
   SEBON_MAPPING: {
     title: "SEBON Mapping & Compliance",
     info: "Ensuring the deal structure aligns with the Specialized Investment Fund (SIF) Regulations 2019 and SEBON directives.",
-    subtasks: []
+    subtasks: [
+      {
+        id: 'sif_compliance',
+        label: 'SIF Regulations 2019 Compliance',
+        help: 'Validate deal mapping and structure against SEBON Specialized Investment Fund regulations.',
+        isMandatory: true
+      },
+      {
+        id: 'valuation_filing',
+        label: 'Valuation Report Submission Ready',
+        help: 'Approved independent third-party valuation report ready for filing with SEBON.',
+        isMandatory: true
+      }
+    ]
   }
 };
 
@@ -506,12 +571,13 @@ function SubTaskItem({ task, projectId, onChange, onViewTemplate }) {
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
+    const hasInput = !!docId || notes.trim().length > 0;
     const isDone = task.isMandatory 
-      ? (status === 'FULFILLED' && !!docId)
+      ? (status === 'FULFILLED' && (task.requiresFile ? !!docId : hasInput))
       : (status === 'FULFILLED' || status === 'NOT_NEEDED');
     
     onChange(task.id, { status, notes, docId, isDone });
-  }, [status, notes, docId, task.isMandatory]);
+  }, [status, notes, docId, task.isMandatory, task.requiresFile]);
 
   const toggleStatus = (s) => {
     if (status === s) {
@@ -591,7 +657,8 @@ function SubTaskItem({ task, projectId, onChange, onViewTemplate }) {
               <div className="space-y-3">
                 <div className="flex items-center justify-between ml-1">
                    <label className="text-[10px] font-black text-text-muted uppercase tracking-[0.3em]">Evidence Bundle</label>
-                   {task.isMandatory && !docId && <span className="text-[9px] text-rose-500 font-black animate-pulse uppercase tracking-widest bg-rose-500/10 px-3 py-1 rounded-full">* Evidence Required</span>}
+                    {task.isMandatory && task.requiresFile && !docId && <span className="text-[9px] text-rose-500 font-black animate-pulse uppercase tracking-widest bg-rose-500/10 px-3 py-1 rounded-full">* Evidence Required</span>}
+                    {task.isMandatory && !task.requiresFile && !docId && !notes.trim() && <span className="text-[9px] text-[#F59F01] font-black uppercase tracking-widest bg-[#F59F01]/10 px-3 py-1 rounded-full">* Comment or File Required</span>}
                 </div>
                 <div className="bg-background p-6 rounded-[2rem] border border-border-theme shadow-inner">
                   <FileUploader 
@@ -674,7 +741,7 @@ function ComplianceGateRow({ gate, deal, onClear, onReset, onViewUBO }) {
 
        {showModal && (
          <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-12 bg-background/90 backdrop-blur-3xl overflow-y-auto theme-transition">
-            <div className="bg-card border border-border-theme p-12 rounded-[4rem] max-w-3xl w-full shadow-2xl space-y-10 relative animate-in fade-in zoom-in duration-500 mb-20 theme-transition">
+            <div className="bg-card border border-border-theme p-12 rounded-[4rem] max-w-3xl w-full max-h-[85vh] overflow-y-auto pr-6 shadow-2xl space-y-10 relative animate-in fade-in zoom-in duration-500 mb-20 theme-transition scrollbar-thin">
                <button onClick={() => setShowModal(false)} className="absolute top-12 right-12 text-text-muted/20 hover:text-foreground transition-all p-3 hover:bg-foreground/5 rounded-2xl border border-border-theme/50">
                   <X size={28} />
                </button>
