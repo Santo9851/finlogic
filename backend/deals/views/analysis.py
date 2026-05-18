@@ -294,6 +294,21 @@ class GPExtractedFinancialsVerifyView(APIView):
         financial.verified_at = timezone.now()
         financial.save()
         
+        # Check if all financials are now verified to automatically trigger QoE
+        try:
+            project = financial.project
+            all_fins = project.financials.all()
+            if all_fins.exists() and all(f.is_verified_by_gp for f in all_fins):
+                progress = project.analysis_progress or {}
+                if not project.qoe_reports.exists() and progress.get('QoE') != 'processing':
+                    progress['QoE'] = 'processing'
+                    project.analysis_progress = progress
+                    project.save(update_fields=['analysis_progress'])
+                    run_qoe_analysis.delay(str(project.pk))
+                    logger.info(f"Automatically triggered QoE analysis for project {project.legal_name} after financial verification.")
+        except Exception as e:
+            logger.error(f"Error triggering QoE analysis on financial verification: {str(e)}")
+            
         return Response(ExtractedFinancialsSerializer(financial).data)
 
 

@@ -61,7 +61,13 @@ export default function ScoringTab({
   
   const [localScores, setLocalScores] = useState(scoring?.criteria_scores || []);
   
-  const showResults = !!scoring;
+  useEffect(() => {
+    if (scoring?.criteria_scores) {
+      setLocalScores(scoring.criteria_scores);
+    }
+  }, [scoring]);
+  
+  const showResults = !!scoring && (scoring.criteria_scores?.length > 0 || scoring.compliance_gates?.length > 0);
   const isProcessing = isTriggering || deal.analysis_progress?.Scoring === 'processing';
 
   const calculateTotal = () => {
@@ -329,7 +335,7 @@ export default function ScoringTab({
             <div className="bg-card border border-border-theme rounded-[2.5rem] p-10 shadow-2xl theme-transition">
                <h4 className="text-[10px] font-black text-foreground uppercase tracking-[0.3em] mb-10 border-b border-border-theme pb-6 opacity-60">Compliance Gates</h4>
                <div className="space-y-8">
-                  {scoring.compliance_gates.map(gate => (
+                  {(scoring.compliance_gates || []).map(gate => (
                     <ComplianceGateRow 
                       key={gate.id} 
                       gate={gate} 

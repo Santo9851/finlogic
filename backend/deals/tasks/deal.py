@@ -135,6 +135,13 @@ def generate_memo_draft(project_id):
         
     except Exception as e:
         logger.error(f"Failed to parse memo draft JSON: {str(e)}")
+        try:
+            progress = project.analysis_progress or {}
+            progress['Memo'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
         raise e
 
 

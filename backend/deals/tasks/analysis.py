@@ -324,7 +324,8 @@ def run_qoe_analysis(project_id):
         client = AIModelClient()
         context_data = {
             "financial_data": financial_summary,
-            "project_name": project.legal_name
+            "project_name": project.legal_name,
+            "sector": project.get_sector_display()
         }
         
         report_text = client.execute_task("qoe_analysis", context_data, project=project)
@@ -361,6 +362,13 @@ def run_qoe_analysis(project_id):
         
     except Exception as e:
         logger.error(f"Error in run_qoe_analysis: {str(e)}")
+        try:
+            progress = project.analysis_progress or {}
+            progress['QoE'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
         raise e
 
 
@@ -494,6 +502,13 @@ def run_commercial_analysis(project_id):
         
     except Exception as e:
         logger.error(f"Error in run_commercial_analysis: {str(e)}")
+        try:
+            progress = project.analysis_progress or {}
+            progress['Commercial'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
         raise e
 
 
@@ -687,6 +702,13 @@ def run_operational_analysis(project_id, manual_context=""):
         
     except Exception as e:
         logger.error(f"Error in run_operational_analysis: {str(e)}")
+        try:
+            progress = project.analysis_progress or {}
+            progress['Operational'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
         raise e
 
 
@@ -770,7 +792,13 @@ def scan_legal_document(document_id):
 
     except Exception as e:
         logger.error(f"Error in scan_legal_document: {str(e)}")
-        raise e
+        try:
+            progress = project.analysis_progress or {}
+            progress['Legal Scan'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
         raise e
 
 
@@ -975,6 +1003,13 @@ def run_finlo_scoring(project_id, user_id=None):
         
     except Exception as e:
         logger.error(f"Error in run_finlo_scoring: {str(e)}")
+        try:
+            progress = project.analysis_progress or {}
+            progress['Scoring'] = 'failed'
+            project.analysis_progress = progress
+            project.save()
+        except:
+            pass
         if 'run' in locals():
             run.status = 'FAILED'
             run.save()

@@ -70,8 +70,15 @@ class AIModelClient:
 
     def _call_gemini(self, model_name, system_prompt, user_prompt, document=None):
         max_retries = 3
-        backoff = 10
         
+        # Define progressive fallback model mapping
+        fallback_map = {
+            "gemini-2.5-flash": "gemini-2.5-pro",
+            "gemini-2.5-pro": "gemini-1.5-flash",
+            "gemini-1.5-flash": "gemini-1.5-pro",
+        }
+        
+        last_exception = None
         for attempt in range(max_retries):
             try:
                 start_time = time.time()
@@ -112,34 +119,38 @@ class AIModelClient:
                 prompt_tokens = len(system_prompt + user_prompt) // 4
                 completion_tokens = len(text) // 4
                 
-                # Gemini 3.1 Flash Cost (Estimated)
+                # Cost (Estimated)
                 cost = (prompt_tokens + completion_tokens) * 0.0000001
                 
                 return text, prompt_tokens, completion_tokens, latency, cost
             except Exception as e:
-                # Log specific error for debugging
+                last_exception = e
                 import logging
-                logging.getLogger('django').error(f"Gemini Call failed (Attempt {attempt+1}): {str(e)}")
+                logger = logging.getLogger('django')
+                logger.error(f"Gemini Call failed for {model_name} (Attempt {attempt+1}/{max_retries}): {str(e)}")
                 
-                if "429" in str(e) or "ResourceExhausted" in str(e):
-                    import logging
-                    if "2.5-flash" in model_name:
-                        next_model = "gemini-2.0-flash"
-                    elif "2.0-flash" in model_name:
-                        next_model = "gemini-flash-latest"
+                # Immediate fallbacks for specific errors: Quota/429 or Not Found/404
+                if "429" in str(e) or "ResourceExhausted" in str(e) or "404" in str(e):
+                    next_model = fallback_map.get(model_name)
+                    if next_model:
+                        logger.warning(f"Gemini hit quota/404 on {model_name}. Falling back to {next_model} immediately.")
+                        return self._call_gemini(next_model, system_prompt, user_prompt, document=document)
                     else:
                         raise e
-                    
-                    logging.getLogger('django').warning(f"Gemini hit quota/rate restriction on {model_name}. Falling back to {next_model} immediately.")
-                    return self._call_gemini(next_model, system_prompt, user_prompt, document=document)
-                elif "404" in str(e):
-                    if "2.5-flash" in model_name:
-                        return self._call_gemini("gemini-2.0-flash", system_prompt, user_prompt, document=document)
-                    elif "2.0-flash" in model_name:
-                        return self._call_gemini("gemini-flash-latest", system_prompt, user_prompt, document=document)
-                    raise e
+                
+                # For other errors (like 503 UNAVAILABLE or network timeout), we backoff and retry the current model.
+                if attempt < max_retries - 1:
+                    sleep_time = 2 * (attempt + 1)
+                    logger.warning(f"Retrying {model_name} in {sleep_time}s due to error...")
+                    time.sleep(sleep_time)
                 else:
-                    raise e
+                    # Last attempt failed. Fallback to next model if available, instead of failing entirely!
+                    next_model = fallback_map.get(model_name)
+                    if next_model:
+                        logger.warning(f"All retries failed for {model_name}. Falling back to {next_model}.")
+                        return self._call_gemini(next_model, system_prompt, user_prompt, document=document)
+                    
+        raise last_exception
 
     def _call_deepseek(self, model_name, system_prompt, user_prompt):
         url = "https://api.deepseek.com/chat/completions"

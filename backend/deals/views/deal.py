@@ -1233,6 +1233,26 @@ class GPProjectDetailView(generics.RetrieveUpdateAPIView):
     permission_classes = [permissions.IsAuthenticated, IsGPStaff, IsDealAccessible]
     queryset = PEProject.objects.select_related('fund', 'entrepreneur_user', 'created_by')
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            financials = instance.financials.all()
+            if financials.exists() and all(f.is_verified_by_gp for f in financials):
+                report_exists = instance.qoe_reports.exists()
+                progress = instance.analysis_progress or {}
+                qoe_progress = progress.get('QoE')
+                
+                if not report_exists and qoe_progress not in ['processing', 'completed']:
+                    progress['QoE'] = 'processing'
+                    instance.analysis_progress = progress
+                    instance.save(update_fields=['analysis_progress'])
+                    run_qoe_analysis.delay(str(instance.pk))
+                    logger.info(f"Automatically triggered QoE analysis for project {instance.legal_name} on detail load.")
+        except Exception as e:
+            logger.error(f"Error triggering automatic QoE analysis: {str(e)}")
+            
+        return super().retrieve(request, *args, **kwargs)
+
     def perform_update(self, serializer):
         old_status = self.get_object().status
         instance = serializer.save()
